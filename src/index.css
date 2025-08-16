@@ -1,0 +1,139 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-navy: #1E2A38;
+    --color-teal: #2FA5A9;
+    --color-gray: #F2F4F7;
+    --color-gold: #F5B700;
+    --color-navy-light: #2A3A4E;
+    --color-navy-dark: #141C26;
+    --color-teal-light: #4DB8BC;
+    --color-teal-dark: #268F92;
+    --color-gold-light: #FFD43B;
+    --color-gold-dark: #E5A600;
+  }
+
+  .dark {
+    --color-navy: #E5E7EB;
+    --color-teal: #4DB8BC;
+    --color-gray: #111827;
+    --color-gold: #FFD43B;
+    --color-navy-light: #F3F4F6;
+    --color-navy-dark: #9CA3AF;
+    --color-teal-light: #67E8F9;
+    --color-teal-dark: #0891B2;
+    --color-gold-light: #FDE047;
+    --color-gold-dark: #CA8A04;
+  }
+
+  body {
+    @apply antialiased transition-colors;
+    background-color: var(--color-gray);
+    color: var(--color-navy);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus,
+  button:focus {
+    @apply outline-none;
+    box-shadow: 0 0 0 3px rgba(47, 165, 169, 0.1);
+  }
+
+  .dark input:focus,
+  .dark select:focus,
+  .dark textarea:focus,
+  .dark button:focus {
+    box-shadow: 0 0 0 3px rgba(77, 184, 188, 0.2);
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
+
+@layer components {
+  .app-card {
+    @apply rounded-xl shadow-lg p-6 transition-all;
+    background-color: var(--color-gray);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .app-card {
+    background-color: #1F2937;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .app-input {
+    @apply rounded-lg px-4 py-2 transition-all;
+    background-color: var(--color-gray);
+    border: 1px solid var(--color-teal);
+    color: var(--color-navy);
+  }
+
+  .dark .app-input {
+    background-color: #374151;
+    border-color: var(--color-teal);
+    color: var(--color-navy);
+  }
+
+  .app-button-primary {
+    background-color: var(--color-teal);
+    @apply text-white font-semibold px-6 py-2 rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md;
+  }
+
+  .app-button-primary:hover {
+    background-color: var(--color-teal-dark);
+  }
+
+  .app-button-secondary {
+    @apply font-medium px-4 py-2 rounded-lg transition-all;
+    background-color: var(--color-gray);
+    border: 1px solid var(--color-navy);
+    color: var(--color-navy);
+  }
+
+  .dark .app-button-secondary {
+    background-color: #374151;
+    border-color: var(--color-navy);
+    color: var(--color-navy);
+  }
+
+  .app-button-secondary:hover {
+    background-color: var(--color-gray);
+    opacity: 0.8;
+  }
+
+  .dark .app-button-secondary:hover {
+    background-color: #4B5563;
+  }
+
+  .app-badge {
+    @apply inline-block px-3 py-1 text-xs font-medium rounded-full;
+  }
+
+  .app-select {
+    @apply rounded-lg px-4 py-2 appearance-none cursor-pointer transition-all;
+    background-color: var(--color-gray);
+    border: 1px solid var(--color-teal);
+    color: var(--color-navy);
+  }
+
+  .dark .app-select {
+    background-color: #374151;
+    border-color: var(--color-teal);
+    color: var(--color-navy);
+  }
+}
