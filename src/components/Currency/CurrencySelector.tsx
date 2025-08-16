@@ -48,7 +48,7 @@ export const CurrencySelector: React.FC = () => {
       >
         {currencies.map((currency) => (
           <option key={currency.code} value={currency.code} className="bg-white dark:bg-gray-800">
-            {currency.code} - {currency.name}
+            {currency.symbol}{currency.code}
           </option>
         ))}
       </select>

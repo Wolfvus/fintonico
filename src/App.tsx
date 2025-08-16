@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from './stores/authStore';
+import { formatDate } from './utils/dateFormat';
 import { AuthForm } from './components/Auth/AuthForm';
 import { ExpenseForm } from './components/ExpenseForm/ExpenseForm';
 import { IncomeForm } from './components/IncomeForm/IncomeForm';
@@ -36,7 +37,7 @@ function App() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-3 border-t-transparent rounded-full animate-spin border-teal-500"></div>
+          <div className="w-12 h-12 border-3 border-t-transparent rounded-full animate-spin border-green-500"></div>
           <span className="text-gray-900 dark:text-white">Loading...</span>
         </div>
       </div>
@@ -50,13 +51,13 @@ function App() {
   const tabs = [
     { id: 'expenses', label: 'Expenses', icon: Receipt, color: 'text-red-600 dark:text-red-400' },
     { id: 'income', label: 'Income', icon: TrendingUp, color: 'text-green-600 dark:text-green-400' },
-    { id: 'analysis', label: 'Analysis', icon: PieChart, color: 'text-teal-600 dark:text-teal-400' },
+    { id: 'analysis', label: 'Analysis', icon: PieChart, color: 'text-green-600 dark:text-green-400' },
     { id: 'networth', label: 'Net Worth', icon: Wallet, color: 'text-amber-600 dark:text-amber-400' },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b-3 border-teal-500 sticky top-0 z-50">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b-3 border-green-500 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-4">
@@ -80,8 +81,8 @@ function App() {
               <button
                 onClick={signOut}
                 className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all
-                         border border-teal-500 text-teal-600 dark:text-teal-400
-                         hover:bg-teal-500 hover:text-white text-sm"
+                         border border-green-500 text-green-600 dark:text-green-400
+                         hover:bg-green-500 hover:text-white text-sm"
               >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Sign Out</span>
@@ -218,7 +219,7 @@ function IncomeList() {
                     <span className="font-mono font-semibold text-green-600 dark:text-white">
                       {formatAmount(convertAmount(income.amount, income.currency, baseCurrency), baseCurrency)}
                     </span>
-                    <span className="text-xs sm:text-sm">{new Date(income.date).toLocaleDateString()}</span>
+                    <span className="text-xs sm:text-sm">{formatDate(income.date)}</span>
                   </div>
                 </div>
                 <button
@@ -366,7 +367,7 @@ function NetWorthTracker() {
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
           <h3 className="text-sm text-gray-600 dark:text-gray-400 mb-2">Net Worth</h3>
-          <p className={`text-xl sm:text-2xl font-bold ${netWorth >= 0 ? 'text-teal-600 dark:text-white' : 'text-red-600 dark:text-white'}`}>
+          <p className={`text-xl sm:text-2xl font-bold ${netWorth >= 0 ? 'text-green-600 dark:text-white' : 'text-red-600 dark:text-white'}`}>
             {formatAmount(netWorth)}
           </p>
         </div>
@@ -632,7 +633,7 @@ function NetWorthTracker() {
                         <span className="text-xs text-gray-600 dark:text-gray-400">({liability.type})</span>
                         {liability.type === 'credit-card' && liability.dueDate && (
                           <span className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full">
-                            Due: {new Date(liability.dueDate).toLocaleDateString()}
+                            Due: {formatDate(liability.dueDate)}
                           </span>
                         )}
                         {liability.type === 'credit-card' && (

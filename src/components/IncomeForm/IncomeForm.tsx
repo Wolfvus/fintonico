@@ -6,33 +6,53 @@ import { DollarSign, Calendar, Briefcase, RefreshCw, Globe } from 'lucide-react'
 export const IncomeForm: React.FC = () => {
   const [source, setSource] = useState('');
   const [amount, setAmount] = useState('');
+  const [displayAmount, setDisplayAmount] = useState('');
   const [currency, setCurrency] = useState('MXN');
-  const [frequency, setFrequency] = useState<'monthly' | 'weekly' | 'biweekly' | 'yearly' | 'one-time'>('monthly');
+  const [frequency, setFrequency] = useState<'one-time' | 'weekly' | 'montly' | 'yearly'>('one-time');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { addIncome } = useIncomeStore();
-  const { currencies } = useCurrencyStore();
+  const { currencies, getCurrencySymbol } = useCurrencyStore();
 
   const frequencyOptions = [
+    { value: 'one-time', label: 'One-Time', icon: '💰' },
     { value: 'monthly', label: 'Monthly', icon: '📅' },
-    { value: 'biweekly', label: 'Bi-weekly', icon: '📆' },
     { value: 'weekly', label: 'Weekly', icon: '🗓️' },
     { value: 'yearly', label: 'Yearly', icon: '📊' },
-    { value: 'one-time', label: 'One-time', icon: '💰' },
   ];
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
     
-    // Allow natural decimal input - don't auto-convert to cents
-    // Only allow valid number characters and one decimal point
-    const sanitized = value.replace(/[^0-9.]/g, '');
-    const decimalCount = (sanitized.match(/\./g) || []).length;
+    // Remove currency symbol and commas
+    const cleaned = value.replace(/[^0-9.]/g, '');
+    const decimalCount = (cleaned.match(/\./g) || []).length;
     
     if (decimalCount <= 1) {
-      setAmount(sanitized);
+      setAmount(cleaned);
+      
+      // Format for display
+      if (cleaned) {
+        const parts = cleaned.split('.');
+        const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        const formattedValue = parts.length > 1 ? `${integerPart}.${parts[1]}` : integerPart;
+        setDisplayAmount(`${getCurrencySymbol(currency)}${formattedValue}`);
+      } else {
+        setDisplayAmount('');
+      }
+    }
+  };
+
+  const handleCurrencyChange = (newCurrency: string) => {
+    setCurrency(newCurrency);
+    // Update display amount with new currency symbol
+    if (amount) {
+      const parts = amount.split('.');
+      const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      const formattedValue = parts.length > 1 ? `${integerPart}.${parts[1]}` : integerPart;
+      setDisplayAmount(`${getCurrencySymbol(newCurrency)}${formattedValue}`);
     }
   };
 
@@ -74,6 +94,7 @@ export const IncomeForm: React.FC = () => {
       // Reset form
       setSource('');
       setAmount('');
+      setDisplayAmount('');
       setCurrency('MXN');
       setFrequency('monthly');
       setDate(new Date().toISOString().split('T')[0]);
@@ -106,7 +127,7 @@ export const IncomeForm: React.FC = () => {
             className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                      transition-all duration-200 text-gray-900 dark:text-white
                      border-green-500 dark:border-green-600 focus:ring-2 focus:ring-green-500/20"
-            placeholder="Salary, Freelance, Investment..."
+            placeholder="Main Salary, Freelance Project..."
             autoFocus
           />
           {errors.source && (
@@ -122,12 +143,12 @@ export const IncomeForm: React.FC = () => {
             </label>
             <input
               type="text"
-              value={amount}
+              value={displayAmount}
               onChange={handleAmountChange}
               className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                        transition-all duration-200 text-gray-900 dark:text-white
                        border-green-500 dark:border-green-600 focus:ring-2 focus:ring-green-500/20"
-              placeholder="0.00"
+              placeholder={`${getCurrencySymbol(currency)}0.00`}
             />
             {errors.amount && (
               <p className="text-xs mt-1 text-red-500">{errors.amount}</p>
@@ -141,14 +162,14 @@ export const IncomeForm: React.FC = () => {
             </label>
             <select
               value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
+              onChange={(e) => handleCurrencyChange(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                        transition-all duration-200 text-gray-900 dark:text-white
                        border-green-500 dark:border-green-600 focus:ring-2 focus:ring-green-500/20"
             >
               {currencies.map((curr) => (
                 <option key={curr.code} value={curr.code}>
-                  {curr.code} - {curr.symbol}
+                  {curr.symbol}{curr.code}
                 </option>
               ))}
             </select>

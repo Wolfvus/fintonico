@@ -7,26 +7,26 @@
 @layer base {
   :root {
     --color-navy: #1E2A38;
-    --color-teal: #2FA5A9;
+    --color-green: #2FA5A9;
     --color-gray: #F2F4F7;
     --color-gold: #F5B700;
     --color-navy-light: #2A3A4E;
     --color-navy-dark: #141C26;
-    --color-teal-light: #4DB8BC;
-    --color-teal-dark: #268F92;
+    --color-green-light: #4DB8BC;
+    --color-green-dark: #268F92;
     --color-gold-light: #FFD43B;
     --color-gold-dark: #E5A600;
   }
 
   .dark {
     --color-navy: #E5E7EB;
-    --color-teal: #4DB8BC;
+    --color-green: #4DB8BC;
     --color-gray: #111827;
     --color-gold: #FFD43B;
     --color-navy-light: #F3F4F6;
     --color-navy-dark: #9CA3AF;
-    --color-teal-light: #67E8F9;
-    --color-teal-dark: #0891B2;
+    --color-green-light: #67E8F9;
+    --color-green-dark: #0891B2;
     --color-gold-light: #FDE047;
     --color-gold-dark: #CA8A04;
   }
@@ -79,23 +79,23 @@
   .app-input {
     @apply rounded-lg px-4 py-2 transition-all;
     background-color: var(--color-gray);
-    border: 1px solid var(--color-teal);
+    border: 1px solid var(--color-green);
     color: var(--color-navy);
   }
 
   .dark .app-input {
     background-color: #374151;
-    border-color: var(--color-teal);
+    border-color: var(--color-green);
     color: var(--color-navy);
   }
 
   .app-button-primary {
-    background-color: var(--color-teal);
+    background-color: var(--color-green);
     @apply text-white font-semibold px-6 py-2 rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md;
   }
 
   .app-button-primary:hover {
-    background-color: var(--color-teal-dark);
+    background-color: var(--color-green-dark);
   }
 
   .app-button-secondary {
@@ -127,13 +127,13 @@
   .app-select {
     @apply rounded-lg px-4 py-2 appearance-none cursor-pointer transition-all;
     background-color: var(--color-gray);
-    border: 1px solid var(--color-teal);
+    border: 1px solid var(--color-green);
     color: var(--color-navy);
   }
 
   .dark .app-select {
     background-color: #374151;
-    border-color: var(--color-teal);
+    border-color: var(--color-green);
     color: var(--color-navy);
   }
 }

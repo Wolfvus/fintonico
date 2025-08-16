@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { useCurrencyStore } from './currencyStore';
 
-export type IncomeFrequency = 'monthly' | 'weekly' | 'biweekly' | 'yearly' | 'one-time';
+export type IncomeFrequency = 'one-time' | 'weekly' | 'yearly' | 'monthly';
 
 export interface Income {
   id: string;
@@ -33,7 +33,6 @@ const STORAGE_KEY = 'fintonico-incomes';
 const FREQUENCY_MULTIPLIERS: Record<IncomeFrequency, number> = {
   monthly: 1,
   weekly: 4.33,
-  biweekly: 2.17,
   yearly: 1/12,
   'one-time': 0
 };

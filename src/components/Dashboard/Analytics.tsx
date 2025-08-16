@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import type { Database } from '../../lib/supabase';
+import { useCurrencyStore } from '../../stores/currencyStore';
 
 type Expense = Database['public']['Tables']['expenses']['Row'];
 
@@ -9,6 +10,7 @@ interface AnalyticsProps {
 }
 
 export const Analytics: React.FC<AnalyticsProps> = ({ expenses }) => {
+  const { formatAmount, baseCurrency } = useCurrencyStore();
   const categoryData = useMemo(() => {
     const categories = (expenses || []).reduce((acc, e) => {
       if (e.category) {
@@ -66,7 +68,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ expenses }) => {
                     border: '1px solid #1E2329',
                     borderRadius: '8px',
                   }}
-                  formatter={(value: number) => `$${value.toFixed(2)}`}
+                  formatter={(value: number) => formatAmount(value, baseCurrency)}
                 />
                 <Legend
                   verticalAlign="bottom"

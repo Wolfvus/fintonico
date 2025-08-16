@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Scissors, Filter } from 'lucide-react';
 import type { Database } from '../../lib/supabase';
+import { useCurrencyStore } from '../../stores/currencyStore';
 
 type Expense = Database['public']['Tables']['expenses']['Row'];
 
@@ -10,6 +11,7 @@ interface CutCandidatesProps {
 
 export const CutCandidates: React.FC<CutCandidatesProps> = ({ expenses }) => {
   const [filterRating, setFilterRating] = useState<'all' | 'non_essential' | 'luxury'>('all');
+  const { formatAmount, baseCurrency, convertAmount } = useCurrencyStore();
 
   const candidates = useMemo(() => {
     const filtered = (expenses || []).filter(e => {
@@ -70,7 +72,7 @@ export const CutCandidates: React.FC<CutCandidatesProps> = ({ expenses }) => {
           <div className="bg-crypto-danger/10 border border-crypto-danger/30 rounded-lg p-3">
             <p className="text-sm text-crypto-danger">
               Potential Monthly Savings:
-              <span className="font-bold font-mono ml-2">${totalSavings.toFixed(2)}</span>
+              <span className="font-bold font-mono ml-2">{formatAmount(totalSavings, baseCurrency)}</span>
             </p>
           </div>
 
@@ -89,10 +91,10 @@ export const CutCandidates: React.FC<CutCandidatesProps> = ({ expenses }) => {
                   </div>
                   <div className="text-right">
                     <p className="font-mono font-bold text-crypto-danger">
-                      ${candidate.total.toFixed(2)}
+                      {formatAmount(candidate.total, baseCurrency)}
                     </p>
                     <p className="text-xs text-crypto-text-dim">
-                      avg ${(candidate.total / candidate.count).toFixed(2)}
+                      avg {formatAmount(candidate.total / candidate.count, baseCurrency)}
                     </p>
                   </div>
                 </div>

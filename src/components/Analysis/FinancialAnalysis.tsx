@@ -188,9 +188,9 @@ export const FinancialAnalysis: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">Monthly Savings</span>
-            <DollarSign className="w-4 h-4 text-teal-600" />
+            <DollarSign className="w-4 h-4 text-green-600" />
           </div>
-          <p className={`text-2xl font-bold ${monthlySavings >= 0 ? 'text-teal-600 dark:text-white' : 'text-red-600 dark:text-white'}`}>
+          <p className={`text-2xl font-bold ${monthlySavings >= 0 ? 'text-green-600 dark:text-white' : 'text-red-600 dark:text-white'}`}>
             {formatAmount(monthlySavings)}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
