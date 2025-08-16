@@ -11,7 +11,7 @@ interface CutCandidatesProps {
 
 export const CutCandidates: React.FC<CutCandidatesProps> = ({ expenses }) => {
   const [filterRating, setFilterRating] = useState<'all' | 'non_essential' | 'luxury'>('all');
-  const { formatAmount, baseCurrency, convertAmount } = useCurrencyStore();
+  const { formatAmount, baseCurrency } = useCurrencyStore();
 
   const candidates = useMemo(() => {
     const filtered = (expenses || []).filter(e => {

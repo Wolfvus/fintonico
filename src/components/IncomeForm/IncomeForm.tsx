@@ -8,7 +8,7 @@ export const IncomeForm: React.FC = () => {
   const [amount, setAmount] = useState('');
   const [displayAmount, setDisplayAmount] = useState('');
   const [currency, setCurrency] = useState('MXN');
-  const [frequency, setFrequency] = useState<'one-time' | 'weekly' | 'montly' | 'yearly'>('one-time');
+  const [frequency, setFrequency] = useState<'one-time' | 'weekly' | 'monthly' | 'yearly'>('monthly');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -24,7 +24,7 @@ export const IncomeForm: React.FC = () => {
   ];
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value;
+    const value = e.target.value;
     
     // Remove currency symbol and commas
     const cleaned = value.replace(/[^0-9.]/g, '');

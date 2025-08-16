@@ -1,18 +1,6 @@
 import { create } from 'zustand';
 import { useCurrencyStore } from './currencyStore';
-
-export type ExpenseRating = 'essential' | 'non_essential' | 'luxury';
-
-export interface Expense {
-  id: string;
-  what: string;
-  amount: number;
-  currency: string;
-  rating: ExpenseRating;
-  date: string;
-  created_at: string;
-  recurring?: boolean;
-}
+import type { Expense, ExpenseRating } from '../types';
 
 export interface NewExpense {
   what: string;

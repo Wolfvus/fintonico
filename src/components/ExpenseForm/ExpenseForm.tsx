@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { DollarSign, Calendar, PenTool, Plus, Globe } from 'lucide-react';
+import { useCurrencyInput } from '../../hooks/useCurrencyInput';
+import { validateRequired, validateAmount, validateDate } from '../../utils/validation';
+import type { ValidationError } from '../../utils/validation';
+import { formStyles } from '../../styles/formStyles';
 
 const RATING_CONFIG = {
   essential: { 
@@ -33,63 +37,38 @@ const RATING_CONFIG = {
 export const ExpenseForm: React.FC = () => {
   const [form, setForm] = useState({
     what: '',
-    amount: '',
-    currency: 'MXN',
     rating: 'non_essential' as keyof typeof RATING_CONFIG,
     date: new Date().toISOString().split('T')[0],
     recurring: false
   });
-  const [displayAmount, setDisplayAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<ValidationError>({});
 
   const { addExpense } = useExpenseStore();
   const { currencies, getCurrencySymbol } = useCurrencyStore();
+  const {
+    amount,
+    displayAmount,
+    currency,
+    handleAmountChange,
+    handleCurrencyChange,
+    reset: resetCurrency
+  } = useCurrencyInput('MXN');
 
-  const handleAmountChange = (value: string) => {
-    // Remove currency symbol and commas
-    const cleaned = value.replace(/[^0-9.]/g, '');
-    const decimalCount = (cleaned.match(/\./g) || []).length;
-    
-    if (decimalCount <= 1) {
-      setForm(prev => ({ ...prev, amount: cleaned }));
-      
-      // Format for display
-      if (cleaned) {
-        const parts = cleaned.split('.');
-        const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        const formattedValue = parts.length > 1 ? `${integerPart}.${parts[1]}` : integerPart;
-        setDisplayAmount(`${getCurrencySymbol(form.currency)}${formattedValue}`);
-      } else {
-        setDisplayAmount('');
-      }
-    }
-  };
-
-  const handleCurrencyChange = (currency: string) => {
-    setForm(prev => ({ ...prev, currency }));
-    // Update display amount with new currency symbol
-    if (form.amount) {
-      const parts = form.amount.split('.');
-      const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-      const formattedValue = parts.length > 1 ? `${integerPart}.${parts[1]}` : integerPart;
-      setDisplayAmount(`${getCurrencySymbol(currency)}${formattedValue}`);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
     
-    const newErrors: Record<string, string> = {};
-    if (!form.what.trim()) newErrors.what = 'Description required';
+    const newErrors: ValidationError = {};
+    const whatError = validateRequired(form.what, 'Description');
+    if (whatError) newErrors.what = whatError;
     
-    const amountNum = parseFloat(form.amount);
-    if (!form.amount || isNaN(amountNum) || amountNum <= 0) {
-      newErrors.amount = 'Valid amount required';
-    }
+    const amountError = validateAmount(amount);
+    if (amountError) newErrors.amount = amountError;
     
-    if (!form.date) newErrors.date = 'Date required';
+    const dateError = validateDate(form.date);
+    if (dateError) newErrors.date = dateError;
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -101,8 +80,8 @@ export const ExpenseForm: React.FC = () => {
     try {
       await addExpense({
         what: form.what.trim(),
-        amount: amountNum,
-        currency: form.currency,
+        amount: parseFloat(amount),
+        currency: currency,
         rating: form.rating,
         date: form.date,
         recurring: form.recurring,
@@ -110,14 +89,12 @@ export const ExpenseForm: React.FC = () => {
       
       setForm({
         what: '',
-        amount: '',
-        currency: 'MXN',
         rating: 'non_essential',
         date: new Date().toISOString().split('T')[0],
         recurring: false
       });
-      setDisplayAmount('');
-    } catch (error) {
+      resetCurrency();
+    } catch {
       setErrors({ submit: 'Failed to add expense. Please try again.' });
     } finally {
       setIsSubmitting(false);
@@ -125,7 +102,7 @@ export const ExpenseForm: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+    <div className={formStyles.card}>
       <div className="flex items-center gap-2 mb-6">
         <Plus className="w-5 h-5 text-green-600 dark:text-green-400" />
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add Expense</h2>
@@ -163,7 +140,7 @@ export const ExpenseForm: React.FC = () => {
               className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                        transition-colors text-gray-900 dark:text-white
                        border-amber-500 dark:border-amber-600 focus:ring-2 focus:ring-amber-500/20"
-              placeholder={`${getCurrencySymbol(form.currency)}0.00`}
+              placeholder={`${getCurrencySymbol(currency)}0.00`}
             />
             {errors.amount && <p className="text-xs mt-1 text-red-500">{errors.amount}</p>}
           </div>
@@ -174,7 +151,7 @@ export const ExpenseForm: React.FC = () => {
               Currency
             </label>
             <select
-              value={form.currency}
+              value={currency}
               onChange={(e) => handleCurrencyChange(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                        transition-colors text-gray-900 dark:text-white
@@ -272,7 +249,7 @@ export const ExpenseForm: React.FC = () => {
 
         <button
           type="submit"
-          disabled={isSubmitting || !form.what.trim() || !form.amount}
+          disabled={isSubmitting || !form.what.trim() || !amount}
           className="w-full text-white font-medium py-3 px-4 rounded-lg transition-all 
                    disabled:opacity-50 disabled:cursor-not-allowed
                    bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600"

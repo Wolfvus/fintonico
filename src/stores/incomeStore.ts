@@ -1,17 +1,8 @@
 import { create } from 'zustand';
 import { useCurrencyStore } from './currencyStore';
+import type { Income } from '../types';
 
 export type IncomeFrequency = 'one-time' | 'weekly' | 'yearly' | 'monthly';
-
-export interface Income {
-  id: string;
-  source: string;
-  amount: number;
-  currency: string;
-  frequency: IncomeFrequency;
-  date: string;
-  created_at: string;
-}
 
 export interface NewIncome {
   source: string;

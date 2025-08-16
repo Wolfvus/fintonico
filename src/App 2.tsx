@@ -236,7 +236,7 @@ function IncomeList() {
           ))}
 
           {/* Investment Yields */}
-          {investmentYields.map((yield_income: any) => (
+          {investmentYields.map((yield_income) => (
             <div
               key={yield_income.id}
               className="rounded-lg p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700"
@@ -286,7 +286,7 @@ function NetWorthTracker() {
   const [newLiability, setNewLiability] = useState({ name: '', value: '', currency: 'MXN', type: 'loan', dueDate: '', isPaid: false });
   const [editingAsset, setEditingAsset] = useState<string | null>(null);
   const [editingLiability, setEditingLiability] = useState<string | null>(null);
-  const { formatAmount, currencies, baseCurrency, convertAmount } = useCurrencyStore();
+  const { formatAmount, currencies, baseCurrency, convertAmount, exchangeRates } = useCurrencyStore();
   // Save to localStorage whenever assets or liabilities change
   useEffect(() => {
     localStorage.setItem('fintonico-assets', JSON.stringify(assets));

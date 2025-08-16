@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Trash2, DollarSign, ArrowUpDown, Calendar, Hash } from 'lucide-react';
-import { useExpenseStore, type Expense } from '../../stores/expenseStore';
+import { useExpenseStore } from '../../stores/expenseStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { formatDate } from '../../utils/dateFormat';
+import type { Expense } from '../../types';
 
 interface ExpenseListProps {
   expenses: Expense[] | undefined;
@@ -11,7 +12,7 @@ interface ExpenseListProps {
 
 export const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, loading }) => {
   const { deleteExpense } = useExpenseStore();
-  const { formatAmount, baseCurrency, convertAmount, exchangeRates } = useCurrencyStore();
+  const { formatAmount, baseCurrency, convertAmount } = useCurrencyStore();
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'rating'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -32,16 +33,18 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, loading }) =
         case 'date':
           comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
           break;
-        case 'amount':
+        case 'amount': {
           const amountA = convertAmount(a.amount, a.currency, baseCurrency);
           const amountB = convertAmount(b.amount, b.currency, baseCurrency);
           comparison = amountA - amountB;
           break;
-        case 'rating':
+        }
+        case 'rating': {
           const ratingOrder = { 'essential': 1, 'non_essential': 2, 'luxury': 3 };
           comparison = (ratingOrder[a.rating as keyof typeof ratingOrder] || 4) - 
                       (ratingOrder[b.rating as keyof typeof ratingOrder] || 4);
           break;
+        }
       }
       return sortOrder === 'asc' ? comparison : -comparison;
     });
