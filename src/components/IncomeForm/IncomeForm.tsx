@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { useIncomeStore } from '../../stores/incomeStore';
-import { DollarSign, Calendar, Briefcase, RefreshCw } from 'lucide-react';
+import { useCurrencyStore } from '../../stores/currencyStore';
+import { DollarSign, Calendar, Briefcase, RefreshCw, Globe } from 'lucide-react';
 
 export const IncomeForm: React.FC = () => {
   const [source, setSource] = useState('');
   const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState('MXN');
   const [frequency, setFrequency] = useState<'monthly' | 'weekly' | 'biweekly' | 'yearly' | 'one-time'>('monthly');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { addIncome } = useIncomeStore();
+  const { currencies } = useCurrencyStore();
 
   const frequencyOptions = [
     { value: 'monthly', label: 'Monthly', icon: '📅' },
@@ -23,15 +26,14 @@ export const IncomeForm: React.FC = () => {
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
     
-    // Auto-format amount with decimal
-    if (value && !value.includes('.')) {
-      const num = parseFloat(value);
-      if (!isNaN(num) && value.length >= 3) {
-        value = (num / 100).toFixed(2);
-      }
-    }
+    // Allow natural decimal input - don't auto-convert to cents
+    // Only allow valid number characters and one decimal point
+    const sanitized = value.replace(/[^0-9.]/g, '');
+    const decimalCount = (sanitized.match(/\./g) || []).length;
     
-    setAmount(value);
+    if (decimalCount <= 1) {
+      setAmount(sanitized);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,6 +66,7 @@ export const IncomeForm: React.FC = () => {
       await addIncome({
         source: source.trim(),
         amount: amountNum,
+        currency,
         frequency,
         date,
       });
@@ -71,6 +74,7 @@ export const IncomeForm: React.FC = () => {
       // Reset form
       setSource('');
       setAmount('');
+      setCurrency('MXN');
       setFrequency('monthly');
       setDate(new Date().toISOString().split('T')[0]);
       
@@ -110,23 +114,45 @@ export const IncomeForm: React.FC = () => {
           )}
         </div>
 
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-            <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
-            Amount
-          </label>
-          <input
-            type="text"
-            value={amount}
-            onChange={handleAmountChange}
-            className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                     transition-all duration-200 text-gray-900 dark:text-white
-                     border-green-500 dark:border-green-600 focus:ring-2 focus:ring-green-500/20"
-            placeholder="0.00"
-          />
-          {errors.amount && (
-            <p className="text-xs mt-1 text-red-500">{errors.amount}</p>
-          )}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+              <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
+              Amount
+            </label>
+            <input
+              type="text"
+              value={amount}
+              onChange={handleAmountChange}
+              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
+                       transition-all duration-200 text-gray-900 dark:text-white
+                       border-green-500 dark:border-green-600 focus:ring-2 focus:ring-green-500/20"
+              placeholder="0.00"
+            />
+            {errors.amount && (
+              <p className="text-xs mt-1 text-red-500">{errors.amount}</p>
+            )}
+          </div>
+          
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+              <Globe className="w-4 h-4 text-green-600 dark:text-green-400" />
+              Currency
+            </label>
+            <select
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
+                       transition-all duration-200 text-gray-900 dark:text-white
+                       border-green-500 dark:border-green-600 focus:ring-2 focus:ring-green-500/20"
+            >
+              {currencies.map((curr) => (
+                <option key={curr.code} value={curr.code}>
+                  {curr.code} - {curr.symbol}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div>

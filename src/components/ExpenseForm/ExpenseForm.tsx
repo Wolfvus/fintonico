@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useExpenseStore } from '../../stores/expenseStore';
-import { DollarSign, Calendar, Hash, Plus } from 'lucide-react';
+import { useCurrencyStore } from '../../stores/currencyStore';
+import { DollarSign, Calendar, Hash, Plus, Globe } from 'lucide-react';
 
 const RATING_CONFIG = {
   essential: { 
@@ -33,20 +34,26 @@ export const ExpenseForm: React.FC = () => {
   const [form, setForm] = useState({
     what: '',
     amount: '',
+    currency: 'MXN',
     rating: 'non_essential' as keyof typeof RATING_CONFIG,
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
+    recurring: false
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { addExpense } = useExpenseStore();
+  const { currencies } = useCurrencyStore();
 
   const handleAmountChange = (value: string) => {
-    if (value && !value.includes('.') && value.length >= 2) {
-      const num = parseFloat(value);
-      if (!isNaN(num)) value = (num / 100).toFixed(2);
+    // Allow natural decimal input - don't auto-convert to cents
+    // Only allow valid number characters and one decimal point
+    const sanitized = value.replace(/[^0-9.]/g, '');
+    const decimalCount = (sanitized.match(/\./g) || []).length;
+    
+    if (decimalCount <= 1) {
+      setForm(prev => ({ ...prev, amount: sanitized }));
     }
-    setForm(prev => ({ ...prev, amount: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,15 +81,19 @@ export const ExpenseForm: React.FC = () => {
       await addExpense({
         what: form.what.trim(),
         amount: amountNum,
+        currency: form.currency,
         rating: form.rating,
         date: form.date,
+        recurring: form.recurring,
       });
       
       setForm({
         what: '',
         amount: '',
+        currency: 'MXN',
         rating: 'non_essential',
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0],
+        recurring: false
       });
     } catch (error) {
       setErrors({ submit: 'Failed to add expense. Please try again.' });
@@ -117,21 +128,43 @@ export const ExpenseForm: React.FC = () => {
           {errors.what && <p className="text-xs mt-1 text-red-500">{errors.what}</p>}
         </div>
 
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-            <DollarSign className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-            Amount
-          </label>
-          <input
-            type="text"
-            value={form.amount}
-            onChange={(e) => handleAmountChange(e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                     transition-colors text-gray-900 dark:text-white
-                     border-amber-500 dark:border-amber-600 focus:ring-2 focus:ring-amber-500/20"
-            placeholder="0.00"
-          />
-          {errors.amount && <p className="text-xs mt-1 text-red-500">{errors.amount}</p>}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+              <DollarSign className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              Amount
+            </label>
+            <input
+              type="text"
+              value={form.amount}
+              onChange={(e) => handleAmountChange(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
+                       transition-colors text-gray-900 dark:text-white
+                       border-amber-500 dark:border-amber-600 focus:ring-2 focus:ring-amber-500/20"
+              placeholder="0.00"
+            />
+            {errors.amount && <p className="text-xs mt-1 text-red-500">{errors.amount}</p>}
+          </div>
+          
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+              <Globe className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              Currency
+            </label>
+            <select
+              value={form.currency}
+              onChange={(e) => setForm(prev => ({ ...prev, currency: e.target.value }))}
+              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
+                       transition-colors text-gray-900 dark:text-white
+                       border-amber-500 dark:border-amber-600 focus:ring-2 focus:ring-amber-500/20"
+            >
+              {currencies.map((currency) => (
+                <option key={currency.code} value={currency.code}>
+                  {currency.code} - {currency.symbol}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div>
@@ -149,6 +182,25 @@ export const ExpenseForm: React.FC = () => {
           />
           {errors.date && <p className="text-xs mt-1 text-red-500">{errors.date}</p>}
         </div>
+
+        {form.rating === 'essential' && (
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+              <input
+                type="checkbox"
+                checked={form.recurring}
+                onChange={(e) => setForm(prev => ({ ...prev, recurring: e.target.checked }))}
+                className="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded 
+                         focus:ring-teal-500 dark:focus:ring-teal-600 dark:ring-offset-gray-800 
+                         focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              />
+              <span>Recurring monthly expense</span>
+            </label>
+            <p className="text-xs mt-1 text-gray-600 dark:text-gray-400 ml-6">
+              Check this for fixed monthly costs like rent, utilities, subscriptions
+            </p>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium mb-3 text-gray-900 dark:text-gray-100">

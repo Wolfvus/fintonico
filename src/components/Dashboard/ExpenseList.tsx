@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trash2, DollarSign } from 'lucide-react';
 import { useExpenseStore, type Expense } from '../../stores/expenseStore';
+import { useCurrencyStore } from '../../stores/currencyStore';
 
 interface ExpenseListProps {
   expenses: Expense[] | undefined;
@@ -9,6 +10,7 @@ interface ExpenseListProps {
 
 export const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, loading }) => {
   const { deleteExpense } = useExpenseStore();
+  const { formatAmount, baseCurrency, convertAmount, exchangeRates } = useCurrencyStore();
 
   const getRatingStyle = (rating: string) => {
     switch (rating) {
@@ -88,14 +90,17 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({ expenses, loading }) =
                       >
                         {ratingStyle.label}
                       </span>
+                      {expense.recurring && (
+                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/30 
+                                       text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-700 shrink-0">
+                          recurring
+                        </span>
+                      )}
                     </div>
                     
                     <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <DollarSign className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-                        <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">
-                          ${expense.amount.toFixed(2)}
-                        </span>
+                      <span className="font-mono font-semibold text-amber-600 dark:text-white">
+                        {formatAmount(convertAmount(expense.amount, expense.currency, baseCurrency), baseCurrency)}
                       </span>
                       <span className="text-xs sm:text-sm">
                         {new Date(expense.date).toLocaleDateString()}

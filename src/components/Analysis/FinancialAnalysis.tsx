@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useIncomeStore } from '../../stores/incomeStore';
+import { useCurrencyStore } from '../../stores/currencyStore';
 import { TrendingUp, TrendingDown, DollarSign, Target, AlertTriangle } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
@@ -8,31 +9,80 @@ export const FinancialAnalysis: React.FC = () => {
   const [projectionYears, setProjectionYears] = useState(10);
   const { expenses } = useExpenseStore();
   const { incomes, getMonthlyTotal } = useIncomeStore();
+  const { formatAmount } = useCurrencyStore();
 
   const monthlyIncome = getMonthlyTotal();
+  
+  // Separate regular income from investment income
+  const { regularIncome, investmentIncome } = useMemo(() => {
+    const { baseCurrency, convertAmount } = useCurrencyStore.getState();
+    
+    // Calculate regular income from income store
+    const now = new Date();
+    const regular = incomes.reduce((total, income) => {
+      const convertedAmount = convertAmount(income.amount, income.currency, baseCurrency);
+      if (income.frequency === 'one-time') {
+        const incomeDate = new Date(income.date);
+        if (incomeDate.getMonth() === now.getMonth() && 
+            incomeDate.getFullYear() === now.getFullYear()) {
+          return total + convertedAmount;
+        }
+        return total;
+      }
+      const FREQUENCY_MULTIPLIERS = { monthly: 1, weekly: 4.33, biweekly: 2.17, yearly: 1/12, 'one-time': 0 };
+      return total + (convertedAmount * FREQUENCY_MULTIPLIERS[income.frequency]);
+    }, 0);
+
+    // Calculate investment income from assets
+    const saved = localStorage.getItem('fintonico-assets');
+    const assets = saved ? JSON.parse(saved) : [];
+    const investment = assets
+      .filter((asset: any) => asset.type === 'investment' && asset.yield > 0)
+      .reduce((total: number, asset: any) => {
+        const monthlyYield = (asset.value * asset.yield / 100) / 12;
+        return total + convertAmount(monthlyYield, asset.currency, baseCurrency);
+      }, 0);
+
+    return { regularIncome: regular, investmentIncome: investment };
+  }, [incomes]);
   const monthlyExpenses = useMemo(() => {
     const now = new Date();
+    const { baseCurrency, convertAmount } = useCurrencyStore.getState();
     const currentMonthExpenses = expenses.filter(e => {
       const expenseDate = new Date(e.date);
       return expenseDate.getMonth() === now.getMonth() && 
              expenseDate.getFullYear() === now.getFullYear();
     });
-    return currentMonthExpenses.reduce((sum, e) => sum + e.amount, 0);
+    return currentMonthExpenses.reduce((sum, e) => {
+      return sum + convertAmount(e.amount, e.currency, baseCurrency);
+    }, 0);
   }, [expenses]);
 
   const monthlySavings = monthlyIncome - monthlyExpenses;
   const savingsRate = monthlyIncome > 0 ? (monthlySavings / monthlyIncome) * 100 : 0;
 
   const expenseBreakdown = useMemo(() => {
-    const breakdown = expenses.reduce((acc, expense) => {
-      acc[expense.rating] = (acc[expense.rating] || 0) + expense.amount;
+    const { baseCurrency, convertAmount } = useCurrencyStore.getState();
+    const now = new Date();
+    const currentMonthExpenses = expenses.filter(e => {
+      const expenseDate = new Date(e.date);
+      return expenseDate.getMonth() === now.getMonth() && 
+             expenseDate.getFullYear() === now.getFullYear();
+    });
+
+    const breakdown = currentMonthExpenses.reduce((acc, expense) => {
+      const convertedAmount = convertAmount(expense.amount, expense.currency, baseCurrency);
+      if (expense.recurring && expense.rating === 'essential') {
+        acc.fixed = (acc.fixed || 0) + convertedAmount;
+      } else {
+        acc.other = (acc.other || 0) + convertedAmount;
+      }
       return acc;
     }, {} as Record<string, number>);
 
     return [
-      { name: 'Essential', value: breakdown.essential || 0, color: '#2FA5A9' },
-      { name: 'Non-Essential', value: breakdown.non_essential || 0, color: '#EAB308' },
-      { name: 'Luxury', value: breakdown.luxury || 0, color: '#DC2626' }
+      { name: 'Fixed Expenses', value: breakdown.fixed || 0, color: '#DC2626' },
+      { name: 'Other Expenses', value: breakdown.other || 0, color: '#EAB308' }
     ];
   }, [expenses]);
 
@@ -79,9 +129,9 @@ export const FinancialAnalysis: React.FC = () => {
     else if (recurringIncomes === 1) score += 20;
     else score += 10;
     
-    const essentialRatio = expenseBreakdown[0]?.value / (monthlyExpenses || 1);
-    if (essentialRatio >= 0.7) score += 30;
-    else if (essentialRatio >= 0.5) score += 20;
+    const fixedExpenseRatio = expenseBreakdown[0]?.value / (monthlyExpenses || 1);
+    if (fixedExpenseRatio <= 0.3) score += 30; // Lower fixed expenses ratio is better
+    else if (fixedExpenseRatio <= 0.5) score += 20;
     else score += 10;
     
     return score;
@@ -102,14 +152,26 @@ export const FinancialAnalysis: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Monthly Income</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">Regular Income</span>
             <TrendingUp className="w-4 h-4 text-green-600" />
           </div>
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-            ${monthlyIncome.toFixed(2)}
+          <p className="text-2xl font-bold text-green-600 dark:text-white">
+            {formatAmount(regularIncome)}
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-600 dark:text-gray-400">Investment Income</span>
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+          </div>
+          <p className="text-2xl font-bold text-blue-600 dark:text-white">
+            {formatAmount(investmentIncome)}
           </p>
         </div>
 
@@ -118,8 +180,8 @@ export const FinancialAnalysis: React.FC = () => {
             <span className="text-sm text-gray-600 dark:text-gray-400">Monthly Expenses</span>
             <TrendingDown className="w-4 h-4 text-red-600" />
           </div>
-          <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-            ${monthlyExpenses.toFixed(2)}
+          <p className="text-2xl font-bold text-red-600 dark:text-white">
+            {formatAmount(monthlyExpenses)}
           </p>
         </div>
 
@@ -128,8 +190,8 @@ export const FinancialAnalysis: React.FC = () => {
             <span className="text-sm text-gray-600 dark:text-gray-400">Monthly Savings</span>
             <DollarSign className="w-4 h-4 text-teal-600" />
           </div>
-          <p className={`text-2xl font-bold ${monthlySavings >= 0 ? 'text-teal-600 dark:text-teal-400' : 'text-red-600 dark:text-red-400'}`}>
-            ${monthlySavings.toFixed(2)}
+          <p className={`text-2xl font-bold ${monthlySavings >= 0 ? 'text-teal-600 dark:text-white' : 'text-red-600 dark:text-white'}`}>
+            {formatAmount(monthlySavings)}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {savingsRate.toFixed(1)}% savings rate
@@ -155,14 +217,16 @@ export const FinancialAnalysis: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={[
-              { name: 'Income', value: monthlyIncome, fill: '#10B981' },
-              { name: 'Expenses', value: monthlyExpenses, fill: '#EF4444' },
+              { name: 'Regular Income', value: regularIncome, fill: '#10B981' },
+              { name: 'Investment Income', value: investmentIncome, fill: '#3B82F6' },
+              { name: 'Fixed Expenses', value: expenseBreakdown[0]?.value || 0, fill: '#DC2626' },
+              { name: 'Other Expenses', value: expenseBreakdown[1]?.value || 0, fill: '#EAB308' },
               { name: 'Savings', value: Math.max(0, monthlySavings), fill: '#2FA5A9' }
             ]}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
+              <Tooltip formatter={(value: number) => formatAmount(value)} />
               <Bar dataKey="value" />
             </BarChart>
           </ResponsiveContainer>
@@ -174,16 +238,22 @@ export const FinancialAnalysis: React.FC = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={(entry) => `${entry.name}: $${(entry.value || 0).toFixed(0)}`}
+                label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
+                minAngle={5}
               >
                 {expenseBreakdown.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
+              <Tooltip formatter={(value: number) => formatAmount(value)} />
+              <Legend 
+                verticalAlign="bottom" 
+                height={36}
+                formatter={(value, entry) => `${value}: ${formatAmount(entry.payload.value)}`}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -225,7 +295,7 @@ export const FinancialAnalysis: React.FC = () => {
             <h4 className="font-semibold text-red-900 dark:text-red-200">Budget Alert</h4>
           </div>
           <p className="text-sm text-red-800 dark:text-red-300">
-            You're spending ${Math.abs(monthlySavings).toFixed(2)} more than you earn each month.
+            You're spending {formatAmount(Math.abs(monthlySavings))} more than you earn each month.
           </p>
         </div>
       )}

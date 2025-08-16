@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useCurrencyStore } from './currencyStore';
 
 export type IncomeFrequency = 'monthly' | 'weekly' | 'biweekly' | 'yearly' | 'one-time';
 
@@ -6,6 +7,7 @@ export interface Income {
   id: string;
   source: string;
   amount: number;
+  currency: string;
   frequency: IncomeFrequency;
   date: string;
   created_at: string;
@@ -14,6 +16,7 @@ export interface Income {
 export interface NewIncome {
   source: string;
   amount: number;
+  currency: string;
   frequency: IncomeFrequency;
   date?: string;
 }
@@ -39,7 +42,12 @@ const storage = {
   get: (): Income[] => {
     try {
       const data = localStorage.getItem(STORAGE_KEY);
-      return data ? JSON.parse(data) : [];
+      const incomes = data ? JSON.parse(data) : [];
+      // Migrate old data without currency field
+      return incomes.map((income: any) => ({
+        ...income,
+        currency: income.currency || 'MXN'
+      }));
     } catch {
       return [];
     }
@@ -58,6 +66,7 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
       id: crypto.randomUUID(),
       source: data.source,
       amount: data.amount,
+      currency: data.currency,
       frequency: data.frequency,
       date: data.date || new Date().toISOString().split('T')[0],
       created_at: new Date().toISOString(),
@@ -76,16 +85,34 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
 
   getMonthlyTotal: () => {
     const now = new Date();
-    return get().incomes.reduce((total, income) => {
+    const { baseCurrency, convertAmount } = useCurrencyStore.getState();
+    
+    // Calculate regular income
+    const regularIncome = get().incomes.reduce((total, income) => {
+      const convertedAmount = convertAmount(income.amount, income.currency, baseCurrency);
       if (income.frequency === 'one-time') {
         const incomeDate = new Date(income.date);
         if (incomeDate.getMonth() === now.getMonth() && 
             incomeDate.getFullYear() === now.getFullYear()) {
-          return total + income.amount;
+          return total + convertedAmount;
         }
         return total;
       }
-      return total + (income.amount * FREQUENCY_MULTIPLIERS[income.frequency]);
+      return total + (convertedAmount * FREQUENCY_MULTIPLIERS[income.frequency]);
     }, 0);
+
+    // Calculate investment yields
+    const getInvestmentYields = () => {
+      const saved = localStorage.getItem('fintonico-assets');
+      const assets = saved ? JSON.parse(saved) : [];
+      return assets
+        .filter((asset: any) => asset.type === 'investment' && asset.yield > 0)
+        .reduce((total: number, asset: any) => {
+          const monthlyYield = (asset.value * asset.yield / 100) / 12;
+          return total + convertAmount(monthlyYield, asset.currency, baseCurrency);
+        }, 0);
+    };
+
+    return regularIncome + getInvestmentYields();
   }
 }));
