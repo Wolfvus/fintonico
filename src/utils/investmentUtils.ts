@@ -1,5 +1,3 @@
-import { useCurrencyStore } from '../stores/currencyStore';
-
 export const calculateInvestmentYields = (
   startDate: Date, 
   endDate: Date, 

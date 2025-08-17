@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useIncomeStore } from '../../stores/incomeStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { TrendingUp, TrendingDown, Wallet, DollarSign, Activity, Filter, Calendar, ChevronLeft, ChevronRight, CreditCard, ArrowUp, ChevronUp, ChevronDown } from 'lucide-react';
+import { TrendingUp, Wallet, DollarSign, Activity, Filter, Calendar, ChevronLeft, ChevronRight, CreditCard, ChevronUp, ChevronDown } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormat';
 import { TestDataAdmin } from '../Admin/TestDataAdmin';
 
@@ -26,7 +26,6 @@ export const NewDashboard: React.FC = () => {
 
   // Calculate date range based on view mode
   const getDateRange = () => {
-    const now = new Date();
     let startDate: Date;
     let endDate: Date;
     

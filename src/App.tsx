@@ -1,22 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from './stores/authStore';
-import { formatDate, formatCreditCardDueDate } from './utils/dateFormat';
+import { formatCreditCardDueDate } from './utils/dateFormat';
 import { checkAndGenerateRecurring } from './utils/recurringUtils';
 import { AuthForm } from './components/Auth/AuthForm';
 import { ExpenseForm } from './components/ExpenseForm/ExpenseForm';
 import { IncomeForm } from './components/IncomeForm/IncomeForm';
 import { NewDashboard } from './components/Dashboard/NewDashboard';
-import { MonthlyView } from './components/MonthlyView/MonthlyView';
 import { TransactionList } from './components/Shared/TransactionList';
 import { CurrencySelector } from './components/Currency/CurrencySelector';
 import { useExpenseStore } from './stores/expenseStore';
 import { Navigation } from './components/Navigation/Navigation';
-import { Moon, Sun } from 'lucide-react';
+import { Filter } from 'lucide-react';
 import { useIncomeStore } from './stores/incomeStore';
 import { useCurrencyStore } from './stores/currencyStore';
 import { ToggleSwitch } from './components/Shared/ToggleSwitch';
 import { useCurrencyInput } from './hooks/useCurrencyInput';
-import { Filter } from 'lucide-react';
 
 // Expenses Tab Component
 function ExpensesTab() {

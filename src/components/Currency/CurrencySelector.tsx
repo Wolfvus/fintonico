@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { DollarSign, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 export const CurrencySelector: React.FC = () => {
   const { 

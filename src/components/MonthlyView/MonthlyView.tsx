@@ -1,9 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useIncomeStore } from '../../stores/incomeStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { TrendingUp, TrendingDown, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatDate } from '../../utils/dateFormat';
 import { TransactionList } from '../Shared/TransactionList';
 
 export const MonthlyView: React.FC = () => {
