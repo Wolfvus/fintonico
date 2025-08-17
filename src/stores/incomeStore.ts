@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { useCurrencyStore } from './currencyStore';
+import { getAssetsByType } from '../utils/investmentUtils';
 import type { Income } from '../types';
 
 export type IncomeFrequency = 'one-time' | 'weekly' | 'yearly' | 'monthly';
@@ -95,10 +96,9 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
 
     // Calculate investment yields
     const getInvestmentYields = () => {
-      const saved = localStorage.getItem('fintonico-assets');
-      const assets = saved ? JSON.parse(saved) : [];
+      const assets = getAssetsByType('investment');
       return assets
-        .filter((asset: any) => asset.type === 'investment' && asset.yield > 0)
+        .filter((asset: any) => asset.yield > 0)
         .reduce((total: number, asset: any) => {
           const monthlyYield = (asset.value * asset.yield / 100) / 12;
           return total + convertAmount(monthlyYield, asset.currency, baseCurrency);
@@ -109,8 +109,7 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
   },
 
   generateInvestmentYields: () => {
-    const saved = localStorage.getItem('fintonico-assets');
-    const assets = saved ? JSON.parse(saved) : [];
+    const assets = getAssetsByType('investment').filter((asset: any) => asset.yield > 0);
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
@@ -125,20 +124,18 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
       return; // Already generated for this month
     }
     
-    const yieldIncomes = assets
-      .filter((asset: any) => asset.type === 'investment' && asset.yield > 0)
-      .map((asset: any) => {
-        const monthlyYield = (asset.value * asset.yield / 100) / 12;
-        return {
-          id: `investment-yield-${asset.id}-${currentYear}-${currentMonth}`,
-          source: `Investment yield: ${asset.name}`,
-          amount: monthlyYield,
-          currency: asset.currency,
-          frequency: 'monthly' as IncomeFrequency,
-          date: firstDayOfMonth,
-          created_at: new Date().toISOString(),
-        };
-      });
+    const yieldIncomes = assets.map((asset: any) => {
+      const monthlyYield = (asset.value * asset.yield / 100) / 12;
+      return {
+        id: `investment-yield-${asset.id}-${currentYear}-${currentMonth}`,
+        source: `Investment yield: ${asset.name}`,
+        amount: monthlyYield,
+        currency: asset.currency,
+        frequency: 'monthly' as IncomeFrequency,
+        date: firstDayOfMonth,
+        created_at: new Date().toISOString(),
+      };
+    });
     
     if (yieldIncomes.length > 0) {
       const allIncomes = [...yieldIncomes, ...get().incomes];

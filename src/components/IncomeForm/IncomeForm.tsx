@@ -108,7 +108,7 @@ export const IncomeForm: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+    <div className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg border border-blue-200 dark:border-gray-700 p-6">
       <div className="flex items-center gap-2 mb-6">
         <Briefcase className="w-5 h-5 text-gray-600 dark:text-gray-400" />
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add Income</h2>
@@ -126,7 +126,7 @@ export const IncomeForm: React.FC = () => {
             onChange={(e) => setSource(e.target.value)}
             className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                      transition-colors text-gray-900 dark:text-white
-                     border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
+                     border-blue-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
             placeholder="Main Salary, Freelance Project..."
             autoFocus
           />
@@ -147,7 +147,7 @@ export const IncomeForm: React.FC = () => {
               onChange={handleAmountChange}
               className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                        transition-colors text-gray-900 dark:text-white
-                       border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
+                       border-blue-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
               placeholder={`${getCurrencySymbol(currency)}0.00`}
             />
             {errors.amount && (
@@ -165,7 +165,7 @@ export const IncomeForm: React.FC = () => {
               onChange={(e) => handleCurrencyChange(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                        transition-colors text-gray-900 dark:text-white
-                       border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
+                       border-blue-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
             >
               {currencies.map((curr) => (
                 <option key={curr.code} value={curr.code}>
@@ -186,7 +186,7 @@ export const IncomeForm: React.FC = () => {
             onChange={(e) => setFrequency(e.target.value as typeof frequency)}
             className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                      transition-colors text-gray-900 dark:text-white
-                     border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
+                     border-blue-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
           >
             {frequencyOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -207,7 +207,7 @@ export const IncomeForm: React.FC = () => {
             onChange={(e) => setDate(e.target.value)}
             className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                      transition-colors text-gray-900 dark:text-white
-                     border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
+                     border-blue-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
           />
           {errors.date && (
             <p className="text-xs mt-1 text-red-500">{errors.date}</p>

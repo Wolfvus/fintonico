@@ -32,7 +32,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   showFilters = true
 }) => {
   const { formatAmount, baseCurrency, convertAmount } = useCurrencyStore();
-  const [filter, setFilter] = useState<'all' | 'this-year' | 'this-month' | 'this-week'>('all');
+  const [filter, setFilter] = useState<'all' | 'this-year' | 'this-month' | 'this-week'>('this-month');
   const [sortBy, setSortBy] = useState<'date' | 'amount'>('date');
 
   const filteredAndSortedTransactions = useMemo(() => {
@@ -74,7 +74,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-blue-50 dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-gray-700">
+      <div className="bg-blue-50 dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-gray-700 shadow-lg">
         <div className="p-4">
           <div className="animate-pulse space-y-3">
             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
@@ -88,7 +88,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   }
 
   return (
-    <div className="bg-blue-50 dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-gray-700">
+    <div className="bg-blue-50 dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-gray-700 shadow-lg">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
@@ -100,7 +100,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value as typeof filter)}
-                className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-blue-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
               >
                 <option value="all">All Time</option>
                 <option value="this-year">This Year</option>
@@ -110,7 +110,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-blue-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
               >
                 <option value="date">By Date</option>
                 <option value="amount">By Amount</option>

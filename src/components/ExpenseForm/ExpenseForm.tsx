@@ -5,7 +5,7 @@ import { Coins, Calendar, PenTool, Plus, Globe } from 'lucide-react';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { validateRequired, validateAmount, validateDate } from '../../utils/validation';
 import type { ValidationError } from '../../utils/validation';
-import { formStyles } from '../../styles/formStyles';
+import { formStyles, getInputClassName } from '../../styles/formStyles';
 import { ToggleSwitch } from '../Shared/ToggleSwitch';
 
 const RATING_CONFIG = {
@@ -119,9 +119,7 @@ export const ExpenseForm: React.FC = () => {
             type="text"
             value={form.what}
             onChange={(e) => setForm(prev => ({ ...prev, what: e.target.value }))}
-            className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                     transition-colors text-gray-900 dark:text-white
-                     border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
+            className={getInputClassName()}
             placeholder="Coffee at Starbucks, Dinner with Friends..."
             autoFocus
           />
@@ -138,9 +136,7 @@ export const ExpenseForm: React.FC = () => {
               type="text"
               value={displayAmount}
               onChange={(e) => handleAmountChange(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                       transition-colors text-gray-900 dark:text-white
-                       border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
+              className={getInputClassName()}
               placeholder={`${getCurrencySymbol(currency)}0.00`}
             />
             {errors.amount && <p className="text-xs mt-1 text-red-500">{errors.amount}</p>}
@@ -154,9 +150,7 @@ export const ExpenseForm: React.FC = () => {
             <select
               value={currency}
               onChange={(e) => handleCurrencyChange(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                       transition-colors text-gray-900 dark:text-white
-                       border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
+              className={getInputClassName()}
             >
               {currencies.map((currency) => (
                 <option key={currency.code} value={currency.code}>
@@ -176,9 +170,7 @@ export const ExpenseForm: React.FC = () => {
             type="date"
             value={form.date}
             onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))}
-            className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                     transition-colors text-gray-900 dark:text-white
-                     border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
+            className={getInputClassName()}
           />
           {errors.date && <p className="text-xs mt-1 text-red-500">{errors.date}</p>}
         </div>
@@ -195,7 +187,7 @@ export const ExpenseForm: React.FC = () => {
                 className={`flex items-center p-2 rounded-md border cursor-pointer transition-all
                   ${form.rating === key 
                     ? `${config.bgClass} ${config.borderClass}` 
-                    : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500'
+                    : 'border-gray-200 dark:border-gray-600 bg-blue-50 dark:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500'
                   }`}
               >
                 <input

@@ -2,9 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useIncomeStore } from '../../stores/incomeStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { TrendingUp, TrendingDown, Wallet, DollarSign, Activity, Filter, Calendar, ChevronLeft, ChevronRight, CreditCard, ArrowUp } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, DollarSign, Activity, Filter, Calendar, ChevronLeft, ChevronRight, CreditCard, AlertTriangle } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormat';
 import { TestDataAdmin } from '../Admin/TestDataAdmin';
+import { calculateInvestmentYields, getAssetsByType, getLiabilitiesByType } from '../../utils/investmentUtils';
 
 export const NewDashboard: React.FC = () => {
   const { expenses } = useExpenseStore();
@@ -67,28 +68,22 @@ export const NewDashboard: React.FC = () => {
   );
   
   // Calculate investment yields for the period
-  const investmentYields = filteredIncomes
-    .filter(income => income.source.startsWith('Investment yield:'))
-    .reduce((sum, income) => sum + convertAmount(income.amount, income.currency, baseCurrency), 0);
+  const investmentYields = calculateInvestmentYields(startDate, endDate, baseCurrency, convertAmount);
   
   const periodBalance = periodIncome - periodExpenses;
   const expensePercentage = periodIncome > 0 ? Math.round((periodExpenses / periodIncome) * 100) : 0;
 
-  // Get assets and liabilities from localStorage
-  const getFinancialData = () => {
-    const savedAssets = localStorage.getItem('fintonico-assets');
-    const savedLiabilities = localStorage.getItem('fintonico-liabilities');
-    const assets = savedAssets ? JSON.parse(savedAssets) : [];
-    const liabilities = savedLiabilities ? JSON.parse(savedLiabilities) : [];
+  // Get assets and liabilities totals
+  const financialData = useMemo(() => {
+    const assets = getAssetsByType();
+    const liabilities = getLiabilitiesByType();
     
     const totalAssets = assets.reduce((sum: number, asset: any) => {
-      const converted = convertAmount(asset.value, asset.currency, baseCurrency);
-      return sum + converted;
+      return sum + convertAmount(asset.value, asset.currency, baseCurrency);
     }, 0);
     
     const totalLiabilities = liabilities.reduce((sum: number, liability: any) => {
-      const converted = convertAmount(liability.value, liability.currency, baseCurrency);
-      return sum + converted;
+      return sum + convertAmount(liability.value, liability.currency, baseCurrency);
     }, 0);
     
     return {
@@ -96,9 +91,7 @@ export const NewDashboard: React.FC = () => {
       totalLiabilities,
       netWorth: totalAssets - totalLiabilities
     };
-  };
-
-  const financialData = getFinancialData();
+  }, [baseCurrency, convertAmount]);
 
   // Get latest entries for the selected period
   const latestEntries = useMemo(() => {
@@ -159,13 +152,13 @@ export const NewDashboard: React.FC = () => {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Date Range Selector - FIRST */}
-      <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-blue-300 dark:border-gray-700 shadow-sm">
         <div className="flex items-center justify-between gap-2 sm:gap-4">
           {/* Navigation and Period Display */}
           <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={() => navigatePeriod('prev')}
-              className="p-1 sm:p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors"
+              className="p-1 sm:p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
               disabled={viewMode === 'custom'}
             >
               <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-400" />
@@ -180,7 +173,7 @@ export const NewDashboard: React.FC = () => {
             
             <button
               onClick={() => navigatePeriod('next')}
-              className="p-1 sm:p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors"
+              className="p-1 sm:p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
               disabled={viewMode === 'custom'}
             >
               <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-400" />
@@ -191,7 +184,7 @@ export const NewDashboard: React.FC = () => {
           <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={() => setViewMode('month')}
-              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-lg transition-colors ${
+              className={`px-1.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-lg transition-colors ${
                 viewMode === 'month'
                   ? 'bg-blue-500 text-white'
                   : 'bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600'
@@ -201,7 +194,7 @@ export const NewDashboard: React.FC = () => {
             </button>
             <button
               onClick={() => setViewMode('year')}
-              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-lg transition-colors ${
+              className={`px-1.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-lg transition-colors ${
                 viewMode === 'year'
                   ? 'bg-blue-500 text-white'
                   : 'bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600'
@@ -211,7 +204,7 @@ export const NewDashboard: React.FC = () => {
             </button>
             <button
               onClick={() => setViewMode('custom')}
-              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-lg transition-colors ${
+              className={`px-1.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-lg transition-colors ${
                 viewMode === 'custom'
                   ? 'bg-blue-500 text-white'
                   : 'bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600'
@@ -222,7 +215,7 @@ export const NewDashboard: React.FC = () => {
             {(viewMode !== 'custom' && (selectedDate.getMonth() !== new Date().getMonth() || selectedDate.getFullYear() !== new Date().getFullYear())) && (
               <button
                 onClick={goToToday}
-                className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                className="px-1.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
               >
                 Today
               </button>
@@ -257,7 +250,7 @@ export const NewDashboard: React.FC = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Period Income */}
-        <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-blue-300 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Income</span>
             <DollarSign className="w-4 h-4 text-green-500" />
@@ -269,7 +262,7 @@ export const NewDashboard: React.FC = () => {
             <p className="text-xs text-gray-500 dark:text-gray-400">{filteredIncomes.length} transactions</p>
           </div>
           {investmentYields > 0 && (
-            <div className="mt-2 pt-2 border-t border-slate-300 dark:border-gray-700">
+            <div className="mt-2 pt-2 border-t border-blue-300 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <p className="text-xs text-gray-600 dark:text-gray-400">Investment yields</p>
                 <span className="text-xs font-semibold text-green-600 dark:text-green-400">{formatAmount(investmentYields)}</span>
@@ -279,10 +272,15 @@ export const NewDashboard: React.FC = () => {
         </div>
 
         {/* Period Expenses */}
-        <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-blue-300 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Expenses</span>
-            <Wallet className="w-4 h-4 text-red-500" />
+            <div className="flex items-center gap-1">
+              {expensePercentage > 100 && (
+                <AlertTriangle className="w-4 h-4 text-red-500" />
+              )}
+              <Wallet className="w-4 h-4 text-red-500" />
+            </div>
           </div>
           <p className="text-base sm:text-lg font-bold text-red-600 dark:text-red-400">
             {formatAmount(periodExpenses)}
@@ -303,7 +301,7 @@ export const NewDashboard: React.FC = () => {
         </div>
 
         {/* Net Worth */}
-        <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-blue-300 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Net Worth</span>
             <TrendingUp className="w-4 h-4 text-yellow-500" />
@@ -317,7 +315,7 @@ export const NewDashboard: React.FC = () => {
         </div>
 
         {/* Total Liabilities */}
-        <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-blue-300 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Liabilities</span>
             <CreditCard className="w-4 h-4 text-blue-500" />
@@ -332,7 +330,7 @@ export const NewDashboard: React.FC = () => {
       </div>
 
       {/* Period Balance */}
-      <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-4 border border-slate-300 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-blue-300 dark:border-gray-700 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
@@ -347,7 +345,7 @@ export const NewDashboard: React.FC = () => {
       </div>
 
       {/* Latest Entries */}
-      <div className="bg-slate-100 dark:bg-gray-800 rounded-lg border border-slate-300 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-blue-300 dark:border-gray-700 shadow-sm">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Recent Transactions</h3>

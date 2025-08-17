@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from './stores/authStore';
 import { formatDate, formatCreditCardDueDate } from './utils/dateFormat';
+import { checkAndGenerateRecurring } from './utils/recurringUtils';
 import { AuthForm } from './components/Auth/AuthForm';
 import { ExpenseForm } from './components/ExpenseForm/ExpenseForm';
 import { IncomeForm } from './components/IncomeForm/IncomeForm';
@@ -95,6 +96,8 @@ function App() {
 
   useEffect(() => {
     checkUser();
+    // Check and generate recurring transactions on app load
+    checkAndGenerateRecurring();
   }, [checkUser]);
 
   useEffect(() => {
@@ -123,7 +126,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-blue-50 dark:bg-gray-900">
       <Navigation 
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab as typeof activeTab)}
@@ -138,28 +141,20 @@ function App() {
         <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-900 dark:text-white">FINTONICO</span>
-            <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">• A Finance Tonic</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">• The Ultimate Personal Finance Dashboard</span>
           </div>
           <div className="flex items-center gap-3">
-            <CurrencySelector />
+            <div className="px-2 py-1 bg-blue-200 dark:bg-gray-700 rounded-lg">
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                {new Date().toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </span>
+            </div>
             <div className="h-4 w-px bg-blue-200 dark:bg-gray-600"></div>
-            <button
-              onClick={() => setIsDark(!isDark)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300
-                       hover:bg-blue-300 dark:hover:bg-gray-600"
-            >
-              {isDark ? (
-                <>
-                  <Sun className="w-4 h-4" />
-                  <span className="text-xs font-medium">Light</span>
-                </>
-              ) : (
-                <>
-                  <Moon className="w-4 h-4" />
-                  <span className="text-xs font-medium">Dark</span>
-                </>
-              )}
-            </button>
+            <CurrencySelector />
           </div>
         </div>
       </div>
@@ -350,19 +345,19 @@ function NetWorthTracker() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 border border-blue-200 dark:border-gray-700">
           <h3 className="text-sm text-gray-600 dark:text-gray-400 mb-2">Total Assets</h3>
-          <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-white">
+          <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
             {formatAmount(totalAssets)}
           </p>
         </div>
         <div className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 border border-blue-200 dark:border-gray-700">
           <h3 className="text-sm text-gray-600 dark:text-gray-400 mb-2">Total Liabilities</h3>
-          <p className="text-xl sm:text-2xl font-bold text-red-600 dark:text-white">
+          <p className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400">
             {formatAmount(totalLiabilities)}
           </p>
         </div>
         <div className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 border border-blue-200 dark:border-gray-700">
           <h3 className="text-sm text-gray-600 dark:text-gray-400 mb-2">Net Worth</h3>
-          <p className={`text-xl sm:text-2xl font-bold ${netWorth >= 0 ? 'text-green-600 dark:text-white' : 'text-red-600 dark:text-white'}`}>
+          <p className={`text-xl sm:text-2xl font-bold ${netWorth >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
             {formatAmount(netWorth)}
           </p>
         </div>
@@ -378,7 +373,7 @@ function NetWorthTracker() {
               <select
                 value={assetFilter}
                 onChange={(e) => setAssetFilter(e.target.value)}
-                className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
+                className="text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
               >
                 <option value="all">All Types</option>
                 <option value="savings">Savings</option>
@@ -390,7 +385,7 @@ function NetWorthTracker() {
               <select
                 value={assetSortBy}
                 onChange={(e) => setAssetSortBy(e.target.value as 'amount' | 'type')}
-                className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
+                className="text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
               >
                 <option value="amount">By Amount</option>
                 <option value="type">By Type</option>
@@ -407,7 +402,7 @@ function NetWorthTracker() {
                       type="text"
                       value={asset.name}
                       onChange={(e) => updateAsset(asset.id, { name: e.target.value })}
-                      className="w-full px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                      className="w-full px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-blue-300 dark:border-gray-600"
                       placeholder="Asset name"
                     />
                     <div className="grid grid-cols-3 gap-2">
@@ -415,13 +410,13 @@ function NetWorthTracker() {
                         type="number"
                         value={asset.value}
                         onChange={(e) => updateAsset(asset.id, { value: parseFloat(e.target.value) || 0 })}
-                        className="px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                        className="px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-blue-300 dark:border-gray-600"
                         placeholder="Value"
                       />
                       <select
                         value={asset.currency}
                         onChange={(e) => updateAsset(asset.id, { currency: e.target.value })}
-                        className="px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                        className="px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-blue-300 dark:border-gray-600"
                       >
                         {currencies.map((curr) => (
                           <option key={curr.code} value={curr.code}>
@@ -432,7 +427,7 @@ function NetWorthTracker() {
                       <select
                         value={asset.type}
                         onChange={(e) => updateAsset(asset.id, { type: e.target.value })}
-                        className="px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                        className="px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-blue-300 dark:border-gray-600"
                       >
                         <option value="savings">Savings</option>
                         <option value="investment">Investment</option>
@@ -446,7 +441,7 @@ function NetWorthTracker() {
                         type="number"
                         value={asset.yield || ''}
                         onChange={(e) => updateAsset(asset.id, { yield: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                        className="w-full px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-blue-300 dark:border-gray-600"
                         placeholder="Annual yield % (e.g., 7.5)"
                         step="0.1"
                       />
@@ -482,7 +477,7 @@ function NetWorthTracker() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-semibold text-green-600 dark:text-white">
+                      <span className="font-mono font-semibold text-gray-900 dark:text-white">
                         {formatAmount(convertAmount(asset.value, asset.currency, baseCurrency), baseCurrency)}
                       </span>
                       <button
@@ -508,7 +503,7 @@ function NetWorthTracker() {
               value={newAsset.name}
               onChange={(e) => setNewAsset({...newAsset, name: e.target.value})}
               className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                       border-gray-300 dark:border-gray-600"
+                       border-blue-300 dark:border-gray-600"
             />
             <div className="grid grid-cols-2 gap-2">
               <input
@@ -517,13 +512,13 @@ function NetWorthTracker() {
                 value={assetDisplayAmount}
                 onChange={(e) => handleAssetAmountChange(e.target.value)}
                 className="px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                         border-gray-300 dark:border-gray-600"
+                         border-blue-300 dark:border-gray-600"
               />
               <select
                 value={assetCurrency}
                 onChange={(e) => handleAssetCurrencyChange(e.target.value)}
                 className="px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                         border-gray-300 dark:border-gray-600"
+                         border-blue-300 dark:border-gray-600"
               >
                 {currencies.map((curr) => (
                   <option key={curr.code} value={curr.code}>
@@ -536,7 +531,7 @@ function NetWorthTracker() {
               value={newAsset.type}
               onChange={(e) => setNewAsset({...newAsset, type: e.target.value})}
               className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                       border-gray-300 dark:border-gray-600"
+                       border-blue-300 dark:border-gray-600"
             >
               <option value="savings">Savings</option>
               <option value="investment">Investment</option>
@@ -551,7 +546,7 @@ function NetWorthTracker() {
                 value={newAsset.yield}
                 onChange={(e) => handleYieldChange(e.target.value)}
                 className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                         border-gray-300 dark:border-gray-600"
+                         border-blue-300 dark:border-gray-600"
               />
             )}
             <button
@@ -573,7 +568,7 @@ function NetWorthTracker() {
               <select
                 value={liabilityFilter}
                 onChange={(e) => setLiabilityFilter(e.target.value)}
-                className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
+                className="text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
               >
                 <option value="all">All Types</option>
                 <option value="loan">Loan</option>
@@ -584,7 +579,7 @@ function NetWorthTracker() {
               <select
                 value={liabilitySortBy}
                 onChange={(e) => setLiabilitySortBy(e.target.value as 'amount' | 'type')}
-                className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
+                className="text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
               >
                 <option value="amount">By Amount</option>
                 <option value="type">By Type</option>
@@ -601,7 +596,7 @@ function NetWorthTracker() {
                       type="text"
                       value={liability.name}
                       onChange={(e) => updateLiability(liability.id, { name: e.target.value })}
-                      className="w-full px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                      className="w-full px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-blue-300 dark:border-gray-600"
                       placeholder="Liability name"
                     />
                     <div className="grid grid-cols-3 gap-2">
@@ -609,13 +604,13 @@ function NetWorthTracker() {
                         type="number"
                         value={liability.value}
                         onChange={(e) => updateLiability(liability.id, { value: parseFloat(e.target.value) || 0 })}
-                        className="px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                        className="px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-blue-300 dark:border-gray-600"
                         placeholder="Value"
                       />
                       <select
                         value={liability.currency}
                         onChange={(e) => updateLiability(liability.id, { currency: e.target.value })}
-                        className="px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                        className="px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-blue-300 dark:border-gray-600"
                       >
                         {currencies.map((curr) => (
                           <option key={curr.code} value={curr.code}>
@@ -626,7 +621,7 @@ function NetWorthTracker() {
                       <select
                         value={liability.type}
                         onChange={(e) => updateLiability(liability.id, { type: e.target.value })}
-                        className="px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                        className="px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-blue-300 dark:border-gray-600"
                       >
                         <option value="loan">Loan</option>
                         <option value="mortgage">Mortgage</option>
@@ -640,7 +635,7 @@ function NetWorthTracker() {
                           type="date"
                           value={liability.dueDate || ''}
                           onChange={(e) => updateLiability(liability.id, { dueDate: e.target.value })}
-                          className="w-full px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                          className="w-full px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-blue-300 dark:border-gray-600"
                           placeholder="Payment due date"
                         />
                         <ToggleSwitch
@@ -690,7 +685,7 @@ function NetWorthTracker() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-semibold text-red-600 dark:text-white">
+                      <span className="font-mono font-semibold text-red-600 dark:text-red-400">
                         {formatAmount(convertAmount(liability.value, liability.currency, baseCurrency), baseCurrency)}
                       </span>
                       <button
@@ -716,7 +711,7 @@ function NetWorthTracker() {
               value={newLiability.name}
               onChange={(e) => setNewLiability({...newLiability, name: e.target.value})}
               className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                       border-gray-300 dark:border-gray-600"
+                       border-blue-300 dark:border-gray-600"
             />
             <div className="grid grid-cols-2 gap-2">
               <input
@@ -725,13 +720,13 @@ function NetWorthTracker() {
                 value={liabilityDisplayAmount}
                 onChange={(e) => handleLiabilityAmountChange(e.target.value)}
                 className="px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                         border-gray-300 dark:border-gray-600"
+                         border-blue-300 dark:border-gray-600"
               />
               <select
                 value={liabilityCurrency}
                 onChange={(e) => handleLiabilityCurrencyChange(e.target.value)}
                 className="px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                         border-gray-300 dark:border-gray-600"
+                         border-blue-300 dark:border-gray-600"
               >
                 {currencies.map((curr) => (
                   <option key={curr.code} value={curr.code}>
@@ -744,7 +739,7 @@ function NetWorthTracker() {
               value={newLiability.type}
               onChange={(e) => setNewLiability({...newLiability, type: e.target.value})}
               className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                       border-gray-300 dark:border-gray-600"
+                       border-blue-300 dark:border-gray-600"
             >
               <option value="loan">Loan</option>
               <option value="mortgage">Mortgage</option>
@@ -759,7 +754,7 @@ function NetWorthTracker() {
                   value={newLiability.dueDate}
                   onChange={(e) => setNewLiability({...newLiability, dueDate: e.target.value})}
                   className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                           border-gray-300 dark:border-gray-600"
+                           border-blue-300 dark:border-gray-600"
                 />
                 <ToggleSwitch
                   checked={newLiability.isPaid}
