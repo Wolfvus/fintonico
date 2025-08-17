@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useIncomeStore } from '../../stores/incomeStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { DollarSign, Calendar, Briefcase, RefreshCw, Globe } from 'lucide-react';
+import { Coins, Calendar, Briefcase, RefreshCw, Globe } from 'lucide-react';
 
 export const IncomeForm: React.FC = () => {
   const [source, setSource] = useState('');
@@ -110,14 +110,14 @@ export const IncomeForm: React.FC = () => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
       <div className="flex items-center gap-2 mb-6">
-        <Briefcase className="w-5 h-5 text-green-600 dark:text-green-400" />
+        <Briefcase className="w-5 h-5 text-gray-600 dark:text-gray-400" />
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add Income</h2>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-            <Briefcase className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <Briefcase className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             Income Source
           </label>
           <input
@@ -125,8 +125,8 @@ export const IncomeForm: React.FC = () => {
             value={source}
             onChange={(e) => setSource(e.target.value)}
             className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                     transition-all duration-200 text-gray-900 dark:text-white
-                     border-green-500 dark:border-green-600 focus:ring-2 focus:ring-green-500/20"
+                     transition-colors text-gray-900 dark:text-white
+                     border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
             placeholder="Main Salary, Freelance Project..."
             autoFocus
           />
@@ -138,7 +138,7 @@ export const IncomeForm: React.FC = () => {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-              <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
+              <Coins className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               Amount
             </label>
             <input
@@ -146,8 +146,8 @@ export const IncomeForm: React.FC = () => {
               value={displayAmount}
               onChange={handleAmountChange}
               className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                       transition-all duration-200 text-gray-900 dark:text-white
-                       border-green-500 dark:border-green-600 focus:ring-2 focus:ring-green-500/20"
+                       transition-colors text-gray-900 dark:text-white
+                       border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
               placeholder={`${getCurrencySymbol(currency)}0.00`}
             />
             {errors.amount && (
@@ -157,15 +157,15 @@ export const IncomeForm: React.FC = () => {
           
           <div>
             <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-              <Globe className="w-4 h-4 text-green-600 dark:text-green-400" />
+              <Globe className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               Currency
             </label>
             <select
               value={currency}
               onChange={(e) => handleCurrencyChange(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                       transition-all duration-200 text-gray-900 dark:text-white
-                       border-green-500 dark:border-green-600 focus:ring-2 focus:ring-green-500/20"
+                       transition-colors text-gray-900 dark:text-white
+                       border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
             >
               {currencies.map((curr) => (
                 <option key={curr.code} value={curr.code}>
@@ -178,15 +178,15 @@ export const IncomeForm: React.FC = () => {
 
         <div>
           <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-            <RefreshCw className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <RefreshCw className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             Frequency
           </label>
           <select
             value={frequency}
             onChange={(e) => setFrequency(e.target.value as typeof frequency)}
             className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                     transition-all duration-200 text-gray-900 dark:text-white
-                     border-green-500 dark:border-green-600 focus:ring-2 focus:ring-green-500/20"
+                     transition-colors text-gray-900 dark:text-white
+                     border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
           >
             {frequencyOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -198,7 +198,7 @@ export const IncomeForm: React.FC = () => {
 
         <div>
           <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-            <Calendar className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             Date
           </label>
           <input
@@ -206,8 +206,8 @@ export const IncomeForm: React.FC = () => {
             value={date}
             onChange={(e) => setDate(e.target.value)}
             className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                     transition-all duration-200 text-gray-900 dark:text-white
-                     border-green-500 dark:border-green-600 focus:ring-2 focus:ring-green-500/20"
+                     transition-colors text-gray-900 dark:text-white
+                     border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
           />
           {errors.date && (
             <p className="text-xs mt-1 text-red-500">{errors.date}</p>
@@ -217,9 +217,8 @@ export const IncomeForm: React.FC = () => {
         <button
           type="submit"
           disabled={isSubmitting || !source.trim() || !amount}
-          className="w-full text-white font-medium py-3 px-4 rounded-lg
-                   transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]
-                   disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+          className="w-full text-white font-medium py-3 px-4 rounded-lg transition-all 
+                   disabled:opacity-50 disabled:cursor-not-allowed
                    bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600"
         >
           {isSubmitting ? (

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { DollarSign, Calendar, PenTool, Plus, Globe } from 'lucide-react';
+import { Coins, Calendar, PenTool, Plus, Globe } from 'lucide-react';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { validateRequired, validateAmount, validateDate } from '../../utils/validation';
 import type { ValidationError } from '../../utils/validation';
 import { formStyles } from '../../styles/formStyles';
+import { ToggleSwitch } from '../Shared/ToggleSwitch';
 
 const RATING_CONFIG = {
   essential: { 
@@ -104,14 +105,14 @@ export const ExpenseForm: React.FC = () => {
   return (
     <div className={formStyles.card}>
       <div className="flex items-center gap-2 mb-6">
-        <Plus className="w-5 h-5 text-green-600 dark:text-green-400" />
+        <Plus className="w-5 h-5 text-gray-600 dark:text-gray-400" />
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add Expense</h2>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-            <PenTool className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <PenTool className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             Description
           </label>
           <input
@@ -120,7 +121,7 @@ export const ExpenseForm: React.FC = () => {
             onChange={(e) => setForm(prev => ({ ...prev, what: e.target.value }))}
             className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                      transition-colors text-gray-900 dark:text-white
-                     border-green-500 dark:border-green-600 focus:ring-2 focus:ring-green-500/20"
+                     border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
             placeholder="Coffee at Starbucks, Dinner with Friends..."
             autoFocus
           />
@@ -130,7 +131,7 @@ export const ExpenseForm: React.FC = () => {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-              <DollarSign className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <Coins className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               Amount
             </label>
             <input
@@ -139,7 +140,7 @@ export const ExpenseForm: React.FC = () => {
               onChange={(e) => handleAmountChange(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                        transition-colors text-gray-900 dark:text-white
-                       border-amber-500 dark:border-amber-600 focus:ring-2 focus:ring-amber-500/20"
+                       border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
               placeholder={`${getCurrencySymbol(currency)}0.00`}
             />
             {errors.amount && <p className="text-xs mt-1 text-red-500">{errors.amount}</p>}
@@ -147,7 +148,7 @@ export const ExpenseForm: React.FC = () => {
           
           <div>
             <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-              <Globe className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <Globe className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               Currency
             </label>
             <select
@@ -155,7 +156,7 @@ export const ExpenseForm: React.FC = () => {
               onChange={(e) => handleCurrencyChange(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                        transition-colors text-gray-900 dark:text-white
-                       border-amber-500 dark:border-amber-600 focus:ring-2 focus:ring-amber-500/20"
+                       border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
             >
               {currencies.map((currency) => (
                 <option key={currency.code} value={currency.code}>
@@ -168,7 +169,7 @@ export const ExpenseForm: React.FC = () => {
 
         <div>
           <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-            <Calendar className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             Date
           </label>
           <input
@@ -177,42 +178,24 @@ export const ExpenseForm: React.FC = () => {
             onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))}
             className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                      transition-colors text-gray-900 dark:text-white
-                     border-green-500 dark:border-green-600 focus:ring-2 focus:ring-green-500/20"
+                     border-gray-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
           />
           {errors.date && <p className="text-xs mt-1 text-red-500">{errors.date}</p>}
         </div>
 
-        {form.rating === 'essential' && (
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-              <input
-                type="checkbox"
-                checked={form.recurring}
-                onChange={(e) => setForm(prev => ({ ...prev, recurring: e.target.checked }))}
-                className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded 
-                         focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 
-                         focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              />
-              <span>Recurring monthly expense</span>
-            </label>
-            <p className="text-xs mt-1 text-gray-600 dark:text-gray-400 ml-6">
-              Check this for fixed monthly costs like rent, utilities, subscriptions
-            </p>
-          </div>
-        )}
 
         <div>
-          <label className="block text-sm font-medium mb-3 text-gray-900 dark:text-gray-100">
+          <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
             Priority
           </label>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {Object.entries(RATING_CONFIG).map(([key, config]) => (
               <label
                 key={key}
-                className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all
+                className={`flex items-center p-2 rounded-md border cursor-pointer transition-all
                   ${form.rating === key 
-                    ? `${config.bgClass} ${config.borderClass} ${config.textClass}` 
-                    : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                    ? `${config.bgClass} ${config.borderClass}` 
+                    : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500'
                   }`}
               >
                 <input
@@ -223,24 +206,42 @@ export const ExpenseForm: React.FC = () => {
                   onChange={(e) => setForm(prev => ({ ...prev, rating: e.target.value as keyof typeof RATING_CONFIG }))}
                   className="sr-only"
                 />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <span className={`font-medium ${form.rating === key ? '' : 'text-gray-900 dark:text-gray-100'}`}>
+                
+                {/* Custom radio button */}
+                <div 
+                  className="w-4 h-4 rounded-full border-2 mr-2 flex-shrink-0"
+                  style={{
+                    borderColor: form.rating === key ? config.color : '#9CA3AF',
+                    backgroundColor: form.rating === key ? config.color : 'transparent'
+                  }}
+                >
+                  {form.rating === key && (
+                    <div className="w-1.5 h-1.5 bg-white rounded-full m-0.5" />
+                  )}
+                </div>
+
+                {/* Content - single line */}
+                <div className="flex items-center justify-between flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm font-medium ${
+                      form.rating === key 
+                        ? config.textClass 
+                        : 'text-gray-900 dark:text-gray-100'
+                    }`}>
                       {config.label}
                     </span>
-                    <div 
-                      className={`w-4 h-4 rounded-full border-2 transition-colors`}
-                      style={{
-                        borderColor: form.rating === key ? config.color : '#9CA3AF',
-                        backgroundColor: form.rating === key ? config.color : 'transparent'
-                      }}
-                    >
-                      {form.rating === key && (
-                        <div className="w-2 h-2 bg-white rounded-full m-0.5" />
-                      )}
-                    </div>
+                    <span className={`text-xs ${
+                      form.rating === key 
+                        ? 'text-gray-600 dark:text-gray-300' 
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}>
+                      · {config.description}
+                    </span>
                   </div>
-                  <p className="text-xs mt-1 opacity-75">{config.description}</p>
+                  <div 
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: config.color }}
+                  />
                 </div>
               </label>
             ))}
@@ -256,6 +257,17 @@ export const ExpenseForm: React.FC = () => {
         >
           {isSubmitting ? 'Adding...' : 'Add Expense'}
         </button>
+
+        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+          <ToggleSwitch
+            checked={form.recurring}
+            onChange={(checked) => setForm(prev => ({ ...prev, recurring: checked }))}
+            label="Recurring monthly expense"
+          />
+          <p className="text-xs mt-1 text-gray-600 dark:text-gray-400 ml-2">
+            Enable for fixed monthly costs like rent, utilities, subscriptions
+          </p>
+        </div>
 
         {errors.submit && (
           <p className="text-sm text-center text-red-500">{errors.submit}</p>

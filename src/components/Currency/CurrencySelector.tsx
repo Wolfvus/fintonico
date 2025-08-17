@@ -37,18 +37,17 @@ export const CurrencySelector: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <DollarSign className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+    <div className="flex items-center gap-2 px-2 py-1 bg-blue-200 dark:bg-gray-700 rounded-lg hover:bg-blue-300 dark:hover:bg-gray-600 transition-colors">
       <select
         value={baseCurrency}
         onChange={(e) => handleCurrencyChange(e.target.value)}
-        className="text-sm border-none bg-transparent text-gray-700 dark:text-gray-300 
-                 focus:outline-none focus:ring-0 cursor-pointer hover:text-gray-900 dark:hover:text-white"
+        className="text-sm font-medium border-none bg-transparent text-gray-900 dark:text-white 
+                 focus:outline-none focus:ring-0 cursor-pointer appearance-none"
         title={error || `Last updated: ${formatLastUpdated()}`}
       >
         {currencies.map((currency) => (
           <option key={currency.code} value={currency.code} className="bg-white dark:bg-gray-800">
-            {currency.symbol}{currency.code}
+            {currency.code}
           </option>
         ))}
       </select>
@@ -56,10 +55,10 @@ export const CurrencySelector: React.FC = () => {
       <button
         onClick={() => forceRefreshRates()}
         disabled={loading}
-        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-all"
+        className="p-1 hover:bg-blue-400 dark:hover:bg-gray-500 rounded transition-all"
         title="Refresh exchange rates"
       >
-        <RefreshCw className={`w-3 h-3 text-gray-400 ${loading ? 'animate-spin' : 'hover:text-gray-600 dark:hover:text-gray-300'}`} />
+        <RefreshCw className={`w-3 h-3 text-gray-600 dark:text-gray-400 ${loading ? 'animate-spin' : 'hover:text-gray-800 dark:hover:text-gray-200'}`} />
       </button>
       
       {error && (
