@@ -143,8 +143,8 @@ function App() {
             <span className="text-sm font-medium text-gray-900 dark:text-white">FINTONICO</span>
             <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">• The Ultimate Personal Finance Dashboard</span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="px-2 py-1 bg-blue-200 dark:bg-gray-700 rounded-lg">
+          <div className="flex items-center gap-2">
+            <div className="h-8 px-3 flex items-center bg-blue-200 dark:bg-gray-700 rounded-lg">
               <span className="text-sm font-medium text-gray-900 dark:text-white">
                 {new Date().toLocaleDateString('en-US', { 
                   month: 'short', 
@@ -153,7 +153,7 @@ function App() {
                 })}
               </span>
             </div>
-            <div className="h-4 w-px bg-blue-200 dark:bg-gray-600"></div>
+            <div className="h-6 w-px bg-blue-300 dark:bg-gray-600"></div>
             <CurrencySelector />
           </div>
         </div>

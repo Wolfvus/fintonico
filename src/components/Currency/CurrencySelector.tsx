@@ -37,7 +37,7 @@ export const CurrencySelector: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center gap-2 px-2 py-1 bg-blue-200 dark:bg-gray-700 rounded-lg hover:bg-blue-300 dark:hover:bg-gray-600 transition-colors">
+    <div className="h-7 lg:h-8 flex items-center gap-1.5 px-2 lg:px-3 bg-blue-200 dark:bg-gray-700 rounded-lg hover:bg-blue-300 dark:hover:bg-gray-600 transition-colors">
       <select
         value={baseCurrency}
         onChange={(e) => handleCurrencyChange(e.target.value)}
@@ -55,7 +55,7 @@ export const CurrencySelector: React.FC = () => {
       <button
         onClick={() => forceRefreshRates()}
         disabled={loading}
-        className="p-1 hover:bg-blue-400 dark:hover:bg-gray-500 rounded transition-all"
+        className="p-0.5 hover:bg-blue-400 dark:hover:bg-gray-500 rounded transition-all"
         title="Refresh exchange rates"
       >
         <RefreshCw className={`w-3 h-3 text-gray-600 dark:text-gray-400 ${loading ? 'animate-spin' : 'hover:text-gray-800 dark:hover:text-gray-200'}`} />

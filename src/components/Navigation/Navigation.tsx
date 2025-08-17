@@ -129,32 +129,36 @@ export const Navigation: React.FC<NavigationProps> = ({
 
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-blue-100 dark:bg-gray-800 border-b border-blue-200 dark:border-gray-700">
-        <div className="flex items-center justify-between p-4">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-            FINTONICO
-          </h1>
+        <div className="flex items-center justify-between p-3">
           <div className="flex items-center gap-2">
-            <div className="px-2 py-1 bg-blue-200 dark:bg-gray-700 rounded-lg">
-              <span className="text-sm font-medium text-gray-900 dark:text-white">
+            <img 
+              src="/fintonico-logo.png" 
+              alt="FINTONICO" 
+              className="w-6 h-6 flex-shrink-0 object-contain"
+            />
+            <h1 className="text-base font-bold text-gray-900 dark:text-white">
+              FINTONICO
+            </h1>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="h-7 px-2 flex items-center bg-blue-200 dark:bg-gray-700 rounded-lg">
+              <span className="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">
                 {new Date().toLocaleDateString('en-US', { 
                   month: 'short', 
                   day: 'numeric'
                 })}
               </span>
             </div>
-            <div className="w-px h-6 bg-blue-300 dark:bg-gray-600"></div>
-            <div className="h-8 flex items-center">
-              <CurrencySelector />
-            </div>
+            <CurrencySelector />
           </div>
           <button
             onClick={onMobileMenuToggle}
-            className="p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
           >
             {isMobileMenuOpen ? (
-              <X className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              <X className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             ) : (
-              <Menu className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              <Menu className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             )}
           </button>
         </div>
