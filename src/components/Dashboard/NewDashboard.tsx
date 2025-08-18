@@ -400,23 +400,23 @@ export const NewDashboard: React.FC = () => {
         </div>
         
         {viewMode === 'custom' && (
-          <div className="mt-4 flex flex-col sm:flex-row gap-3">
-            <div className="flex-1">
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Start Date</label>
+          <div className="mt-4 space-y-3 sm:space-y-0 sm:flex sm:flex-row sm:gap-3">
+            <div className="flex-1 min-w-0">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Start Date</label>
               <input
                 type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                className="w-full px-2.5 py-2 sm:px-3 sm:py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 text-base sm:text-sm min-h-[44px] sm:min-h-0"
               />
             </div>
-            <div className="flex-1">
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">End Date</label>
+            <div className="flex-1 min-w-0">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">End Date</label>
               <input
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                className="w-full px-2.5 py-2 sm:px-3 sm:py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 text-base sm:text-sm min-h-[44px] sm:min-h-0"
               />
             </div>
           </div>
