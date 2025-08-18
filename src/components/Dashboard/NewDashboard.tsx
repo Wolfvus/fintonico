@@ -167,7 +167,7 @@ export const NewDashboard: React.FC = () => {
           <div className="flex items-center justify-between mb-3">
             <button
               onClick={() => navigatePeriod('prev')}
-              className="p-2.5 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
               disabled={viewMode === 'custom'}
             >
               <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -182,7 +182,7 @@ export const NewDashboard: React.FC = () => {
             
             <button
               onClick={() => navigatePeriod('next')}
-              className="p-2.5 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
               disabled={viewMode === 'custom'}
             >
               <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -194,7 +194,7 @@ export const NewDashboard: React.FC = () => {
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setViewMode('month')}
-                className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors min-h-[40px] ${
+                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                   viewMode === 'month'
                     ? 'bg-blue-500 text-white'
                     : 'bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600'
@@ -204,7 +204,7 @@ export const NewDashboard: React.FC = () => {
               </button>
               <button
                 onClick={() => setViewMode('year')}
-                className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors min-h-[40px] ${
+                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                   viewMode === 'year'
                     ? 'bg-blue-500 text-white'
                     : 'bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600'
@@ -214,7 +214,7 @@ export const NewDashboard: React.FC = () => {
               </button>
               <button
                 onClick={() => setViewMode('custom')}
-                className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors min-h-[40px] ${
+                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                   viewMode === 'custom'
                     ? 'bg-blue-500 text-white'
                     : 'bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600'
@@ -228,7 +228,7 @@ export const NewDashboard: React.FC = () => {
             {(viewMode !== 'custom' && (selectedDate.getMonth() !== new Date().getMonth() || selectedDate.getFullYear() !== new Date().getFullYear())) && (
               <button
                 onClick={goToToday}
-                className="px-4 py-2.5 text-sm font-medium bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors min-h-[40px]"
+                className="px-3 py-2 text-sm font-medium bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
               >
                 Today
               </button>
@@ -425,10 +425,22 @@ export const NewDashboard: React.FC = () => {
 
       {/* Latest Entries with Pagination and Collapse */}
       <div className="bg-slate-100 dark:bg-gray-800 rounded-lg border border-slate-300 dark:border-gray-700">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Recent Transactions</h3>
-            <div className="flex items-center gap-2">
+        <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Recent Transactions</h3>
+              <button
+                onClick={() => setIsTransactionsCollapsed(!isTransactionsCollapsed)}
+                className="sm:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
+              >
+                {isTransactionsCollapsed ? (
+                  <ChevronDown className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                ) : (
+                  <ChevronUp className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                )}
+              </button>
+            </div>
+            <div className="flex items-center gap-2 justify-between sm:justify-end">
               <div className="flex items-center gap-1">
                 <Filter className="w-4 h-4 text-gray-400" />
                 <select
@@ -446,12 +458,12 @@ export const NewDashboard: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsTransactionsCollapsed(!isTransactionsCollapsed)}
-                className="p-2 sm:p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-w-[40px] min-h-[40px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                className="hidden sm:flex p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors items-center justify-center"
               >
                 {isTransactionsCollapsed ? (
-                  <ChevronDown className="w-5 h-5 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-400" />
+                  <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                 ) : (
-                  <ChevronUp className="w-5 h-5 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-400" />
+                  <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                 )}
               </button>
             </div>
@@ -545,17 +557,17 @@ export const NewDashboard: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[40px]"
+                      className="px-3 py-2 text-sm font-medium rounded-lg bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       Previous
                     </button>
-                    <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
                       Page {currentPage} of {Math.ceil(latestEntries.length / itemsPerPage)}
                     </span>
                     <button
                       onClick={() => setCurrentPage(currentPage + 1)}
                       disabled={currentPage >= Math.ceil(latestEntries.length / itemsPerPage)}
-                      className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[40px]"
+                      className="px-3 py-2 text-sm font-medium rounded-lg bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       Next
                     </button>
