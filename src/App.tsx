@@ -376,7 +376,7 @@ function NetWorthTracker() {
               <select
                 value={assetFilter}
                 onChange={(e) => setAssetFilter(e.target.value)}
-                className="text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
+                className="text-base sm:text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
               >
                 <option value="all">All Types</option>
                 <option value="savings">Savings</option>
@@ -388,7 +388,7 @@ function NetWorthTracker() {
               <select
                 value={assetSortBy}
                 onChange={(e) => setAssetSortBy(e.target.value as 'amount' | 'type')}
-                className="text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
+                className="text-base sm:text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
               >
                 <option value="amount">By Amount</option>
                 <option value="type">By Type</option>
@@ -571,7 +571,7 @@ function NetWorthTracker() {
               <select
                 value={liabilityFilter}
                 onChange={(e) => setLiabilityFilter(e.target.value)}
-                className="text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
+                className="text-base sm:text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
               >
                 <option value="all">All Types</option>
                 <option value="loan">Loan</option>
@@ -582,7 +582,7 @@ function NetWorthTracker() {
               <select
                 value={liabilitySortBy}
                 onChange={(e) => setLiabilitySortBy(e.target.value as 'amount' | 'type')}
-                className="text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
+                className="text-base sm:text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
               >
                 <option value="amount">By Amount</option>
                 <option value="type">By Type</option>

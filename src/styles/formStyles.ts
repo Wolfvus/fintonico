@@ -1,6 +1,6 @@
 export const formStyles = {
   input: {
-    base: 'w-full px-3.5 py-2.5 sm:py-2 sm:px-3 border rounded-lg bg-white dark:bg-gray-700 transition-colors text-gray-900 dark:text-white focus:ring-1 text-sm min-h-[44px] sm:min-h-0',
+    base: 'w-full px-3.5 py-2.5 sm:py-2 sm:px-3 border rounded-lg bg-white dark:bg-gray-700 transition-colors text-gray-900 dark:text-white focus:ring-1 text-base sm:text-sm min-h-[44px] sm:min-h-0',
     default: 'border-blue-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-gray-500 focus:ring-blue-200 dark:focus:ring-gray-600',
     green: 'border-blue-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-gray-500 focus:ring-blue-200 dark:focus:ring-gray-600',
     amber: 'border-blue-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-gray-500 focus:ring-blue-200 dark:focus:ring-gray-600',

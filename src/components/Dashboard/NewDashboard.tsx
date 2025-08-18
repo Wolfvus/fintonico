@@ -449,7 +449,7 @@ export const NewDashboard: React.FC = () => {
                     setEntryFilter(e.target.value as 'all' | 'income' | 'expense');
                     setCurrentPage(1);
                   }}
-                  className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  className="text-base sm:text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                 >
                   <option value="all">All</option>
                   <option value="income">Income</option>
