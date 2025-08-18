@@ -1,23 +1,28 @@
 import React, { useState } from 'react';
 import { useIncomeStore } from '../../stores/incomeStore';
-import { useCurrencyStore } from '../../stores/currencyStore';
-import { Coins, Calendar, Briefcase, RefreshCw, Globe } from 'lucide-react';
+import { Calendar, Briefcase, RefreshCw } from 'lucide-react';
 import { getTodayLocalString } from '../../utils/dateFormat';
-import { sanitizeText } from '../../utils/sanitization';
+import { sanitizeDescription } from '../../utils/sanitization';
+import { useCurrencyInput } from '../../hooks/useCurrencyInput';
+import { AmountCurrencyInput } from '../Shared/AmountCurrencyInput';
+import { FormField } from '../Shared/FormField';
 
 export const IncomeForm: React.FC = () => {
   const [source, setSource] = useState('');
-  const [amount, setAmount] = useState('');
-  const [displayAmount, setDisplayAmount] = useState('');
-  const { formatAmount, baseCurrency, getCurrencySymbol } = useCurrencyStore();
-  const [currency, setCurrency] = useState(baseCurrency);
   const [frequency, setFrequency] = useState<'one-time' | 'weekly' | 'monthly' | 'yearly'>('monthly');
   const [date, setDate] = useState(getTodayLocalString());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { addIncome } = useIncomeStore();
-  const { currencies } = useCurrencyStore();
+  const {
+    amount,
+    displayAmount,
+    currency,
+    handleAmountChange,
+    handleCurrencyChange,
+    reset: resetCurrency
+  } = useCurrencyInput();
 
   const frequencyOptions = [
     { value: 'one-time', label: 'One-Time', icon: '💰' },
@@ -26,38 +31,6 @@ export const IncomeForm: React.FC = () => {
     { value: 'yearly', label: 'Yearly', icon: '📊' },
   ];
 
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    
-    // Remove currency symbol and commas
-    const cleaned = value.replace(/[^0-9.]/g, '');
-    const decimalCount = (cleaned.match(/\./g) || []).length;
-    
-    if (decimalCount <= 1) {
-      setAmount(cleaned);
-      
-      // Format for display
-      if (cleaned) {
-        const parts = cleaned.split('.');
-        const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        const formattedValue = parts.length > 1 ? `${integerPart}.${parts[1]}` : integerPart;
-        setDisplayAmount(`${getCurrencySymbol(currency)}${formattedValue}`);
-      } else {
-        setDisplayAmount('');
-      }
-    }
-  };
-
-  const handleCurrencyChange = (newCurrency: string) => {
-    setCurrency(newCurrency);
-    // Update display amount with new currency symbol
-    if (amount) {
-      const parts = amount.split('.');
-      const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-      const formattedValue = parts.length > 1 ? `${integerPart}.${parts[1]}` : integerPart;
-      setDisplayAmount(`${getCurrencySymbol(newCurrency)}${formattedValue}`);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +60,7 @@ export const IncomeForm: React.FC = () => {
     
     try {
       await addIncome({
-        source: sanitizeText(source),
+        source: sanitizeDescription(source),
         amount: amountNum,
         currency,
         frequency,
@@ -96,9 +69,7 @@ export const IncomeForm: React.FC = () => {
       
       // Reset form
       setSource('');
-      setAmount('');
-      setDisplayAmount('');
-      setCurrency(baseCurrency);
+      resetCurrency();
       setFrequency('monthly');
       setDate(getTodayLocalString());
       
@@ -118,66 +89,24 @@ export const IncomeForm: React.FC = () => {
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-            <Briefcase className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-            Income Source
-          </label>
-          <input
-            type="text"
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                     transition-colors text-gray-900 dark:text-white
-                     border-blue-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
-            placeholder="Main Salary, Freelance Project..."
-            autoFocus
-          />
-          {errors.source && (
-            <p className="text-xs mt-1 text-red-500">{errors.source}</p>
-          )}
-        </div>
+        <FormField
+          label="Income Source"
+          icon={Briefcase}
+          value={source}
+          onChange={setSource}
+          placeholder="Main Salary, Freelance..."
+          maxLength={30}
+          autoFocus
+          error={errors.source}
+        />
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-              <Coins className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              Amount
-            </label>
-            <input
-              type="text"
-              value={displayAmount}
-              onChange={handleAmountChange}
-              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                       transition-colors text-gray-900 dark:text-white
-                       border-blue-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
-              placeholder={`${getCurrencySymbol(currency)}0.00`}
-            />
-            {errors.amount && (
-              <p className="text-xs mt-1 text-red-500">{errors.amount}</p>
-            )}
-          </div>
-          
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-              <Globe className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              Currency
-            </label>
-            <select
-              value={currency}
-              onChange={(e) => handleCurrencyChange(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                       transition-colors text-gray-900 dark:text-white
-                       border-blue-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
-            >
-              {currencies.map((curr) => (
-                <option key={curr.code} value={curr.code}>
-                  {curr.symbol}{curr.code}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+        <AmountCurrencyInput
+          displayAmount={displayAmount}
+          currency={currency}
+          onAmountChange={handleAmountChange}
+          onCurrencyChange={handleCurrencyChange}
+          amountError={errors.amount}
+        />
 
         <div>
           <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
@@ -199,23 +128,14 @@ export const IncomeForm: React.FC = () => {
           </select>
         </div>
 
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-            <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-            Date
-          </label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                     transition-colors text-gray-900 dark:text-white
-                     border-blue-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
-          />
-          {errors.date && (
-            <p className="text-xs mt-1 text-red-500">{errors.date}</p>
-          )}
-        </div>
+        <FormField
+          label="Date"
+          icon={Calendar}
+          type="date"
+          value={date}
+          onChange={setDate}
+          error={errors.date}
+        />
 
         <button
           type="submit"

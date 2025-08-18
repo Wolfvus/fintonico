@@ -285,7 +285,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             {filteredAndSortedTransactions.map((transaction) => (
               <div
                 key={transaction.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors group border border-gray-100 dark:border-gray-700"
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors group border border-gray-200 dark:border-gray-700"
               >
                 <div className="hidden sm:flex sm:items-center sm:gap-3 sm:flex-1 sm:min-w-0">
                   <div 

@@ -490,7 +490,7 @@ export const NewDashboard: React.FC = () => {
                   {latestEntries
                     .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                     .map((entry) => (
-                      <div key={`${entry.type}-${entry.id}`} className="p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors group">
+                      <div key={`${entry.type}-${entry.id}`} className="p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors group border border-gray-200 dark:border-gray-700">
                         {/* Mobile Layout */}
                         <div className="block sm:hidden">
                           {/* Top line: Description (left) + Amount (right) */}

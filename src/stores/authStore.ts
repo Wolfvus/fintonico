@@ -24,27 +24,22 @@ export const useAuthStore = create<AuthState>((set) => ({
   loading: true,
 
   signIn: async (email: string, password: string) => {
-    console.log('SignIn attempt:', { email, password });
-    
     // Simulate async operation
     await new Promise(resolve => setTimeout(resolve, 100));
     
     // Mock auth - accept admin/admin or any email format
     if (email === 'admin' && password === 'admin') {
-      console.log('Admin login successful');
       set({ user: MOCK_USER });
       localStorage.setItem('fintonico-user', JSON.stringify(MOCK_USER));
       return;
     }
     
     if (email.includes('@') && password.length >= 1) {
-      console.log('Email login successful');
       set({ user: MOCK_USER });
       localStorage.setItem('fintonico-user', JSON.stringify(MOCK_USER));
       return;
     }
     
-    console.log('Login failed');
     throw new Error('Invalid credentials. Try admin/admin or any email.');
   },
 

@@ -36,9 +36,3 @@ export const formatCurrencyInput = (
   };
 };
 
-import { validateAmount as sanitizeAmount } from './sanitization';
-
-export const validateAmount = (amount: string): boolean => {
-  const result = sanitizeAmount(amount);
-  return result.isValid;
-};

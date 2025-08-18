@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { useCurrencyStore } from './currencyStore';
 import { getAssetsByType } from '../utils/investmentUtils';
 import type { Income } from '../types';
-import { sanitizeText, validateAmount, validateDate } from '../utils/sanitization';
+import { sanitizeDescription, validateAmount, validateDate } from '../utils/sanitization';
 
 export type IncomeFrequency = 'one-time' | 'weekly' | 'yearly' | 'monthly';
 
@@ -21,7 +21,6 @@ interface IncomeState {
   deleteIncome: (id: string) => void;
   getMonthlyTotal: () => number;
   generateInvestmentYields: () => void;
-  addTestData: () => void;
 }
 
 const STORAGE_KEY = 'fintonico-incomes';
@@ -44,13 +43,13 @@ const storage = {
       // Validate and sanitize each income
       return parsed.filter((income: any) => {
         if (typeof income !== 'object' || !income) return false;
-        const sourceResult = sanitizeText(income.source || '');
+        const sourceResult = sanitizeDescription(income.source || '');
         const amountResult = validateAmount(String(income.amount || ''));
         const dateResult = validateDate(income.date || '');
         return sourceResult && amountResult.isValid && dateResult.isValid;
       }).map((income: any) => ({
         id: String(income.id || crypto.randomUUID()),
-        source: sanitizeText(income.source),
+        source: sanitizeDescription(income.source),
         amount: validateAmount(String(income.amount)).sanitizedValue,
         currency: String(income.currency || 'MXN'),
         frequency: String(income.frequency || 'monthly') as IncomeFrequency,
@@ -163,41 +162,5 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
       set({ incomes: allIncomes });
       storage.set(allIncomes);
     }
-  },
-
-  addTestData: () => {
-    const testIncomes = [
-      { source: 'Monthly salary', amount: 4500.00, frequency: 'monthly' as IncomeFrequency },
-      { source: 'Freelance web design', amount: 800.00, frequency: 'one-time' as IncomeFrequency },
-      { source: 'Investment dividends', amount: 150.00, frequency: 'one-time' as IncomeFrequency },
-      { source: 'Side hustle consulting', amount: 600.00, frequency: 'one-time' as IncomeFrequency },
-      { source: 'Rental property income', amount: 1200.00, frequency: 'monthly' as IncomeFrequency },
-      { source: 'Stock market gains', amount: 300.00, frequency: 'one-time' as IncomeFrequency },
-      { source: 'Part-time job', amount: 900.00, frequency: 'weekly' as IncomeFrequency },
-      { source: 'Online course sales', amount: 250.00, frequency: 'one-time' as IncomeFrequency },
-      { source: 'Bonus payment', amount: 1000.00, frequency: 'one-time' as IncomeFrequency },
-      { source: 'Tax refund', amount: 750.00, frequency: 'yearly' as IncomeFrequency },
-      { source: 'Gift from family', amount: 200.00, frequency: 'one-time' as IncomeFrequency },
-      { source: 'Cashback rewards', amount: 45.00, frequency: 'monthly' as IncomeFrequency },
-      { source: 'Selling old electronics', amount: 180.00, frequency: 'one-time' as IncomeFrequency },
-      { source: 'Tutoring sessions', amount: 120.00, frequency: 'weekly' as IncomeFrequency },
-      { source: 'Affiliate marketing', amount: 85.00, frequency: 'monthly' as IncomeFrequency }
-    ];
-
-    const currencies = ['USD', 'MXN', 'EUR'];
-    
-    const incomes = testIncomes.map((income, index) => ({
-      id: `test-income-${index + 1}`,
-      source: income.source,
-      amount: income.amount,
-      currency: currencies[Math.floor(Math.random() * currencies.length)],
-      frequency: income.frequency,
-      date: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      created_at: new Date().toISOString()
-    }));
-
-    const allIncomes = [...incomes, ...get().incomes];
-    set({ incomes: allIncomes });
-    storage.set(allIncomes);
   }
 }));

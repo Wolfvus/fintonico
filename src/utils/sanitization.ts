@@ -3,6 +3,7 @@
  */
 
 const MAX_STRING_LENGTH = 1000;
+const MAX_DESCRIPTION_LENGTH = 30;
 const MAX_AMOUNT = 1000000000; // $1 billion
 const MIN_AMOUNT = 0.01;
 
@@ -15,6 +16,24 @@ export const sanitizeText = (input: string): string => {
   return input
     .trim()
     .slice(0, MAX_STRING_LENGTH) // Limit length
+    .replace(/[<>]/g, '') // Remove angle brackets
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/on\w+=/gi, '') // Remove event handlers like onclick=
+    .replace(/script/gi, '') // Remove script tags
+    .replace(/iframe/gi, '') // Remove iframe tags
+    .replace(/object/gi, '') // Remove object tags
+    .replace(/embed/gi, ''); // Remove embed tags
+};
+
+/**
+ * Sanitize description with 30-character limit
+ */
+export const sanitizeDescription = (input: string): string => {
+  if (typeof input !== 'string') return '';
+  
+  return input
+    .trim()
+    .slice(0, MAX_DESCRIPTION_LENGTH) // Limit to 30 characters
     .replace(/[<>]/g, '') // Remove angle brackets
     .replace(/javascript:/gi, '') // Remove javascript: protocol
     .replace(/on\w+=/gi, '') // Remove event handlers like onclick=
@@ -167,40 +186,5 @@ export const validateCurrency = (input: string): {
   };
 };
 
-/**
- * Sanitize and validate JSON data from localStorage
- */
-export const sanitizeStoredData = (data: any): any => {
-  if (!data || typeof data !== 'object') return null;
-  
-  try {
-    // If it's an array (transactions)
-    if (Array.isArray(data)) {
-      return data.map(item => ({
-        id: sanitizeText(item.id || '').slice(0, 50),
-        description: sanitizeText(item.description || item.what || item.source || ''),
-        amount: validateAmount(item.amount || 0).sanitizedValue,
-        currency: validateCurrency(item.currency || 'USD').sanitizedValue,
-        date: validateDate(item.date || new Date().toISOString().split('T')[0]).sanitizedValue,
-        // Preserve other fields but sanitize them
-        ...Object.keys(item).reduce((acc, key) => {
-          if (!['id', 'description', 'amount', 'currency', 'date', 'what', 'source'].includes(key)) {
-            if (typeof item[key] === 'string') {
-              acc[key] = sanitizeText(item[key]);
-            } else {
-              acc[key] = item[key];
-            }
-          }
-          return acc;
-        }, {} as any)
-      })).filter(item => item.id && item.description); // Remove invalid items
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('Error sanitizing stored data:', error);
-    return null;
-  }
-};
 
 export const MAX_AMOUNT_VALUE = MAX_AMOUNT;

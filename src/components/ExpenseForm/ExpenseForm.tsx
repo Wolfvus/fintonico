@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { useExpenseStore } from '../../stores/expenseStore';
-import { useCurrencyStore } from '../../stores/currencyStore';
-import { Coins, Calendar, PenTool, Plus, Globe } from 'lucide-react';
+import { Calendar, PenTool, Plus } from 'lucide-react';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { validateRequired, validateAmount, validateDate } from '../../utils/validation';
-import { sanitizeText } from '../../utils/sanitization';
+import { sanitizeDescription } from '../../utils/sanitization';
 import type { ValidationError } from '../../utils/validation';
-import { formStyles, getInputClassName } from '../../styles/formStyles';
+import { formStyles } from '../../styles/formStyles';
 import { getTodayLocalString } from '../../utils/dateFormat';
 import { ToggleSwitch } from '../Shared/ToggleSwitch';
+import { AmountCurrencyInput } from '../Shared/AmountCurrencyInput';
+import { FormField } from '../Shared/FormField';
 
 const RATING_CONFIG = {
   essential: { 
@@ -48,7 +49,6 @@ export const ExpenseForm: React.FC = () => {
   const [errors, setErrors] = useState<ValidationError>({});
 
   const { addExpense } = useExpenseStore();
-  const { currencies, getCurrencySymbol } = useCurrencyStore();
   const {
     amount,
     displayAmount,
@@ -82,7 +82,7 @@ export const ExpenseForm: React.FC = () => {
     
     try {
       await addExpense({
-        what: sanitizeText(form.what),
+        what: sanitizeDescription(form.what),
         amount: parseFloat(amount),
         currency: currency,
         rating: form.rating,
@@ -112,70 +112,34 @@ export const ExpenseForm: React.FC = () => {
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-4">
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium mb-2.5 sm:mb-2 text-gray-900 dark:text-gray-100">
-            <PenTool className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-            Description
-          </label>
-          <input
-            type="text"
-            value={form.what}
-            onChange={(e) => setForm(prev => ({ ...prev, what: e.target.value }))}
-            className={getInputClassName()}
-            placeholder="Coffee at Starbucks, Dinner with Friends..."
-            autoFocus
-          />
-          {errors.what && <p className="text-xs mt-1 text-red-500">{errors.what}</p>}
-        </div>
+        <FormField
+          label="Description"
+          icon={PenTool}
+          value={form.what}
+          onChange={(value) => setForm(prev => ({ ...prev, what: value }))}
+          placeholder="Coffee at Starbucks, Dinner..."
+          maxLength={30}
+          autoFocus
+          error={errors.what}
+          className="space-y-2.5 sm:space-y-2"
+        />
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-              <Coins className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              Amount
-            </label>
-            <input
-              type="text"
-              value={displayAmount}
-              onChange={(e) => handleAmountChange(e.target.value)}
-              className={getInputClassName()}
-              placeholder={`${getCurrencySymbol(currency)}0.00`}
-            />
-            {errors.amount && <p className="text-xs mt-1 text-red-500">{errors.amount}</p>}
-          </div>
-          
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-              <Globe className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              Currency
-            </label>
-            <select
-              value={currency}
-              onChange={(e) => handleCurrencyChange(e.target.value)}
-              className={getInputClassName()}
-            >
-              {currencies.map((currency) => (
-                <option key={currency.code} value={currency.code}>
-                  {currency.symbol}{currency.code}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+        <AmountCurrencyInput
+          displayAmount={displayAmount}
+          currency={currency}
+          onAmountChange={handleAmountChange}
+          onCurrencyChange={handleCurrencyChange}
+          amountError={errors.amount}
+        />
 
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-            <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-            Date
-          </label>
-          <input
-            type="date"
-            value={form.date}
-            onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))}
-            className={getInputClassName()}
-          />
-          {errors.date && <p className="text-xs mt-1 text-red-500">{errors.date}</p>}
-        </div>
+        <FormField
+          label="Date"
+          icon={Calendar}
+          type="date"
+          value={form.date}
+          onChange={(value) => setForm(prev => ({ ...prev, date: value }))}
+          error={errors.date}
+        />
 
 
         <div>

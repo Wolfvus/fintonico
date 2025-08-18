@@ -3,8 +3,8 @@ import { useExpenseStore } from '../../stores/expenseStore';
 import { useIncomeStore } from '../../stores/incomeStore';
 
 export const TestDataAdmin: React.FC = () => {
-  const { addTestData: addExpenseTestData, expenses } = useExpenseStore();
-  const { addTestData: addIncomeTestData, incomes } = useIncomeStore();
+  const { expenses } = useExpenseStore();
+  const { incomes } = useIncomeStore();
 
   // Get current assets and liabilities from localStorage
   const getAssets = () => {
@@ -21,13 +21,28 @@ export const TestDataAdmin: React.FC = () => {
   const liabilities = getLiabilities();
 
   const handleAddTestExpenses = () => {
-    addExpenseTestData();
-    alert('30 test expenses added!');
+    // Directly manipulate localStorage since addTestData was removed
+    const testExpenses = [
+      { id: crypto.randomUUID(), what: 'Coffee at Starbucks', amount: 5.75, currency: 'USD', rating: 'non_essential', date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString(), recurring: false },
+      { id: crypto.randomUUID(), what: 'Grocery shopping', amount: 125.50, currency: 'USD', rating: 'essential', date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString(), recurring: false },
+      { id: crypto.randomUUID(), what: 'Gas station fill-up', amount: 45.00, currency: 'USD', rating: 'essential', date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString(), recurring: false }
+    ];
+    
+    const currentExpenses = JSON.parse(localStorage.getItem('fintonico-expenses') || '[]');
+    localStorage.setItem('fintonico-expenses', JSON.stringify([...testExpenses, ...currentExpenses]));
+    window.location.reload(); // Refresh to update stores
   };
 
   const handleAddTestIncome = () => {
-    addIncomeTestData();
-    alert('15 test income entries added!');
+    // Directly manipulate localStorage since addTestData was removed  
+    const testIncomes = [
+      { id: crypto.randomUUID(), source: 'Monthly salary', amount: 4500.00, currency: 'USD', frequency: 'monthly', date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString() },
+      { id: crypto.randomUUID(), source: 'Freelance project', amount: 800.00, currency: 'USD', frequency: 'one-time', date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString() }
+    ];
+    
+    const currentIncomes = JSON.parse(localStorage.getItem('fintonico-incomes') || '[]');
+    localStorage.setItem('fintonico-incomes', JSON.stringify([...testIncomes, ...currentIncomes]));
+    window.location.reload(); // Refresh to update stores
   };
 
   const handleAddTestAssets = () => {
