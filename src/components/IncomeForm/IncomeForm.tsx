@@ -3,19 +3,21 @@ import { useIncomeStore } from '../../stores/incomeStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { Coins, Calendar, Briefcase, RefreshCw, Globe } from 'lucide-react';
 import { getTodayLocalString } from '../../utils/dateFormat';
+import { sanitizeText } from '../../utils/sanitization';
 
 export const IncomeForm: React.FC = () => {
   const [source, setSource] = useState('');
   const [amount, setAmount] = useState('');
   const [displayAmount, setDisplayAmount] = useState('');
-  const [currency, setCurrency] = useState('MXN');
+  const { formatAmount, baseCurrency, getCurrencySymbol } = useCurrencyStore();
+  const [currency, setCurrency] = useState(baseCurrency);
   const [frequency, setFrequency] = useState<'one-time' | 'weekly' | 'monthly' | 'yearly'>('monthly');
   const [date, setDate] = useState(getTodayLocalString());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { addIncome } = useIncomeStore();
-  const { currencies, getCurrencySymbol } = useCurrencyStore();
+  const { currencies } = useCurrencyStore();
 
   const frequencyOptions = [
     { value: 'one-time', label: 'One-Time', icon: '💰' },
@@ -85,7 +87,7 @@ export const IncomeForm: React.FC = () => {
     
     try {
       await addIncome({
-        source: source.trim(),
+        source: sanitizeText(source),
         amount: amountNum,
         currency,
         frequency,
@@ -96,7 +98,7 @@ export const IncomeForm: React.FC = () => {
       setSource('');
       setAmount('');
       setDisplayAmount('');
-      setCurrency('MXN');
+      setCurrency(baseCurrency);
       setFrequency('monthly');
       setDate(getTodayLocalString());
       

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Filter, Trash2, ChevronLeft, ChevronRight, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { CurrencyBadge } from './CurrencyBadge';
 import { formatDate, parseLocalDate } from '../../utils/dateFormat';
 import { useCurrencyStore } from '../../stores/currencyStore';
 
@@ -83,7 +84,19 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     // Apply date filter
     if (filter !== 'all') {
       const now = new Date();
-      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+      
+      // Calculate week boundaries (Monday to Sunday, ending at 11:59:59 PM Sunday)
+      const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1; // If Sunday, go back 6 days to Monday
+      
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - daysFromMonday);
+      startOfWeek.setHours(0, 0, 0, 0); // Start at 12:00:00 AM Monday
+      
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6); // Monday + 6 days = Sunday
+      endOfWeek.setHours(23, 59, 59, 999); // End at 11:59:59 PM Sunday
+      
       const startOfYear = new Date(now.getFullYear(), 0, 1);
       
       // For custom month, use selectedDate
@@ -93,7 +106,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
       filtered = transactions.filter(t => {
         const transactionDate = parseLocalDate(t.date);
         if (filter === 'this-week') {
-          return transactionDate >= startOfWeek;
+          return transactionDate >= startOfWeek && transactionDate <= endOfWeek;
         } else if (filter === 'custom-month') {
           return transactionDate >= startOfSelectedMonth && transactionDate <= endOfSelectedMonth;
         } else if (filter === 'this-year') {
@@ -274,7 +287,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                 key={transaction.id}
                 className="flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors group border border-gray-100 dark:border-gray-700"
               >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="hidden sm:flex sm:items-center sm:gap-3 sm:flex-1 sm:min-w-0">
                   <div 
                     className={`w-2 h-2 rounded-full flex-shrink-0 ${
                       transaction.type === 'income' ? 'bg-green-500' : 'bg-red-500'
@@ -307,7 +320,68 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3 flex-shrink-0 mt-2 sm:mt-0">
+                {/* Mobile Layout */}
+                <div className="block sm:hidden w-full mt-2">
+                  {/* Top line: Description (left) + Amount (right) */}
+                  <div className="flex items-start justify-between">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white flex-1 min-w-0 pr-2">
+                      {transaction.description}
+                    </p>
+                    <p className={`text-sm font-medium flex-shrink-0 ${
+                      transaction.type === 'income' 
+                        ? 'text-green-600 dark:text-green-400' 
+                        : 'text-red-600 dark:text-red-400'
+                    }`}>
+                      {transaction.type === 'income' ? '+' : '-'}
+                      {formatAmount(convertAmount(transaction.amount, transaction.currency, baseCurrency))}
+                    </p>
+                  </div>
+                  
+                  {/* Bottom line: Tags (left) + Date/Currency/Delete (right) */}
+                  <div className="flex items-center justify-between mt-1">
+                    <div className="flex items-center gap-1 flex-1 min-w-0">
+                      {transaction.category && (
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                          transaction.type === 'income'
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                            : transaction.rating === 'essential'
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                            : transaction.rating === 'non_essential'
+                            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                            : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                        }`}>
+                          {transaction.category}
+                        </span>
+                      )}
+                      {transaction.recurring && (
+                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                          recurring
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatDate(transaction.date)}
+                      </p>
+                      <CurrencyBadge 
+                        currency={transaction.currency} 
+                        baseCurrency={baseCurrency}
+                      />
+                      {onDelete && (
+                        <button
+                          onClick={() => onDelete(transaction.id)}
+                          className="p-1 text-gray-400 hover:text-red-500 transition-colors ml-1"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Desktop Layout */}
+                <div className="hidden sm:flex sm:items-center sm:gap-3 sm:flex-shrink-0">
                   <div className="text-right">
                     <p className={`text-sm font-medium ${
                       transaction.type === 'income' 
@@ -317,9 +391,15 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                       {transaction.type === 'income' ? '+' : '-'}
                       {formatAmount(convertAmount(transaction.amount, transaction.currency, baseCurrency))}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 text-right">
-                      {formatDate(transaction.date)}
-                    </p>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatDate(transaction.date)}
+                      </p>
+                      <CurrencyBadge 
+                        currency={transaction.currency} 
+                        baseCurrency={baseCurrency}
+                      />
+                    </div>
                   </div>
                   
                   {onDelete && (

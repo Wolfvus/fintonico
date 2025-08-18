@@ -2,20 +2,21 @@ export interface ValidationError {
   [key: string]: string;
 }
 
+import { sanitizeText, validateAmount as sanitizeAmount, validateDate as sanitizeDate } from './sanitization';
+
 export const validateRequired = (value: string, fieldName: string): string | null => {
-  return !value.trim() ? `${fieldName} required` : null;
+  const sanitized = sanitizeText(value);
+  return !sanitized ? `${fieldName} required` : null;
 };
 
 export const validateAmount = (amount: string): string | null => {
-  const num = parseFloat(amount);
-  if (!amount || isNaN(num) || num <= 0) {
-    return 'Valid amount required';
-  }
-  return null;
+  const result = sanitizeAmount(amount);
+  return result.isValid ? null : result.error || 'Valid amount required';
 };
 
 export const validateDate = (date: string): string | null => {
-  return !date ? 'Date required' : null;
+  const result = sanitizeDate(date);
+  return result.isValid ? null : result.error || 'Date required';
 };
 
 export const collectErrors = (errors: (string | null)[]): ValidationError => {

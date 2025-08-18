@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { useCurrencyStore } from './currencyStore';
 import { getAssetsByType } from '../utils/investmentUtils';
 import type { Income } from '../types';
+import { sanitizeText, validateAmount, validateDate } from '../utils/sanitization';
 
 export type IncomeFrequency = 'one-time' | 'weekly' | 'yearly' | 'monthly';
 
@@ -35,18 +36,38 @@ const storage = {
   get: (): Income[] => {
     try {
       const data = localStorage.getItem(STORAGE_KEY);
-      const incomes = data ? JSON.parse(data) : [];
-      // Migrate old data without currency field
-      return incomes.map((income: any) => ({
-        ...income,
-        currency: income.currency || 'MXN'
+      if (!data) return [];
+      
+      const parsed = JSON.parse(data);
+      if (!Array.isArray(parsed)) return [];
+      
+      // Validate and sanitize each income
+      return parsed.filter((income: any) => {
+        if (typeof income !== 'object' || !income) return false;
+        const sourceResult = sanitizeText(income.source || '');
+        const amountResult = validateAmount(String(income.amount || ''));
+        const dateResult = validateDate(income.date || '');
+        return sourceResult && amountResult.isValid && dateResult.isValid;
+      }).map((income: any) => ({
+        id: String(income.id || crypto.randomUUID()),
+        source: sanitizeText(income.source),
+        amount: validateAmount(String(income.amount)).sanitizedValue,
+        currency: String(income.currency || 'MXN'),
+        frequency: String(income.frequency || 'monthly') as IncomeFrequency,
+        date: income.date,
+        created_at: String(income.created_at || new Date().toISOString())
       }));
-    } catch {
+    } catch (error) {
+      console.error('Error loading incomes from localStorage:', error);
       return [];
     }
   },
   set: (incomes: Income[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(incomes));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(incomes));
+    } catch (error) {
+      console.error('Error saving incomes to localStorage:', error);
+    }
   }
 };
 

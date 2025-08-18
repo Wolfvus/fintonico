@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { useCurrencyStore } from './currencyStore';
 import type { Expense, ExpenseRating } from '../types';
+import { sanitizeText, validateAmount, validateDate } from '../utils/sanitization';
 
 export interface NewExpense {
   what: string;
@@ -27,18 +28,39 @@ const storage = {
   get: (): Expense[] => {
     try {
       const data = localStorage.getItem(STORAGE_KEY);
-      const expenses = data ? JSON.parse(data) : [];
-      // Migrate old data without currency field
-      return expenses.map((expense: any) => ({
-        ...expense,
-        currency: expense.currency || 'MXN'
+      if (!data) return [];
+      
+      const parsed = JSON.parse(data);
+      if (!Array.isArray(parsed)) return [];
+      
+      // Validate and sanitize each expense
+      return parsed.filter((expense: any) => {
+        if (typeof expense !== 'object' || !expense) return false;
+        const whatResult = sanitizeText(expense.what || '');
+        const amountResult = validateAmount(String(expense.amount || ''));
+        const dateResult = validateDate(expense.date || '');
+        return whatResult && amountResult.isValid && dateResult.isValid;
+      }).map((expense: any) => ({
+        id: String(expense.id || crypto.randomUUID()),
+        what: sanitizeText(expense.what),
+        amount: validateAmount(String(expense.amount)).sanitizedValue,
+        currency: String(expense.currency || 'MXN'),
+        rating: String(expense.rating || 'non_essential') as ExpenseRating,
+        date: expense.date,
+        created_at: String(expense.created_at || new Date().toISOString()),
+        recurring: Boolean(expense.recurring)
       }));
-    } catch {
+    } catch (error) {
+      console.error('Error loading expenses from localStorage:', error);
       return [];
     }
   },
   set: (expenses: Expense[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+    } catch (error) {
+      console.error('Error saving expenses to localStorage:', error);
+    }
   }
 };
 

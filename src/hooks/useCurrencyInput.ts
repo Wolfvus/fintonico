@@ -2,11 +2,13 @@ import { useState, useCallback } from 'react';
 import { formatCurrencyInput } from '../utils/currency';
 import { useCurrencyStore } from '../stores/currencyStore';
 
-export const useCurrencyInput = (initialCurrency = 'MXN') => {
+export const useCurrencyInput = (initialCurrency?: string) => {
+  const { getCurrencySymbol, baseCurrency } = useCurrencyStore();
+  const defaultCurrency = initialCurrency || baseCurrency;
+  
   const [amount, setAmount] = useState('');
   const [displayAmount, setDisplayAmount] = useState('');
-  const [currency, setCurrency] = useState(initialCurrency);
-  const { getCurrencySymbol } = useCurrencyStore();
+  const [currency, setCurrency] = useState(defaultCurrency);
 
   const handleAmountChange = useCallback((value: string) => {
     const { rawValue, displayValue } = formatCurrencyInput(
@@ -34,8 +36,8 @@ export const useCurrencyInput = (initialCurrency = 'MXN') => {
   const reset = useCallback(() => {
     setAmount('');
     setDisplayAmount('');
-    setCurrency(initialCurrency);
-  }, [initialCurrency]);
+    setCurrency(defaultCurrency);
+  }, [defaultCurrency]);
 
   return {
     amount,

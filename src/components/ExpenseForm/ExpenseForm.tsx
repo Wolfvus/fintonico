@@ -4,6 +4,7 @@ import { useCurrencyStore } from '../../stores/currencyStore';
 import { Coins, Calendar, PenTool, Plus, Globe } from 'lucide-react';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { validateRequired, validateAmount, validateDate } from '../../utils/validation';
+import { sanitizeText } from '../../utils/sanitization';
 import type { ValidationError } from '../../utils/validation';
 import { formStyles, getInputClassName } from '../../styles/formStyles';
 import { getTodayLocalString } from '../../utils/dateFormat';
@@ -55,7 +56,7 @@ export const ExpenseForm: React.FC = () => {
     handleAmountChange,
     handleCurrencyChange,
     reset: resetCurrency
-  } = useCurrencyInput('MXN');
+  } = useCurrencyInput();
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,7 +82,7 @@ export const ExpenseForm: React.FC = () => {
     
     try {
       await addExpense({
-        what: form.what.trim(),
+        what: sanitizeText(form.what),
         amount: parseFloat(amount),
         currency: currency,
         rating: form.rating,

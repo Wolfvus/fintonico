@@ -15,6 +15,8 @@ import { useIncomeStore } from './stores/incomeStore';
 import { useCurrencyStore } from './stores/currencyStore';
 import { ToggleSwitch } from './components/Shared/ToggleSwitch';
 import { useCurrencyInput } from './hooks/useCurrencyInput';
+import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
+import { sanitizeText, validateAmount, validateDate } from './utils/sanitization';
 
 // Expenses Tab Component
 function ExpensesTab() {
@@ -33,20 +35,22 @@ function ExpensesTab() {
   }));
   
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="lg:col-span-1">
-          <ExpenseForm />
-        </div>
-        <div className="lg:col-span-2">
-          <TransactionList
-            title="Recent Expenses"
-            transactions={expenseTransactions}
-            onDelete={deleteExpense}
-          />
+    <ErrorBoundary>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="lg:col-span-1">
+            <ExpenseForm />
+          </div>
+          <div className="lg:col-span-2">
+            <TransactionList
+              title="Recent Expenses"
+              transactions={expenseTransactions}
+              onDelete={deleteExpense}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }
 
@@ -66,20 +70,22 @@ function IncomeTab() {
   }));
   
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="lg:col-span-1">
-          <IncomeForm />
-        </div>
-        <div className="lg:col-span-2">
-          <TransactionList
-            title="Recent Income"
-            transactions={incomeTransactions}
-            onDelete={deleteIncome}
-          />
+    <ErrorBoundary>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="lg:col-span-1">
+            <IncomeForm />
+          </div>
+          <div className="lg:col-span-2">
+            <TransactionList
+              title="Recent Income"
+              transactions={incomeTransactions}
+              onDelete={deleteIncome}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }
 
@@ -166,7 +172,9 @@ function App() {
       <main className="pt-20 lg:pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:pl-20">
           {activeTab === 'dashboard' && (
-            <NewDashboard />
+            <ErrorBoundary>
+              <NewDashboard />
+            </ErrorBoundary>
           )}
 
           {activeTab === 'expenses' && (
@@ -178,7 +186,9 @@ function App() {
           )}
 
           {activeTab === 'networth' && (
-            <NetWorthTracker />
+            <ErrorBoundary>
+              <NetWorthTracker />
+            </ErrorBoundary>
           )}
         </div>
       </main>
@@ -188,14 +198,59 @@ function App() {
 
 // Net Worth Tracker Component
 function NetWorthTracker() {
-  // Load from localStorage on mount
+  // Load from localStorage with validation on mount
   const [assets, setAssets] = useState<{id: string; name: string; value: number; currency: string; type: string; yield?: number}[]>(() => {
-    const saved = localStorage.getItem('fintonico-assets');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('fintonico-assets');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(asset => {
+            if (typeof asset !== 'object' || !asset) return false;
+            const nameResult = sanitizeText(asset.name || '');
+            const amountResult = validateAmount(String(asset.value || ''));
+            return nameResult && amountResult.isValid && asset.currency && asset.type;
+          }).map(asset => ({
+            id: String(asset.id || crypto.randomUUID()),
+            name: sanitizeText(asset.name),
+            value: validateAmount(String(asset.value)).sanitizedValue,
+            currency: String(asset.currency),
+            type: String(asset.type),
+            yield: asset.yield ? Number(asset.yield) : undefined
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading assets from localStorage:', error);
+    }
+    return [];
   });
   const [liabilities, setLiabilities] = useState<{id: string; name: string; value: number; currency: string; type: string; dueDate?: string; isPaid?: boolean}[]>(() => {
-    const saved = localStorage.getItem('fintonico-liabilities');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('fintonico-liabilities');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(liability => {
+            if (typeof liability !== 'object' || !liability) return false;
+            const nameResult = sanitizeText(liability.name || '');
+            const amountResult = validateAmount(String(liability.value || ''));
+            return nameResult && amountResult.isValid && liability.currency && liability.type;
+          }).map(liability => ({
+            id: String(liability.id || crypto.randomUUID()),
+            name: sanitizeText(liability.name),
+            value: validateAmount(String(liability.value)).sanitizedValue,
+            currency: String(liability.currency),
+            type: String(liability.type),
+            dueDate: liability.dueDate ? validateDate(liability.dueDate).isValid ? liability.dueDate : undefined : undefined,
+            isPaid: Boolean(liability.isPaid)
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading liabilities from localStorage:', error);
+    }
+    return [];
   });
   const [newAsset, setNewAsset] = useState({ name: '', value: '', currency: 'MXN', type: 'savings', yield: '' });
   const [newLiability, setNewLiability] = useState({ name: '', value: '', currency: 'MXN', type: 'loan', dueDate: '', isPaid: false });

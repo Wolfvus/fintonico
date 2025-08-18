@@ -4,11 +4,12 @@ import { useIncomeStore } from '../../stores/incomeStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { TrendingUp, Wallet, DollarSign, Activity, Filter, Calendar, ChevronLeft, ChevronRight, CreditCard, ChevronUp, ChevronDown } from 'lucide-react';
 import { formatDate, parseLocalDate } from '../../utils/dateFormat';
+import { CurrencyBadge } from '../Shared/CurrencyBadge';
 import { TestDataAdmin } from '../Admin/TestDataAdmin';
 
 export const NewDashboard: React.FC = () => {
-  const { expenses } = useExpenseStore();
-  const { incomes, generateInvestmentYields } = useIncomeStore();
+  const { expenses, deleteExpense } = useExpenseStore();
+  const { incomes, generateInvestmentYields, deleteIncome } = useIncomeStore();
   const { formatAmount, baseCurrency, convertAmount } = useCurrencyStore();
   const [entryFilter, setEntryFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [viewMode, setViewMode] = useState<'month' | 'year' | 'custom'>('month');
@@ -154,6 +155,14 @@ export const NewDashboard: React.FC = () => {
       return customStartDate && customEndDate 
         ? `${formatDate(customStartDate)} - ${formatDate(customEndDate)}`
         : 'Custom Range';
+    }
+  };
+
+  const handleDelete = (entry: any) => {
+    if (entry.type === 'expense') {
+      deleteExpense(entry.id);
+    } else if (entry.type === 'income') {
+      deleteIncome(entry.id);
     }
   };
 
@@ -481,35 +490,44 @@ export const NewDashboard: React.FC = () => {
                   {latestEntries
                     .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                     .map((entry) => (
-                      <div key={`${entry.type}-${entry.id}`} className="p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                      <div key={`${entry.type}-${entry.id}`} className="p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors group">
                         {/* Mobile Layout */}
                         <div className="block sm:hidden">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {/* Top line: Description (left) + Amount (right) */}
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
                               <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                                 entry.type === 'income' ? 'bg-green-500' : 'bg-red-500'
                               }`} />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                  {entry.description}
-                                </p>
-                              </div>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                {entry.description}
+                              </p>
                             </div>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <div className="text-right">
-                                <p className={`text-sm font-medium ${
-                                  entry.type === 'income' 
-                                    ? 'text-green-600 dark:text-green-400' 
-                                    : 'text-red-600 dark:text-red-400'
-                                }`}>
-                                  {entry.type === 'income' ? '+' : '-'}{entry.displayAmount}
-                                </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  {formatDate(entry.date)}
-                                </p>
-                              </div>
-                              <button className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <p className={`text-sm font-medium flex-shrink-0 ${
+                              entry.type === 'income' 
+                                ? 'text-green-600 dark:text-green-400' 
+                                : 'text-red-600 dark:text-red-400'
+                            }`}>
+                              {entry.type === 'income' ? '+' : '-'}{entry.displayAmount}
+                            </p>
+                          </div>
+                          
+                          {/* Bottom line: Empty (no tags in dashboard) + Date/Currency/Delete (right) */}
+                          <div className="flex items-center justify-between mt-1">
+                            <div></div> {/* Empty space for balance */}
+                            <div className="flex items-center gap-1">
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {formatDate(entry.date)}
+                              </p>
+                              <CurrencyBadge 
+                                currency={entry.currency} 
+                                baseCurrency={baseCurrency}
+                              />
+                              <button 
+                                onClick={() => handleDelete(entry)}
+                                className="p-1 text-gray-400 hover:text-red-500 transition-colors ml-1"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                               </button>
@@ -523,15 +541,16 @@ export const NewDashboard: React.FC = () => {
                             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                               entry.type === 'income' ? 'bg-green-500' : 'bg-red-500'
                             }`} />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                {entry.description}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {formatDate(entry.date)}
-                              </span>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate flex-1 min-w-0">
+                              {entry.description}
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              {formatDate(entry.date)}
+                            </span>
+                            <div className="flex items-center gap-1">
                               <span className={`text-sm font-medium ${
                                 entry.type === 'income' 
                                   ? 'text-green-600 dark:text-green-400' 
@@ -539,7 +558,19 @@ export const NewDashboard: React.FC = () => {
                               }`}>
                                 {entry.type === 'income' ? '+' : '-'}{entry.displayAmount}
                               </span>
+                              <CurrencyBadge 
+                                currency={entry.currency} 
+                                baseCurrency={baseCurrency}
+                              />
                             </div>
+                            <button 
+                              onClick={() => handleDelete(entry)}
+                              className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all ml-1"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
                           </div>
                         </div>
                       </div>
