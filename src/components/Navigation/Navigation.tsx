@@ -182,14 +182,14 @@ export const Navigation: React.FC<NavigationProps> = ({
                         onTabChange(item.id);
                         onMobileMenuToggle?.();
                       }}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      className={`w-full flex items-center gap-3 px-5 py-4 rounded-lg transition-colors min-h-[56px] ${
                         activeTab === item.id
                           ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-2 border-green-200 dark:border-green-700'
                           : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 border-2 border-transparent'
                       }`}
                     >
-                      <Icon className="w-5 h-5" />
-                      <span className="font-medium">{item.label}</span>
+                      <Icon className="w-6 h-6" />
+                      <span className="font-medium text-base">{item.label}</span>
                     </button>
                   );
                 })}
@@ -199,17 +199,17 @@ export const Navigation: React.FC<NavigationProps> = ({
               <div className="mt-6 pt-6 border-t border-blue-200 dark:border-gray-700">
                 <button
                   onClick={onThemeToggle}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
+                  className="w-full flex items-center gap-3 px-5 py-4 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors min-h-[56px]"
                 >
                   {isDark ? (
                     <>
-                      <Sun className="w-5 h-5" />
-                      <span className="font-medium">Light Mode</span>
+                      <Sun className="w-6 h-6" />
+                      <span className="font-medium text-base">Light Mode</span>
                     </>
                   ) : (
                     <>
-                      <Moon className="w-5 h-5" />
-                      <span className="font-medium">Dark Mode</span>
+                      <Moon className="w-6 h-6" />
+                      <span className="font-medium text-base">Dark Mode</span>
                     </>
                   )}
                 </button>
@@ -225,10 +225,10 @@ export const Navigation: React.FC<NavigationProps> = ({
                   </div>
                   <button
                     onClick={handleSignOut}
-                    className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
+                    className="w-full flex items-center gap-3 px-5 py-4 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors min-h-[48px]"
                   >
-                    <LogOut className="w-5 h-5" />
-                    <span className="font-medium">Sign Out</span>
+                    <LogOut className="w-6 h-6" />
+                    <span className="font-medium text-base">Sign Out</span>
                   </button>
                 </div>
               )}

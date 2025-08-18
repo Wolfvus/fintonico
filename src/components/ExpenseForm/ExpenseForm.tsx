@@ -109,9 +109,9 @@ export const ExpenseForm: React.FC = () => {
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add Expense</h2>
       </div>
       
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-4">
         <div>
-          <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+          <label className="flex items-center gap-2 text-sm font-medium mb-2.5 sm:mb-2 text-gray-900 dark:text-gray-100">
             <PenTool className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             Description
           </label>

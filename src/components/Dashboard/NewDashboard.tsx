@@ -167,10 +167,10 @@ export const NewDashboard: React.FC = () => {
           <div className="flex items-center justify-between mb-3">
             <button
               onClick={() => navigatePeriod('prev')}
-              className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors"
+              className="p-2.5 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               disabled={viewMode === 'custom'}
             >
-              <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
             
             <div className="flex items-center gap-2">
@@ -182,10 +182,10 @@ export const NewDashboard: React.FC = () => {
             
             <button
               onClick={() => navigatePeriod('next')}
-              className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors"
+              className="p-2.5 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               disabled={viewMode === 'custom'}
             >
-              <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
           
@@ -194,7 +194,7 @@ export const NewDashboard: React.FC = () => {
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setViewMode('month')}
-                className={`px-2 py-1 text-xs rounded-lg transition-colors ${
+                className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors min-h-[40px] ${
                   viewMode === 'month'
                     ? 'bg-blue-500 text-white'
                     : 'bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600'
@@ -204,7 +204,7 @@ export const NewDashboard: React.FC = () => {
               </button>
               <button
                 onClick={() => setViewMode('year')}
-                className={`px-2 py-1 text-xs rounded-lg transition-colors ${
+                className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors min-h-[40px] ${
                   viewMode === 'year'
                     ? 'bg-blue-500 text-white'
                     : 'bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600'
@@ -214,7 +214,7 @@ export const NewDashboard: React.FC = () => {
               </button>
               <button
                 onClick={() => setViewMode('custom')}
-                className={`px-2 py-1 text-xs rounded-lg transition-colors ${
+                className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors min-h-[40px] ${
                   viewMode === 'custom'
                     ? 'bg-blue-500 text-white'
                     : 'bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600'
@@ -228,7 +228,7 @@ export const NewDashboard: React.FC = () => {
             {(viewMode !== 'custom' && (selectedDate.getMonth() !== new Date().getMonth() || selectedDate.getFullYear() !== new Date().getFullYear())) && (
               <button
                 onClick={goToToday}
-                className="px-2 py-1 text-xs bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                className="px-4 py-2.5 text-sm font-medium bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors min-h-[40px]"
               >
                 Today
               </button>
@@ -446,12 +446,12 @@ export const NewDashboard: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsTransactionsCollapsed(!isTransactionsCollapsed)}
-                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-2 sm:p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-w-[40px] min-h-[40px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
               >
                 {isTransactionsCollapsed ? (
-                  <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <ChevronDown className="w-5 h-5 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-400" />
                 ) : (
-                  <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <ChevronUp className="w-5 h-5 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-400" />
                 )}
               </button>
             </div>
@@ -496,8 +496,8 @@ export const NewDashboard: React.FC = () => {
                                   {formatDate(entry.date)}
                                 </p>
                               </div>
-                              <button className="p-1 text-gray-400 hover:text-red-500 transition-colors">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <button className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                               </button>
@@ -545,17 +545,17 @@ export const NewDashboard: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="px-2 py-1 text-xs rounded-lg bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[40px]"
                     >
                       Previous
                     </button>
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                    <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
                       Page {currentPage} of {Math.ceil(latestEntries.length / itemsPerPage)}
                     </span>
                     <button
                       onClick={() => setCurrentPage(currentPage + 1)}
                       disabled={currentPage >= Math.ceil(latestEntries.length / itemsPerPage)}
-                      className="px-2 py-1 text-xs rounded-lg bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[40px]"
                     >
                       Next
                     </button>
