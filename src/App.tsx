@@ -132,6 +132,8 @@ function App() {
         onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         isDark={isDark}
         onThemeToggle={() => setIsDark(!isDark)}
+        onLogoClick={() => setActiveTab('dashboard')}
+        onDateClick={() => setActiveTab('dashboard')}
       />
       
       {/* Desktop Top Bar */}
@@ -142,7 +144,10 @@ function App() {
             <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">• The Ultimate Personal Finance Dashboard</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="h-8 px-3 flex items-center bg-blue-200 dark:bg-gray-700 rounded-lg">
+            <button 
+              onClick={() => setActiveTab('dashboard')}
+              className="h-8 px-3 flex items-center bg-blue-200 dark:bg-gray-700 rounded-lg hover:bg-blue-300 dark:hover:bg-gray-600 transition-colors"
+            >
               <span className="text-sm font-medium text-gray-900 dark:text-white">
                 {new Date().toLocaleDateString('en-US', { 
                   month: 'short', 
@@ -150,7 +155,7 @@ function App() {
                   year: 'numeric'
                 })}
               </span>
-            </div>
+            </button>
             <div className="h-6 w-px bg-blue-300 dark:bg-gray-600"></div>
             <CurrencySelector />
           </div>

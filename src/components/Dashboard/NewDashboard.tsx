@@ -159,7 +159,99 @@ export const NewDashboard: React.FC = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Date Range Selector - FIRST */}
+      {/* Period Balance - FIRST */}
+      <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-4 border border-slate-300 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+              {viewMode === 'month' ? 'Monthly' : viewMode === 'year' ? 'Yearly' : 'Period'} Balance
+            </h3>
+            <p className={`text-2xl font-bold ${periodBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {formatAmount(periodBalance)}
+            </p>
+          </div>
+          <Activity className={`w-8 h-8 ${periodBalance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Period Income */}
+        <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Income</span>
+            <DollarSign className="w-4 h-4 text-green-500" />
+          </div>
+          <p className="text-base sm:text-lg font-bold text-green-600 dark:text-green-400">
+            {formatAmount(periodIncome)}
+          </p>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400">{filteredIncomes.length} transactions</p>
+          </div>
+          {investmentYields > 0 && (
+            <div className="mt-2 pt-2 border-t border-slate-300 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-600 dark:text-gray-400">Investment yields</p>
+                <span className="text-xs font-semibold text-green-600 dark:text-green-400">{formatAmount(investmentYields)}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Period Expenses */}
+        <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Expenses</span>
+            <Wallet className="w-4 h-4 text-red-500" />
+          </div>
+          <p className="text-base sm:text-lg font-bold text-red-600 dark:text-red-400">
+            {formatAmount(periodExpenses)}
+          </p>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400">{filteredExpenses.length} transactions</p>
+            <span className={`text-xs font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ${
+              expensePercentage > 90 
+                ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                : expensePercentage > 70
+                ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+            }`}>
+              <span className="hidden xs:inline">{expensePercentage}% of income</span>
+              <span className="xs:hidden">{expensePercentage}%</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Net Worth */}
+        <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Net Worth</span>
+            <TrendingUp className="w-4 h-4 text-yellow-500" />
+          </div>
+          <p className={`text-base sm:text-lg font-bold ${financialData.netWorth >= 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
+            {formatAmount(financialData.netWorth)}
+          </p>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400">Assets - Liabilities</p>
+          </div>
+        </div>
+
+        {/* Total Liabilities */}
+        <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Liabilities</span>
+            <CreditCard className="w-4 h-4 text-blue-500" />
+          </div>
+          <p className="text-base sm:text-lg font-bold text-blue-600 dark:text-blue-400">
+            {formatAmount(financialData.totalLiabilities)}
+          </p>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400">Total debt</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Date Range Selector - MOVED AFTER SUMMARY CARDS */}
       <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700">
         {/* Mobile Layout */}
         <div className="block sm:hidden">
@@ -329,98 +421,6 @@ export const NewDashboard: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
-      
-      {/* Period Balance - MOVED TO TOP */}
-      <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-4 border border-slate-300 dark:border-gray-700">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-              {viewMode === 'month' ? 'Monthly' : viewMode === 'year' ? 'Yearly' : 'Period'} Balance
-            </h3>
-            <p className={`text-2xl font-bold ${periodBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-              {formatAmount(periodBalance)}
-            </p>
-          </div>
-          <Activity className={`w-8 h-8 ${periodBalance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
-        </div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Period Income */}
-        <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Income</span>
-            <DollarSign className="w-4 h-4 text-green-500" />
-          </div>
-          <p className="text-base sm:text-lg font-bold text-green-600 dark:text-green-400">
-            {formatAmount(periodIncome)}
-          </p>
-          <div className="flex items-center justify-between mt-1">
-            <p className="text-xs text-gray-500 dark:text-gray-400">{filteredIncomes.length} transactions</p>
-          </div>
-          {investmentYields > 0 && (
-            <div className="mt-2 pt-2 border-t border-slate-300 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-gray-600 dark:text-gray-400">Investment yields</p>
-                <span className="text-xs font-semibold text-green-600 dark:text-green-400">{formatAmount(investmentYields)}</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Period Expenses */}
-        <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Expenses</span>
-            <Wallet className="w-4 h-4 text-red-500" />
-          </div>
-          <p className="text-base sm:text-lg font-bold text-red-600 dark:text-red-400">
-            {formatAmount(periodExpenses)}
-          </p>
-          <div className="flex items-center justify-between mt-1">
-            <p className="text-xs text-gray-500 dark:text-gray-400">{filteredExpenses.length} transactions</p>
-            <span className={`text-xs font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ${
-              expensePercentage > 90 
-                ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                : expensePercentage > 70
-                ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-            }`}>
-              <span className="hidden xs:inline">{expensePercentage}% of income</span>
-              <span className="xs:hidden">{expensePercentage}%</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Net Worth */}
-        <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Net Worth</span>
-            <TrendingUp className="w-4 h-4 text-yellow-500" />
-          </div>
-          <p className={`text-base sm:text-lg font-bold ${financialData.netWorth >= 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
-            {formatAmount(financialData.netWorth)}
-          </p>
-          <div className="flex items-center justify-between mt-1">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Assets - Liabilities</p>
-          </div>
-        </div>
-
-        {/* Total Liabilities */}
-        <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Liabilities</span>
-            <CreditCard className="w-4 h-4 text-blue-500" />
-          </div>
-          <p className="text-base sm:text-lg font-bold text-blue-600 dark:text-blue-400">
-            {formatAmount(financialData.totalLiabilities)}
-          </p>
-          <div className="flex items-center justify-between mt-1">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Total debt</p>
-          </div>
-        </div>
       </div>
 
       {/* Latest Entries with Pagination and Collapse */}

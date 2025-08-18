@@ -21,6 +21,8 @@ interface NavigationProps {
   onMobileMenuToggle?: () => void;
   isDark?: boolean;
   onThemeToggle?: () => void;
+  onLogoClick?: () => void;
+  onDateClick?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -29,7 +31,9 @@ export const Navigation: React.FC<NavigationProps> = ({
   isMobileMenuOpen = false,
   onMobileMenuToggle,
   isDark = false,
-  onThemeToggle
+  onThemeToggle,
+  onLogoClick,
+  onDateClick
 }) => {
   const { user, signOut } = useAuthStore();
 
@@ -54,17 +58,20 @@ export const Navigation: React.FC<NavigationProps> = ({
         className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 bg-blue-100 dark:bg-gray-800 border-r border-blue-200 dark:border-gray-700 transition-all duration-300 ease-in-out z-50 lg:w-16 hover:lg:w-64 group overflow-hidden"
       >
         {/* Logo */}
-        <div className="p-3 border-b border-blue-200 dark:border-gray-700">
-          <div className="flex items-center justify-center lg:group-hover:justify-start gap-3 transition-all duration-300">
+        <div className="p-2 border-b border-blue-200 dark:border-gray-700">
+          <button 
+            onClick={onLogoClick}
+            className="w-full h-10 flex items-center justify-center lg:group-hover:justify-start gap-3 transition-all duration-300 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg px-2"
+          >
             <img 
               src="/fintonico-logo.png" 
               alt="FINTONICO" 
-              className="w-8 h-8 flex-shrink-0 object-contain"
+              className="w-6 h-6 flex-shrink-0 object-contain"
             />
             <h1 className="font-bold text-gray-900 dark:text-white text-xl whitespace-nowrap hidden lg:group-hover:block">
               FINTONICO
             </h1>
-          </div>
+          </button>
         </div>
 
         {/* Navigation Items */}
@@ -130,7 +137,10 @@ export const Navigation: React.FC<NavigationProps> = ({
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-blue-100 dark:bg-gray-800 border-b border-blue-200 dark:border-gray-700">
         <div className="flex items-center justify-between p-3">
-          <div className="flex items-center gap-2">
+          <button 
+            onClick={onLogoClick}
+            className="flex items-center gap-2 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg p-1 transition-colors"
+          >
             <img 
               src="/fintonico-logo.png" 
               alt="FINTONICO" 
@@ -139,16 +149,19 @@ export const Navigation: React.FC<NavigationProps> = ({
             <h1 className="text-base font-bold text-gray-900 dark:text-white">
               FINTONICO
             </h1>
-          </div>
+          </button>
           <div className="flex items-center gap-1.5">
-            <div className="h-7 px-2 flex items-center bg-blue-200 dark:bg-gray-700 rounded-lg">
+            <button 
+              onClick={onDateClick}
+              className="h-7 px-2 flex items-center bg-blue-200 dark:bg-gray-700 rounded-lg hover:bg-blue-300 dark:hover:bg-gray-600 transition-colors"
+            >
               <span className="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">
                 {new Date().toLocaleDateString('en-US', { 
                   month: 'short', 
                   day: 'numeric'
                 })}
               </span>
-            </div>
+            </button>
             <CurrencySelector />
           </div>
           <button
