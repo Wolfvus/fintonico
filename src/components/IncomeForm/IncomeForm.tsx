@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useIncomeStore } from '../../stores/incomeStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { Coins, Calendar, Briefcase, RefreshCw, Globe } from 'lucide-react';
+import { getTodayLocalString } from '../../utils/dateFormat';
 
 export const IncomeForm: React.FC = () => {
   const [source, setSource] = useState('');
@@ -9,7 +10,7 @@ export const IncomeForm: React.FC = () => {
   const [displayAmount, setDisplayAmount] = useState('');
   const [currency, setCurrency] = useState('MXN');
   const [frequency, setFrequency] = useState<'one-time' | 'weekly' | 'monthly' | 'yearly'>('monthly');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(getTodayLocalString());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -97,7 +98,7 @@ export const IncomeForm: React.FC = () => {
       setDisplayAmount('');
       setCurrency('MXN');
       setFrequency('monthly');
-      setDate(new Date().toISOString().split('T')[0]);
+      setDate(getTodayLocalString());
       
     } catch (error) {
       console.error('Failed to add income:', error);

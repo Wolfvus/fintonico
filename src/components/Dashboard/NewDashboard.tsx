@@ -3,7 +3,7 @@ import { useExpenseStore } from '../../stores/expenseStore';
 import { useIncomeStore } from '../../stores/incomeStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { TrendingUp, Wallet, DollarSign, Activity, Filter, Calendar, ChevronLeft, ChevronRight, CreditCard, ChevronUp, ChevronDown } from 'lucide-react';
-import { formatDate } from '../../utils/dateFormat';
+import { formatDate, parseLocalDate } from '../../utils/dateFormat';
 import { TestDataAdmin } from '../Admin/TestDataAdmin';
 
 export const NewDashboard: React.FC = () => {
@@ -50,12 +50,12 @@ export const NewDashboard: React.FC = () => {
   
   // Filter transactions for date range
   const filteredExpenses = expenses.filter(expense => {
-    const expenseDate = new Date(expense.date);
+    const expenseDate = parseLocalDate(expense.date);
     return expenseDate >= startDate && expenseDate <= endDate;
   });
   
   const filteredIncomes = incomes.filter(income => {
-    const incomeDate = new Date(income.date);
+    const incomeDate = parseLocalDate(income.date);
     return incomeDate >= startDate && incomeDate <= endDate;
   });
   
@@ -124,7 +124,7 @@ export const NewDashboard: React.FC = () => {
       : allEntries.filter(e => e.type === entryFilter);
     
     return filtered
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      .sort((a, b) => parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime());
   }, [filteredExpenses, filteredIncomes, formatAmount, convertAmount, baseCurrency, entryFilter]);
   
   // Navigation functions

@@ -6,6 +6,7 @@ import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { validateRequired, validateAmount, validateDate } from '../../utils/validation';
 import type { ValidationError } from '../../utils/validation';
 import { formStyles, getInputClassName } from '../../styles/formStyles';
+import { getTodayLocalString } from '../../utils/dateFormat';
 import { ToggleSwitch } from '../Shared/ToggleSwitch';
 
 const RATING_CONFIG = {
@@ -39,7 +40,7 @@ export const ExpenseForm: React.FC = () => {
   const [form, setForm] = useState({
     what: '',
     rating: 'non_essential' as keyof typeof RATING_CONFIG,
-    date: new Date().toISOString().split('T')[0],
+    date: getTodayLocalString(),
     recurring: false
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,7 +92,7 @@ export const ExpenseForm: React.FC = () => {
       setForm({
         what: '',
         rating: 'non_essential',
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayLocalString(),
         recurring: false
       });
       resetCurrency();

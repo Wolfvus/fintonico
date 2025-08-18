@@ -10,7 +10,7 @@ import { TransactionList } from './components/Shared/TransactionList';
 import { CurrencySelector } from './components/Currency/CurrencySelector';
 import { useExpenseStore } from './stores/expenseStore';
 import { Navigation } from './components/Navigation/Navigation';
-import { Filter } from 'lucide-react';
+import { Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { useIncomeStore } from './stores/incomeStore';
 import { useCurrencyStore } from './stores/currencyStore';
 import { ToggleSwitch } from './components/Shared/ToggleSwitch';
@@ -205,6 +205,8 @@ function NetWorthTracker() {
   const [liabilityFilter, setLiabilityFilter] = useState<string>('all');
   const [assetSortBy, setAssetSortBy] = useState<'amount' | 'type'>('amount');
   const [liabilitySortBy, setLiabilitySortBy] = useState<'amount' | 'type'>('amount');
+  const [isAssetFiltersExpanded, setIsAssetFiltersExpanded] = useState(false);
+  const [isLiabilityFiltersExpanded, setIsLiabilityFiltersExpanded] = useState(false);
   const { formatAmount, currencies, baseCurrency, convertAmount } = useCurrencyStore();
   
   // Currency inputs
@@ -372,29 +374,78 @@ function NetWorthTracker() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Assets</h3>
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-400" />
-              <select
-                value={assetFilter}
-                onChange={(e) => setAssetFilter(e.target.value)}
-                className="text-base sm:text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
+              {/* Desktop: Show filters inline */}
+              <div className="hidden sm:flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-400" />
+                <select
+                  value={assetFilter}
+                  onChange={(e) => setAssetFilter(e.target.value)}
+                  className="text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
+                >
+                  <option value="all">All Types</option>
+                  <option value="savings">Savings</option>
+                  <option value="investment">Investment</option>
+                  <option value="property">Property</option>
+                  <option value="vehicle">Vehicle</option>
+                  <option value="other">Other</option>
+                </select>
+                <select
+                  value={assetSortBy}
+                  onChange={(e) => setAssetSortBy(e.target.value as 'amount' | 'type')}
+                  className="text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
+                >
+                  <option value="amount">By Amount</option>
+                  <option value="type">By Type</option>
+                </select>
+              </div>
+
+              {/* Mobile: Show collapsible filters button */}
+              <button
+                onClick={() => setIsAssetFiltersExpanded(!isAssetFiltersExpanded)}
+                className="sm:hidden flex items-center gap-1 px-3 py-2 bg-blue-100 dark:bg-gray-700 hover:bg-blue-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
               >
-                <option value="all">All Types</option>
-                <option value="savings">Savings</option>
-                <option value="investment">Investment</option>
-                <option value="property">Property</option>
-                <option value="vehicle">Vehicle</option>
-                <option value="other">Other</option>
-              </select>
-              <select
-                value={assetSortBy}
-                onChange={(e) => setAssetSortBy(e.target.value as 'amount' | 'type')}
-                className="text-base sm:text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
-              >
-                <option value="amount">By Amount</option>
-                <option value="type">By Type</option>
-              </select>
+                <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters</span>
+                {isAssetFiltersExpanded ? (
+                  <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                )}
+              </button>
             </div>
           </div>
+
+          {/* Mobile: Expandable Filters Panel */}
+          {isAssetFiltersExpanded && (
+            <div className="sm:hidden bg-blue-50 dark:bg-gray-700 rounded-lg p-3 space-y-3 mb-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Asset Type</label>
+                <select
+                  value={assetFilter}
+                  onChange={(e) => setAssetFilter(e.target.value)}
+                  className="w-full text-base border border-blue-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                >
+                  <option value="all">All Types</option>
+                  <option value="savings">Savings</option>
+                  <option value="investment">Investment</option>
+                  <option value="property">Property</option>
+                  <option value="vehicle">Vehicle</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Sort By</label>
+                <select
+                  value={assetSortBy}
+                  onChange={(e) => setAssetSortBy(e.target.value as 'amount' | 'type')}
+                  className="w-full text-base border border-blue-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                >
+                  <option value="amount">By Amount</option>
+                  <option value="type">By Type</option>
+                </select>
+              </div>
+            </div>
+          )}
           
           <div className="space-y-3 mb-4">
             {filteredAssets.map((asset) => (
@@ -492,6 +543,15 @@ function NetWorthTracker() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
+                      <button
+                        onClick={() => deleteAsset(asset.id)}
+                        className="p-1 text-gray-400 hover:text-red-500 transition-all"
+                        title="Delete"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -567,28 +627,76 @@ function NetWorthTracker() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Liabilities</h3>
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-400" />
-              <select
-                value={liabilityFilter}
-                onChange={(e) => setLiabilityFilter(e.target.value)}
-                className="text-base sm:text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
+              {/* Desktop: Show filters inline */}
+              <div className="hidden sm:flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-400" />
+                <select
+                  value={liabilityFilter}
+                  onChange={(e) => setLiabilityFilter(e.target.value)}
+                  className="text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
+                >
+                  <option value="all">All Types</option>
+                  <option value="loan">Loan</option>
+                  <option value="mortgage">Mortgage</option>
+                  <option value="credit-card">Credit Card</option>
+                  <option value="other">Other</option>
+                </select>
+                <select
+                  value={liabilitySortBy}
+                  onChange={(e) => setLiabilitySortBy(e.target.value as 'amount' | 'type')}
+                  className="text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
+                >
+                  <option value="amount">By Amount</option>
+                  <option value="type">By Type</option>
+                </select>
+              </div>
+
+              {/* Mobile: Show collapsible filters button */}
+              <button
+                onClick={() => setIsLiabilityFiltersExpanded(!isLiabilityFiltersExpanded)}
+                className="sm:hidden flex items-center gap-1 px-3 py-2 bg-blue-100 dark:bg-gray-700 hover:bg-blue-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
               >
-                <option value="all">All Types</option>
-                <option value="loan">Loan</option>
-                <option value="mortgage">Mortgage</option>
-                <option value="credit-card">Credit Card</option>
-                <option value="other">Other</option>
-              </select>
-              <select
-                value={liabilitySortBy}
-                onChange={(e) => setLiabilitySortBy(e.target.value as 'amount' | 'type')}
-                className="text-base sm:text-xs border border-blue-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700"
-              >
-                <option value="amount">By Amount</option>
-                <option value="type">By Type</option>
-              </select>
+                <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters</span>
+                {isLiabilityFiltersExpanded ? (
+                  <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                )}
+              </button>
             </div>
           </div>
+
+          {/* Mobile: Expandable Filters Panel */}
+          {isLiabilityFiltersExpanded && (
+            <div className="sm:hidden bg-blue-50 dark:bg-gray-700 rounded-lg p-3 space-y-3 mb-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Liability Type</label>
+                <select
+                  value={liabilityFilter}
+                  onChange={(e) => setLiabilityFilter(e.target.value)}
+                  className="w-full text-base border border-blue-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                >
+                  <option value="all">All Types</option>
+                  <option value="loan">Loan</option>
+                  <option value="mortgage">Mortgage</option>
+                  <option value="credit-card">Credit Card</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Sort By</label>
+                <select
+                  value={liabilitySortBy}
+                  onChange={(e) => setLiabilitySortBy(e.target.value as 'amount' | 'type')}
+                  className="w-full text-base border border-blue-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                >
+                  <option value="amount">By Amount</option>
+                  <option value="type">By Type</option>
+                </select>
+              </div>
+            </div>
+          )}
           
           <div className="space-y-3 mb-4">
             {filteredLiabilities.map((liability) => (
@@ -698,6 +806,15 @@ function NetWorthTracker() {
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => deleteLiability(liability.id)}
+                        className="p-1 text-gray-400 hover:text-red-500 transition-all"
+                        title="Delete"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
                     </div>

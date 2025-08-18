@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Filter, Trash2, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
-import { formatDate } from '../../utils/dateFormat';
+import { Filter, Trash2, ChevronLeft, ChevronRight, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { formatDate, parseLocalDate } from '../../utils/dateFormat';
 import { useCurrencyStore } from '../../stores/currencyStore';
 
 interface Transaction {
@@ -35,6 +35,30 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   const [filter, setFilter] = useState<'all' | 'this-year' | 'custom-month' | 'this-week'>('custom-month');
   const [sortBy, setSortBy] = useState<'date' | 'amount'>('date');
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
+  const [lastTransactionCount, setLastTransactionCount] = useState(transactions.length);
+
+  // Auto-switch to current month when new transactions are added
+  React.useEffect(() => {
+    if (transactions.length > lastTransactionCount) {
+      // Check if the latest transaction is from today
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      
+      const hasRecentTransaction = transactions.some(t => t.date === todayStr);
+      
+      if (hasRecentTransaction && filter === 'custom-month') {
+        // If viewing a custom month and there's a transaction from today, switch to current month
+        const currentMonthYear = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+        const selectedMonthYear = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}`;
+        
+        if (currentMonthYear !== selectedMonthYear) {
+          setSelectedDate(new Date(today.getFullYear(), today.getMonth(), 1));
+        }
+      }
+    }
+    setLastTransactionCount(transactions.length);
+  }, [transactions.length, lastTransactionCount, filter, selectedDate]);
 
   // Navigation functions
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -67,7 +91,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
       const endOfSelectedMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59);
 
       filtered = transactions.filter(t => {
-        const transactionDate = new Date(t.date);
+        const transactionDate = parseLocalDate(t.date);
         if (filter === 'this-week') {
           return transactionDate >= startOfWeek;
         } else if (filter === 'custom-month') {
@@ -86,7 +110,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
         const amountB = convertAmount(b.amount, b.currency, baseCurrency);
         return amountB - amountA;
       } else {
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
+        return parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime();
       }
     });
 
@@ -118,61 +142,119 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             
             {showFilters && (
               <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-gray-400" />
+                {/* Desktop: Show filters inline */}
+                <div className="hidden sm:flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-gray-400" />
+                  <select
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value as typeof filter)}
+                    className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-blue-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  >
+                    <option value="all">All Time</option>
+                    <option value="this-year">This Year</option>
+                    <option value="custom-month">Select Month</option>
+                    <option value="this-week">This Week</option>
+                  </select>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                    className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-blue-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  >
+                    <option value="date">By Date</option>
+                    <option value="amount">By Amount</option>
+                  </select>
+                </div>
+
+                {/* Mobile: Show collapsible filters button */}
+                <button
+                  onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+                  className="sm:hidden flex items-center gap-1 px-3 py-2 bg-blue-100 dark:bg-gray-700 hover:bg-blue-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                >
+                  <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters</span>
+                  {isFiltersExpanded ? (
+                    <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile: Expandable Filters Panel */}
+          {showFilters && isFiltersExpanded && (
+            <div className="sm:hidden bg-blue-50 dark:bg-gray-700 rounded-lg p-3 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Time Period</label>
                 <select
                   value={filter}
                   onChange={(e) => setFilter(e.target.value as typeof filter)}
-                  className="text-base sm:text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-blue-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  className="w-full text-base border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
                 >
                   <option value="all">All Time</option>
                   <option value="this-year">This Year</option>
                   <option value="custom-month">Select Month</option>
                   <option value="this-week">This Week</option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Sort By</label>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                  className="text-base sm:text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-blue-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  className="w-full text-base border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
                 >
                   <option value="date">By Date</option>
                   <option value="amount">By Amount</option>
                 </select>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Month Navigation - Show when custom-month is selected */}
           {showFilters && filter === 'custom-month' && (
-            <div className="flex items-center justify-between bg-blue-100 dark:bg-gray-700 rounded-lg p-3">
-              <button
-                onClick={() => navigateMonth('prev')}
-                className="p-1.5 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              </button>
-              
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {getMonthLabel()}
-                </span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between bg-blue-100 dark:bg-gray-700 rounded-lg p-3">
+                <button
+                  onClick={() => navigateMonth('prev')}
+                  className="p-1.5 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                </button>
+                
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {getMonthLabel()}
+                  </span>
+                </div>
+                
+                <button
+                  onClick={() => navigateMonth('next')}
+                  className="p-1.5 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                </button>
+                
+                {/* Today button - show if not current month */}
+                {(selectedDate.getMonth() !== new Date().getMonth() || selectedDate.getFullYear() !== new Date().getFullYear()) && (
+                  <button
+                    onClick={goToCurrentMonth}
+                    className="ml-2 px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                  >
+                    Current
+                  </button>
+                )}
               </div>
               
-              <button
-                onClick={() => navigateMonth('next')}
-                className="p-1.5 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
-              >
-                <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              </button>
-              
-              {/* Today button - show if not current month */}
+              {/* Info message when viewing past month */}
               {(selectedDate.getMonth() !== new Date().getMonth() || selectedDate.getFullYear() !== new Date().getFullYear()) && (
-                <button
-                  onClick={goToCurrentMonth}
-                  className="ml-2 px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-                >
-                  Current
-                </button>
+                <div className="text-center">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Viewing {getMonthLabel()} • New transactions will auto-switch to current month
+                  </p>
+                </div>
               )}
             </div>
           )}
