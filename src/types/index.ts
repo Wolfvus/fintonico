@@ -43,13 +43,3 @@ export interface Liability {
   dueDate?: string;
   isPaid?: boolean;
 }
-
-export interface FinancialAnalysisData {
-  monthlyIncome: number;
-  monthlyExpenses: number;
-  projectedMonths: number;
-  currentAge: number;
-  retirementAge: number;
-  assets: Asset[];
-  liabilities: Liability[];
-}

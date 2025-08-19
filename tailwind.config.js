@@ -7,25 +7,6 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
-      colors: {
-        // Dark theme - Professional finance colors
-        'finance-dark': '#0F172A',
-        'finance-darker': '#020617',
-        'finance-border': '#334155',
-        'finance-accent': '#3B82F6',
-        'finance-success': '#10B981',
-        'finance-danger': '#EF4444',
-        'finance-warning': '#F59E0B',
-        'finance-text': '#E2E8F0',
-        'finance-text-dim': '#94A3B8',
-        
-        // Light theme - Blueish grey and professional
-        'finance-light': '#FFFFFF',
-        'finance-light-bg': '#F1F5F9',
-        'finance-light-border': '#CBD5E1',
-        'finance-light-text': '#1E293B',
-        'finance-light-text-dim': '#475569',
-      },
       fontFamily: {
         'mono': ['SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'monospace'],
         'sans': ['Inter', 'system-ui', 'sans-serif'],

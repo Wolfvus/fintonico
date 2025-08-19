@@ -5,7 +5,7 @@ import { checkAndGenerateRecurring } from './utils/recurringUtils';
 import { AuthForm } from './components/Auth/AuthForm';
 import { ExpenseForm } from './components/ExpenseForm/ExpenseForm';
 import { IncomeForm } from './components/IncomeForm/IncomeForm';
-import { NewDashboard } from './components/Dashboard/NewDashboard';
+import { Dashboard } from './components/Dashboard/Dashboard';
 import { TransactionList } from './components/Shared/TransactionList';
 import { CurrencySelector } from './components/Currency/CurrencySelector';
 import { useExpenseStore } from './stores/expenseStore';
@@ -95,7 +95,7 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('fintonico-theme');
-    return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    return saved !== 'light'; // Default to dark theme unless explicitly set to light
   });
 
   useEffect(() => {
@@ -173,7 +173,7 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:pl-20">
           {activeTab === 'dashboard' && (
             <ErrorBoundary>
-              <NewDashboard />
+              <Dashboard onNavigate={(tab) => setActiveTab(tab)} />
             </ErrorBoundary>
           )}
 

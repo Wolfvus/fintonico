@@ -1,8 +1,18 @@
 import { create } from 'zustand';
 import { useCurrencyStore } from './currencyStore';
-import { getAssetsByType } from '../utils/investmentUtils';
 import type { Income } from '../types';
 import { sanitizeDescription, validateAmount, validateDate } from '../utils/sanitization';
+
+const getAssetsByType = (type?: string) => {
+  const savedAssets = localStorage.getItem('fintonico-assets');
+  const assets = savedAssets ? JSON.parse(savedAssets) : [];
+  
+  if (type) {
+    return assets.filter((asset: any) => asset.type === type);
+  }
+  
+  return assets;
+};
 
 export type IncomeFrequency = 'one-time' | 'weekly' | 'yearly' | 'monthly';
 

@@ -81,8 +81,11 @@ export const Navigation: React.FC<NavigationProps> = ({
             return (
               <button
                 key={item.id}
-                onClick={() => onTabChange(item.id)}
-                className={`w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-3 rounded-lg transition-all duration-300 ${
+                onClick={(e) => {
+                  onTabChange(item.id);
+                  e.currentTarget.blur();
+                }}
+                  className={`w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-3 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
                   activeTab === item.id
                     ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-2 border-green-200 dark:border-green-700'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 border-2 border-transparent'
