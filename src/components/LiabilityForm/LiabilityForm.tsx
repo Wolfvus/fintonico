@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAccountStore } from '../../stores/accountStore';
-import { TrendingDown, Plus, Trash2, Calendar } from 'lucide-react';
-import { getTodayLocalString } from '../../utils/dateFormat';
+import { TrendingDown, Plus, Trash2 } from 'lucide-react';
 import { sanitizeDescription } from '../../utils/sanitization';
 import { AmountCurrencyInput } from '../Shared/AmountCurrencyInput';
 import type { AccountType, AccountBalance } from '../../types';

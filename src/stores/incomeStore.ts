@@ -1,18 +1,8 @@
 import { create } from 'zustand';
 import { useCurrencyStore } from './currencyStore';
+import { useAccountStore } from './accountStore';
 import type { Income } from '../types';
 import { sanitizeDescription, validateAmount, validateDate } from '../utils/sanitization';
-
-const getAssetsByType = (type?: string) => {
-  const savedAssets = localStorage.getItem('fintonico-assets');
-  const assets = savedAssets ? JSON.parse(savedAssets) : [];
-  
-  if (type) {
-    return assets.filter((asset: any) => asset.type === type);
-  }
-  
-  return assets;
-};
 
 export type IncomeFrequency = 'one-time' | 'weekly' | 'yearly' | 'monthly';
 
@@ -124,22 +114,29 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
       return total + (convertedAmount * FREQUENCY_MULTIPLIERS[income.frequency]);
     }, 0);
 
-    // Calculate investment yields
+    // Calculate investment yields from accounts
     const getInvestmentYields = () => {
-      const assets = getAssetsByType('investment');
-      return assets
-        .filter((asset: any) => asset.yield > 0)
-        .reduce((total: number, asset: any) => {
-          const monthlyYield = (asset.value * asset.yield / 100) / 12;
-          return total + convertAmount(monthlyYield, asset.currency, baseCurrency);
+      const { accounts } = useAccountStore.getState();
+      const investmentAccounts = accounts.filter(account => account.type === 'investment');
+      
+      return investmentAccounts.reduce((total: number, account) => {
+        // Sum all balances for this investment account
+        const accountTotal = account.balances.reduce((sum, balance) => {
+          return sum + convertAmount(balance.amount, balance.currency, baseCurrency);
         }, 0);
+        
+        // For now, assume a 5% annual yield for investment accounts
+        const monthlyYield = (accountTotal * 0.05) / 12;
+        return total + monthlyYield;
+      }, 0);
     };
 
     return regularIncome + getInvestmentYields();
   },
 
   generateInvestmentYields: () => {
-    const assets = getAssetsByType('investment').filter((asset: any) => asset.yield > 0);
+    const { accounts } = useAccountStore.getState();
+    const investmentAccounts = accounts.filter(account => account.type === 'investment');
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
@@ -154,13 +151,21 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
       return; // Already generated for this month
     }
     
-    const yieldIncomes = assets.map((asset: any) => {
-      const monthlyYield = (asset.value * asset.yield / 100) / 12;
+    const yieldIncomes = investmentAccounts.map(account => {
+      // Calculate total value of the investment account
+      const accountTotal = account.balances.reduce((sum, balance) => {
+        const { convertAmount, baseCurrency } = useCurrencyStore.getState();
+        return sum + convertAmount(balance.amount, balance.currency, baseCurrency);
+      }, 0);
+      
+      // Assume 5% annual yield, calculate monthly
+      const monthlyYield = (accountTotal * 0.05) / 12;
+      
       return {
-        id: `investment-yield-${asset.id}-${currentYear}-${currentMonth}`,
-        source: `Investment yield: ${asset.name}`,
+        id: `investment-yield-${account.id}-${currentYear}-${currentMonth}`,
+        source: `Investment yield: ${account.name}`,
         amount: monthlyYield,
-        currency: asset.currency,
+        currency: useCurrencyStore.getState().baseCurrency,
         frequency: 'monthly' as IncomeFrequency,
         date: firstDayOfMonth,
         created_at: new Date().toISOString(),

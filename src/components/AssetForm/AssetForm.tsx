@@ -24,7 +24,7 @@ export const AssetForm: React.FC = () => {
   const assetTypeOptions = [
     { value: 'cash' as AccountType, label: 'Cash', icon: '💵' },
     { value: 'bank' as AccountType, label: 'Bank Account', icon: '🏦' },
-    { value: 'exchange' as AccountType, label: 'Exchange (Binance, etc.)', icon: '₿' },
+    { value: 'exchange' as AccountType, label: 'Exchange', icon: '₿' },
     { value: 'investment' as AccountType, label: 'Investment Account', icon: '📈' },
     { value: 'property' as AccountType, label: 'Property', icon: '🏠' },
     { value: 'other' as AccountType, label: 'Other Asset', icon: '💼' },
@@ -130,7 +130,7 @@ export const AssetForm: React.FC = () => {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g., Chase Checking, Binance Account"
+            placeholder="Chase Checking, Binance Account"
             className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                      transition-colors text-gray-900 dark:text-white
                      border-blue-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"

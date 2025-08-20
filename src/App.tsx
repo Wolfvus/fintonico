@@ -8,7 +8,8 @@ import { Dashboard } from './components/Dashboard/Dashboard';
 import { AccountsPage } from './components/Accounts/AccountsPage';
 import { AssetsPage } from './components/Assets/AssetsPage';
 import { LiabilitiesPage } from './components/Liabilities/LiabilitiesPage';
-import { TransactionList } from './components/Shared/TransactionList';
+import { DataList } from './components/Shared/DataList';
+import { TransactionItem, type Transaction } from './components/Shared/TransactionItem';
 import { CurrencySelector } from './components/Currency/CurrencySelector';
 import { useExpenseStore } from './stores/expenseStore';
 import { Navigation } from './components/Navigation/Navigation';
@@ -19,7 +20,7 @@ import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 function ExpensesTab() {
   const { expenses, deleteExpense } = useExpenseStore();
   
-  const expenseTransactions = expenses.map(expense => ({
+  const expenseTransactions: Transaction[] = expenses.map(expense => ({
     id: expense.id,
     description: expense.what,
     amount: expense.amount,
@@ -39,10 +40,17 @@ function ExpensesTab() {
             <ExpenseForm />
           </div>
           <div className="lg:col-span-2">
-            <TransactionList
+            <DataList
               title="Recent Expenses"
-              transactions={expenseTransactions}
+              items={expenseTransactions}
+              renderItem={(transaction, onDelete) => (
+                <TransactionItem 
+                  transaction={transaction} 
+                  onDelete={onDelete}
+                />
+              )}
               onDelete={deleteExpense}
+              emptyMessage="No expenses yet. Add your first expense to get started."
             />
           </div>
         </div>
@@ -55,7 +63,7 @@ function ExpensesTab() {
 function IncomeTab() {
   const { incomes, deleteIncome } = useIncomeStore();
   
-  const incomeTransactions = incomes.map(income => ({
+  const incomeTransactions: Transaction[] = incomes.map(income => ({
     id: income.id,
     description: income.source,
     amount: income.amount,
@@ -74,10 +82,17 @@ function IncomeTab() {
             <IncomeForm />
           </div>
           <div className="lg:col-span-2">
-            <TransactionList
+            <DataList
               title="Recent Income"
-              transactions={incomeTransactions}
+              items={incomeTransactions}
+              renderItem={(transaction, onDelete) => (
+                <TransactionItem 
+                  transaction={transaction} 
+                  onDelete={onDelete}
+                />
+              )}
               onDelete={deleteIncome}
+              emptyMessage="No income yet. Add your first income source to get started."
             />
           </div>
         </div>
