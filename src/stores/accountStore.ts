@@ -7,6 +7,7 @@ interface AccountState {
   accounts: Account[];
   addAccount: (account: Omit<Account, 'id'>) => void;
   deleteAccount: (accountId: string) => void;
+  updateAccount: (accountId: string, updatedAccountData: Omit<Account, 'id'>) => void;
   updateAccountBalance: (accountId: string, currency: string, newAmount: number) => void;
 }
 
@@ -33,6 +34,17 @@ export const useAccountStore = create<AccountState>()(
       deleteAccount: (accountId) => {
         set((state) => ({
           accounts: state.accounts.filter(account => account.id !== accountId)
+        }));
+      },
+
+      // updateAccount function
+      updateAccount: (accountId, updatedAccountData) => {
+        set((state) => ({
+          accounts: state.accounts.map(account =>
+            account.id === accountId
+              ? { ...updatedAccountData, id: accountId }
+              : account
+          )
         }));
       },
 

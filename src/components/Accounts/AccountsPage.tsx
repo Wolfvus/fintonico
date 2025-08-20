@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAccountStore } from '../../stores/accountStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { AccountForm } from './AccountForm';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import type { AccountType } from '../../types';
 
 export const AccountsPage: React.FC = () => {
@@ -43,7 +43,10 @@ export const AccountsPage: React.FC = () => {
 
   const { totalAssets, totalLiabilities, netWorth } = calculateTotals();
 
-  // Render the Summary
+  // Filter accounts by type
+  const assetAccounts = accounts.filter(account => assetTypes.includes(account.type));
+  const liabilityAccounts = accounts.filter(account => liabilityTypes.includes(account.type));
+
   return (
     <div className="space-y-6">
       {/* Financial Summary - Three Card Layout */}
@@ -51,8 +54,11 @@ export const AccountsPage: React.FC = () => {
         {/* Total Assets Card */}
         <div className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 border border-blue-200 dark:border-gray-700">
           <h3 className="text-sm text-gray-600 dark:text-gray-400 mb-2">Total Assets</h3>
-          <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+          <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">
             {formatAmount(totalAssets)}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+            {assetAccounts.length} accounts
           </p>
         </div>
 
@@ -61,6 +67,9 @@ export const AccountsPage: React.FC = () => {
           <h3 className="text-sm text-gray-600 dark:text-gray-400 mb-2">Total Liabilities</h3>
           <p className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400">
             {formatAmount(totalLiabilities)}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+            {liabilityAccounts.length} accounts
           </p>
         </div>
 
@@ -74,60 +83,128 @@ export const AccountsPage: React.FC = () => {
           }`}>
             {formatAmount(netWorth)}
           </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+            {accounts.length} total accounts
+          </p>
         </div>
       </div>
 
-      {/* Account Form */}
+      {/* Quick Account Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AccountForm />
-        
-        {/* Account List */}
-        <div className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 border border-blue-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Accounts</h3>
-          
-          {accounts.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-600 dark:text-gray-400 mb-2">
-                No accounts yet
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-500">
-                Use the form to add your first account
-              </p>
+        {/* Assets Overview */}
+        <div className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg border border-blue-200 dark:border-gray-700">
+          <div className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Assets</h3>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {accounts.map(account => (
-                <div key={account.id} className="p-4 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white">
-                        {account.name}
-                      </h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
-                        {account.type.replace('-', ' ')}
+            
+            {assetAccounts.length === 0 ? (
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
+                No assets yet. Go to the Assets tab to add accounts.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {assetAccounts.slice(0, 5).map(account => {
+                  const accountTotal = account.balances.reduce((sum, balance) => {
+                    return sum + convertAmount(balance.amount, balance.currency, baseCurrency);
+                  }, 0);
+                  
+                  return (
+                    <div key={account.id} className="flex justify-between items-center">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {account.name}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                          {account.type.replace('-', ' ')}
+                        </p>
+                      </div>
+                      <p className="text-sm font-bold text-green-600 dark:text-green-400">
+                        {formatAmount(accountTotal)}
                       </p>
                     </div>
-                  </div>
-                  
-                  {/* Multi-currency balances */}
-                  <div className="space-y-1">
-                    {account.balances.map((balance, index) => (
-                      <div key={index} className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {balance.currency}
-                        </span>
-                        <span className="font-mono font-semibold text-gray-900 dark:text-white">
-                          {formatAmount(balance.amount, balance.currency)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+                {assetAccounts.length > 5 && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    +{assetAccounts.length - 5} more accounts
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Liabilities Overview */}
+        <div className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg border border-blue-200 dark:border-gray-700">
+          <div className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Liabilities</h3>
             </div>
-          )}
+            
+            {liabilityAccounts.length === 0 ? (
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
+                No liabilities yet. Go to the Liabilities tab to add accounts.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {liabilityAccounts.slice(0, 5).map(account => {
+                  const accountTotal = account.balances.reduce((sum, balance) => {
+                    return sum + convertAmount(balance.amount, balance.currency, baseCurrency);
+                  }, 0);
+                  
+                  return (
+                    <div key={account.id} className="flex justify-between items-center">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {account.name}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                          {account.type.replace('-', ' ')}
+                        </p>
+                      </div>
+                      <p className="text-sm font-bold text-red-600 dark:text-red-400">
+                        {formatAmount(accountTotal)}
+                      </p>
+                    </div>
+                  );
+                })}
+                {liabilityAccounts.length > 5 && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    +{liabilityAccounts.length - 5} more accounts
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Getting Started Message */}
+      {accounts.length === 0 && (
+        <div className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg border border-blue-200 dark:border-gray-700 p-8 text-center">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Welcome to Your Financial Overview
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Start building your net worth by adding your first accounts.
+          </p>
+          <div className="flex gap-4 justify-center">
+            <div className="text-center">
+              <TrendingUp className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Assets Tab</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Cash, Bank, Investments</p>
+            </div>
+            <div className="text-center">
+              <TrendingDown className="w-8 h-8 text-red-600 dark:text-red-400 mx-auto mb-2" />
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Liabilities Tab</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Credit Cards, Loans</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

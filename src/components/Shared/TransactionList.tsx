@@ -10,11 +10,15 @@ interface Transaction {
   amount: number;
   currency: string;
   date: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'asset' | 'liability';
   category?: string;
   frequency?: string;
   rating?: string;
   recurring?: boolean;
+  accountType?: string;
+  balances?: Array<{ currency: string; amount: number }>;
+  dueDate?: string;
+  recurringDueDate?: number;
 }
 
 interface TransactionListProps {
@@ -23,6 +27,8 @@ interface TransactionListProps {
   onDelete?: (id: string) => void;
   loading?: boolean;
   showFilters?: boolean;
+  emptyMessage?: string;
+  renderCustomContent?: (transaction: Transaction) => React.ReactNode;
 }
 
 export const TransactionList: React.FC<TransactionListProps> = ({
@@ -30,7 +36,9 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   transactions,
   onDelete,
   loading = false,
-  showFilters = true
+  showFilters = true,
+  emptyMessage = "No transactions yet",
+  renderCustomContent
 }) => {
   const { formatAmount, baseCurrency, convertAmount } = useCurrencyStore();
   const [filter, setFilter] = useState<'all' | 'this-year' | 'custom-month' | 'this-week'>('custom-month');
@@ -278,7 +286,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
       <div className="p-3">
         {filteredAndSortedTransactions.length === 0 ? (
           <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
-            No transactions found
+            {emptyMessage}
           </div>
         ) : (
           <div className="space-y-2">
@@ -290,7 +298,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                 <div className="hidden sm:flex sm:items-center sm:gap-3 sm:flex-1 sm:min-w-0">
                   <div 
                     className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                      transaction.type === 'income' ? 'bg-green-500' : 'bg-red-500'
+                      transaction.type === 'income' || transaction.type === 'asset' ? 'bg-green-500' : 'bg-red-500'
                     }`}
                   />
                   <div className="flex-1 min-w-0">
@@ -328,11 +336,11 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                       {transaction.description}
                     </p>
                     <p className={`text-sm font-medium flex-shrink-0 ${
-                      transaction.type === 'income' 
+                      transaction.type === 'income' || transaction.type === 'asset'
                         ? 'text-green-600 dark:text-green-400' 
                         : 'text-red-600 dark:text-red-400'
                     }`}>
-                      {transaction.type === 'income' ? '+' : '-'}
+                      {(transaction.type === 'income' || transaction.type === 'asset') ? '+' : '-'}
                       {formatAmount(convertAmount(transaction.amount, transaction.currency, baseCurrency))}
                     </p>
                   </div>
@@ -380,15 +388,22 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                   </div>
                 </div>
 
+                {/* Custom Content */}
+                {renderCustomContent && (
+                  <div className="mt-2 px-1">
+                    {renderCustomContent(transaction)}
+                  </div>
+                )}
+
                 {/* Desktop Layout */}
                 <div className="hidden sm:flex sm:items-center sm:gap-3 sm:flex-shrink-0">
                   <div className="text-right">
                     <p className={`text-sm font-medium ${
-                      transaction.type === 'income' 
+                      transaction.type === 'income' || transaction.type === 'asset'
                         ? 'text-green-600 dark:text-green-400' 
                         : 'text-red-600 dark:text-red-400'
                     }`}>
-                      {transaction.type === 'income' ? '+' : '-'}
+                      {(transaction.type === 'income' || transaction.type === 'asset') ? '+' : '-'}
                       {formatAmount(convertAmount(transaction.amount, transaction.currency, baseCurrency))}
                     </p>
                     <div className="text-right">

@@ -40,4 +40,6 @@ export interface Account {
   name: string;
   type: AccountType;
   balances: AccountBalance[];
+  dueDate?: string; // Optional due date for credit cards and loans
+  recurringDueDate?: number; // Day of month (1-31) for recurring payments
 }

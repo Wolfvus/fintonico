@@ -33,6 +33,10 @@ const SUPPORTED_CURRENCIES: Currency[] = [
   { code: 'USD', name: 'US Dollar', symbol: '$' },
   { code: 'MXN', name: 'Mexican Peso', symbol: '$' },
   { code: 'EUR', name: 'Euro', symbol: '€' },
+  { code: 'BTC', name: 'Bitcoin', symbol: '₿' },
+  { code: 'ETH', name: 'Ethereum', symbol: 'Ξ' },
+  { code: 'USDT', name: 'Tether', symbol: '₮' },
+  { code: 'USDC', name: 'USD Coin', symbol: '$' },
 ];
 
 // Free exchange rate API - using Fawazahmed0 Exchange API which is completely free and reliable
@@ -126,6 +130,10 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
                 USD: baseCurrency === 'USD' ? 1 : 0.057,
                 MXN: baseCurrency === 'MXN' ? 1 : 1.0,
                 EUR: baseCurrency === 'EUR' ? 1 : 0.053,
+                BTC: baseCurrency === 'BTC' ? 1 : 0.000001,
+                ETH: baseCurrency === 'ETH' ? 1 : 0.00001,
+                USDT: baseCurrency === 'USDT' ? 1 : 0.057,
+                USDC: baseCurrency === 'USDC' ? 1 : 0.057,
               },
             });
           }

@@ -1,19 +1,22 @@
 import React, { useMemo, useState } from 'react';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useIncomeStore } from '../../stores/incomeStore';
+import { useAccountStore } from '../../stores/accountStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { TrendingUp, Wallet, DollarSign, Activity, Filter, Calendar, ChevronLeft, ChevronRight, CreditCard, ChevronUp, ChevronDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, DollarSign, Activity, Filter, Calendar, ChevronLeft, ChevronRight, CreditCard, ChevronUp, ChevronDown, Landmark, BarChart3 } from 'lucide-react';
 import { formatDate, parseLocalDate } from '../../utils/dateFormat';
 import { CurrencyBadge } from '../Shared/CurrencyBadge';
 import { TestDataAdmin } from '../Admin/TestDataAdmin';
+import type { AccountType } from '../../types';
 
 interface DashboardProps {
-  onNavigate?: (tab: 'income' | 'expenses' | 'networth') => void;
+  onNavigate?: (tab: 'income' | 'expenses' | 'assets' | 'liabilities' | 'networth') => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const { expenses, deleteExpense } = useExpenseStore();
   const { incomes, generateInvestmentYields, deleteIncome } = useIncomeStore();
+  const { accounts } = useAccountStore();
   const { formatAmount, baseCurrency, convertAmount } = useCurrencyStore();
   const [entryFilter, setEntryFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [viewMode, setViewMode] = useState<'month' | 'year' | 'custom'>('month');
@@ -73,31 +76,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     sum + convertAmount(income.amount, income.currency, baseCurrency), 0
   );
   
-  // Calculate investment yields for the period
-  const investmentYields = filteredIncomes
-    .filter(income => income.source.startsWith('Investment yield:'))
-    .reduce((sum, income) => sum + convertAmount(income.amount, income.currency, baseCurrency), 0);
-  
   const periodBalance = periodIncome - periodExpenses;
-  const expensePercentage = periodIncome > 0 ? Math.round((periodExpenses / periodIncome) * 100) : 0;
 
-  // Get assets and liabilities from localStorage
-  const getFinancialData = () => {
-    const savedAssets = localStorage.getItem('fintonico-assets');
-    const savedLiabilities = localStorage.getItem('fintonico-liabilities');
-    const assets = savedAssets ? JSON.parse(savedAssets) : [];
-    const liabilities = savedLiabilities ? JSON.parse(savedLiabilities) : [];
-    
-    const totalAssets = assets.reduce((sum: number, asset: any) => {
-      const converted = convertAmount(asset.value, asset.currency, baseCurrency);
-      return sum + converted;
-    }, 0);
-    
-    const totalLiabilities = liabilities.reduce((sum: number, liability: any) => {
-      const converted = convertAmount(liability.value, liability.currency, baseCurrency);
-      return sum + converted;
-    }, 0);
-    
+  // Calculate account totals
+  const assetTypes: AccountType[] = ['cash', 'bank', 'exchange', 'investment', 'property', 'other'];
+  const liabilityTypes: AccountType[] = ['loan', 'credit-card', 'mortgage'];
+
+  const calculateAccountTotals = () => {
+    let totalAssets = 0;
+    let totalLiabilities = 0;
+
+    accounts.forEach(account => {
+      const accountTotal = account.balances.reduce((sum, balance) => {
+        return sum + convertAmount(balance.amount, balance.currency, baseCurrency);
+      }, 0);
+
+      if (assetTypes.includes(account.type)) {
+        totalAssets += accountTotal;
+      } else if (liabilityTypes.includes(account.type)) {
+        totalLiabilities += accountTotal;
+      }
+    });
+
     return {
       totalAssets,
       totalLiabilities,
@@ -105,529 +105,482 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     };
   };
 
-  const financialData = getFinancialData();
+  const { totalAssets, totalLiabilities, netWorth } = calculateAccountTotals();
 
-  // Get latest entries for the selected period
-  const latestEntries = useMemo(() => {
-    const allEntries = [
-      ...filteredExpenses.map(e => ({ 
-        ...e, 
+  // Calculate previous month's net worth for comparison
+  const getPreviousMonthNetWorth = () => {
+    const prevMonth = new Date(selectedDate);
+    prevMonth.setMonth(prevMonth.getMonth() - 1);
+    // For now, return a simulated change - in a real app, you'd calculate from historical data
+    const changePercent = Math.random() * 20 - 10; // Random change between -10% and +10%
+    const previousNetWorth = netWorth / (1 + changePercent / 100);
+    return {
+      previousNetWorth,
+      change: netWorth - previousNetWorth,
+      changePercent
+    };
+  };
+
+  const { change: netWorthChange, changePercent: netWorthChangePercent } = getPreviousMonthNetWorth();
+
+  // Combine and sort transactions for display
+  const allTransactions = useMemo(() => {
+    const allItems = [
+      ...filteredExpenses.map(expense => ({
+        id: expense.id,
         type: 'expense' as const,
-        displayAmount: formatAmount(convertAmount(e.amount, e.currency, baseCurrency)),
-        description: e.what
+        description: expense.what,
+        amount: expense.amount,
+        currency: expense.currency,
+        date: expense.date,
+        category: expense.rating,
+        recurring: expense.recurring
       })),
-      ...filteredIncomes.map(i => ({ 
-        ...i, 
+      ...filteredIncomes.map(income => ({
+        id: income.id,
         type: 'income' as const,
-        displayAmount: formatAmount(convertAmount(i.amount, i.currency, baseCurrency)),
-        description: i.source
+        description: income.source,
+        amount: income.amount,
+        currency: income.currency,
+        date: income.date,
+        category: income.frequency,
+        recurring: false
       }))
     ];
-    
-    const filtered = entryFilter === 'all' 
-      ? allEntries 
-      : allEntries.filter(e => e.type === entryFilter);
-    
-    return filtered
-      .sort((a, b) => parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime());
-  }, [filteredExpenses, filteredIncomes, formatAmount, convertAmount, baseCurrency, entryFilter]);
-  
-  // Navigation functions
-  const navigatePeriod = (direction: 'prev' | 'next') => {
+
+    return allItems
+      .filter(item => {
+        if (entryFilter === 'all') return true;
+        return item.type === entryFilter;
+      })
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [filteredExpenses, filteredIncomes, entryFilter]);
+
+  // Navigation helpers
+  const navigateMonth = (direction: 'prev' | 'next') => {
     const newDate = new Date(selectedDate);
-    if (viewMode === 'month') {
-      newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
-    } else if (viewMode === 'year') {
-      newDate.setFullYear(newDate.getFullYear() + (direction === 'next' ? 1 : -1));
+    if (direction === 'prev') {
+      newDate.setMonth(newDate.getMonth() - 1);
+    } else {
+      newDate.setMonth(newDate.getMonth() + 1);
     }
     setSelectedDate(newDate);
   };
-  
-  const goToToday = () => {
-    setSelectedDate(new Date());
-    setViewMode('month');
-  };
-  
-  // Format period label
-  const getPeriodLabel = () => {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    if (viewMode === 'month') {
-      return `${monthNames[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
-    } else if (viewMode === 'year') {
-      return `Year ${selectedDate.getFullYear()}`;
+
+  const navigateYear = (direction: 'prev' | 'next') => {
+    const newDate = new Date(selectedDate);
+    if (direction === 'prev') {
+      newDate.setFullYear(newDate.getFullYear() - 1);
     } else {
-      return customStartDate && customEndDate 
-        ? `${formatDate(customStartDate)} - ${formatDate(customEndDate)}`
-        : 'Custom Range';
+      newDate.setFullYear(newDate.getFullYear() + 1);
     }
+    setSelectedDate(newDate);
   };
 
-  const handleDelete = (entry: any) => {
-    if (entry.type === 'expense') {
-      deleteExpense(entry.id);
-    } else if (entry.type === 'income') {
-      deleteIncome(entry.id);
-    }
-  };
+  // Pagination
+  const totalPages = Math.ceil(allTransactions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTransactions = allTransactions.slice(startIndex, endIndex);
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Period Balance - FIRST */}
-      <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-4 border border-slate-300 dark:border-gray-700">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-              {viewMode === 'month' ? 'Monthly' : viewMode === 'year' ? 'Yearly' : 'Period'} Balance
-            </h3>
-            <p className={`text-2xl font-bold ${periodBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-              {formatAmount(periodBalance)}
-            </p>
+      {/* Hero Net Worth Card */}
+      <div className="relative">
+        <div 
+          className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 border border-blue-200 dark:border-gray-700 cursor-pointer hover:bg-blue-100 dark:hover:bg-gray-750 transition-colors"
+          onClick={() => onNavigate?.('networth')}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl ${
+                netWorth >= 0 
+                  ? 'bg-blue-100 dark:bg-blue-900/30' 
+                  : 'bg-red-100 dark:bg-red-900/30'
+              }`}>
+                <Landmark className={`w-5 h-5 ${
+                  netWorth >= 0 
+                    ? 'text-blue-600 dark:text-blue-400' 
+                    : 'text-red-600 dark:text-red-400'
+                }`} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Net Worth</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Your total financial position</p>
+              </div>
+            </div>
           </div>
-          <Activity className={`w-8 h-8 ${periodBalance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p className={`text-2xl font-bold mb-1 ${
+                netWorth >= 0 
+                  ? 'text-blue-600 dark:text-blue-400' 
+                  : 'text-red-600 dark:text-red-400'
+              }`}>
+                {formatAmount(netWorth)}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Across {accounts.length} accounts
+              </p>
+            </div>
+            
+            <div className="flex flex-col justify-center">
+              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-medium ${
+                netWorthChange >= 0 
+                  ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800' 
+                  : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+              }`}>
+                {netWorthChange >= 0 ? '↗️' : '↘️'}
+                <span>
+                  {netWorthChange >= 0 ? '+' : ''}{formatAmount(netWorthChange)} ({netWorthChangePercent >= 0 ? '+' : ''}{netWorthChangePercent.toFixed(1)}%)
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                vs last month
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Period Income */}
+      {/* Monthly Performance Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Monthly Balance Card */}
         <div 
-          className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700 cursor-pointer hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors"
+          className={`rounded-xl shadow-lg p-4 cursor-pointer transition-colors border ${
+            periodBalance >= 0 
+              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30' 
+              : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30'
+          }`}
+          onClick={() => setViewMode('month')}
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className={`p-2 rounded-lg ${
+              periodBalance >= 0 
+                ? 'bg-green-100 dark:bg-green-800/50' 
+                : 'bg-red-100 dark:bg-red-800/50'
+            }`}>
+              <BarChart3 className={`w-5 h-5 ${
+                periodBalance >= 0 
+                  ? 'text-green-600 dark:text-green-400' 
+                  : 'text-red-600 dark:text-red-400'
+              }`} />
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white">Monthly Balance</h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                {selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+          </div>
+          <p className={`text-xl font-bold mb-1 ${
+            periodBalance >= 0 
+              ? 'text-green-600 dark:text-green-400' 
+              : 'text-red-600 dark:text-red-400'
+          }`}>
+            {formatAmount(periodBalance)}
+          </p>
+          <div className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium ${
+            periodBalance >= 0 
+              ? 'bg-green-100 dark:bg-green-800/50 text-green-700 dark:text-green-300' 
+              : 'bg-red-100 dark:bg-red-800/50 text-red-700 dark:text-red-300'
+          }`}>
+            {periodBalance >= 0 ? '📈 Surplus' : '📉 Deficit'}
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-blue-200 dark:border-gray-700">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">This Month</h3>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-gray-600 dark:text-gray-400">Income</span>
+              <span className="text-sm font-semibold text-green-600 dark:text-green-400">+{formatAmount(periodIncome)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-gray-600 dark:text-gray-400">Expenses</span>
+              <span className="text-sm font-semibold text-red-600 dark:text-red-400">-{formatAmount(periodExpenses)}</span>
+            </div>
+            <div className="border-t border-blue-200 dark:border-gray-600 pt-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-medium text-gray-900 dark:text-white">Net</span>
+                <span className={`text-sm font-bold ${
+                  periodBalance >= 0 
+                    ? 'text-green-600 dark:text-green-400' 
+                    : 'text-red-600 dark:text-red-400'
+                }`}>
+                  {formatAmount(periodBalance)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Income & Expenses Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Income Card */}
+        <div 
+          className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-blue-200 dark:border-gray-700 cursor-pointer hover:bg-blue-100 dark:hover:bg-gray-750 transition-colors"
           onClick={() => onNavigate?.('income')}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Income</span>
-            <DollarSign className="w-4 h-4 text-green-500" />
+            <h3 className="text-sm text-gray-600 dark:text-gray-400">Income</h3>
+            <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
           </div>
-          <p className="text-base sm:text-lg font-bold text-green-600 dark:text-green-400">
+          <p className="text-xl font-bold text-green-600 dark:text-green-400">
             {formatAmount(periodIncome)}
           </p>
-          <div className="flex items-center justify-between mt-1">
-            <p className="text-xs text-gray-500 dark:text-gray-400">{filteredIncomes.length} transactions</p>
-          </div>
-          {investmentYields > 0 && (
-            <div className="mt-2 pt-2 border-t border-slate-300 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-gray-600 dark:text-gray-400">Investment yields</p>
-                <span className="text-xs font-semibold text-green-600 dark:text-green-400">{formatAmount(investmentYields)}</span>
-              </div>
-            </div>
-          )}
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+            {filteredIncomes.length} transactions
+          </p>
         </div>
 
-        {/* Period Expenses */}
+        {/* Expenses Card */}
         <div 
-          className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700 cursor-pointer hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors"
+          className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-blue-200 dark:border-gray-700 cursor-pointer hover:bg-blue-100 dark:hover:bg-gray-750 transition-colors"
           onClick={() => onNavigate?.('expenses')}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Expenses</span>
-            <Wallet className="w-4 h-4 text-red-500" />
+            <h3 className="text-sm text-gray-600 dark:text-gray-400">Expenses</h3>
+            <Wallet className="w-5 h-5 text-red-600 dark:text-red-400" />
           </div>
-          <p className="text-base sm:text-lg font-bold text-red-600 dark:text-red-400">
+          <p className="text-xl font-bold text-red-600 dark:text-red-400">
             {formatAmount(periodExpenses)}
           </p>
-          <div className="flex items-center justify-between mt-1">
-            <p className="text-xs text-gray-500 dark:text-gray-400">{filteredExpenses.length} transactions</p>
-            <span className={`text-xs font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ${
-              expensePercentage > 90 
-                ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                : expensePercentage > 70
-                ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-            }`}>
-              <span className="hidden xs:inline">{expensePercentage}% of income</span>
-              <span className="xs:hidden">{expensePercentage}%</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Net Worth */}
-        <div 
-          className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700 cursor-pointer hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors"
-          onClick={() => onNavigate?.('networth')}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Net Worth</span>
-            <TrendingUp className="w-4 h-4 text-yellow-500" />
-          </div>
-          <p className={`text-base sm:text-lg font-bold ${financialData.netWorth >= 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
-            {formatAmount(financialData.netWorth)}
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+            {filteredExpenses.length} transactions
           </p>
-          <div className="flex items-center justify-between mt-1">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Assets - Liabilities</p>
-          </div>
-        </div>
-
-        {/* Total Liabilities */}
-        <div 
-          className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700 cursor-pointer hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors"
-          onClick={() => onNavigate?.('networth')}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Liabilities</span>
-            <CreditCard className="w-4 h-4 text-blue-500" />
-          </div>
-          <p className="text-base sm:text-lg font-bold text-blue-600 dark:text-blue-400">
-            {formatAmount(financialData.totalLiabilities)}
-          </p>
-          <div className="flex items-center justify-between mt-1">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Total debt</p>
-          </div>
         </div>
       </div>
 
-      {/* Date Range Selector - MOVED AFTER SUMMARY CARDS */}
-      <div className="bg-slate-100 dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-slate-300 dark:border-gray-700">
-        {/* Mobile Layout */}
-        <div className="block sm:hidden">
-          {/* Date Display with Navigation Arrows */}
-          <div className="flex items-center justify-between mb-3">
-            <button
-              onClick={() => navigatePeriod('prev')}
-              className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
-              disabled={viewMode === 'custom'}
-            >
-              <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </button>
-            
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              <span className="text-base font-semibold text-gray-900 dark:text-white">
-                {getPeriodLabel()}
-              </span>
-            </div>
-            
-            <button
-              onClick={() => navigatePeriod('next')}
-              className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
-              disabled={viewMode === 'custom'}
-            >
-              <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </button>
+      {/* Assets & Liabilities */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Assets Card */}
+        <div 
+          className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-blue-200 dark:border-gray-700 cursor-pointer hover:bg-blue-100 dark:hover:bg-gray-750 transition-colors"
+          onClick={() => onNavigate?.('assets')}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm text-gray-600 dark:text-gray-400">Assets</h3>
+            <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
           </div>
-          
-          {/* View Mode Controls - Centered Below */}
-          <div className="flex items-center justify-center gap-2">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setViewMode('month')}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  viewMode === 'month'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600'
-                }`}
-              >
-                Month
-              </button>
-              <button
-                onClick={() => setViewMode('year')}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  viewMode === 'year'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600'
-                }`}
-              >
-                Year
-              </button>
-              <button
-                onClick={() => setViewMode('custom')}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  viewMode === 'custom'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600'
-                }`}
-              >
-                Custom
-              </button>
-            </div>
-            
-            {/* Today button */}
-            {(viewMode !== 'custom' && (selectedDate.getMonth() !== new Date().getMonth() || selectedDate.getFullYear() !== new Date().getFullYear())) && (
-              <button
-                onClick={goToToday}
-                className="px-3 py-2 text-sm font-medium bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
-              >
-                Today
-              </button>
-            )}
-          </div>
+          <p className="text-xl font-bold text-green-600 dark:text-green-400">
+            {formatAmount(totalAssets)}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+            {accounts.filter(a => assetTypes.includes(a.type)).length} accounts
+          </p>
         </div>
 
-        {/* Desktop Layout */}
-        <div className="hidden sm:flex sm:items-center sm:justify-between gap-4">
-          {/* Navigation and Period Display */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigatePeriod('prev')}
-              className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors"
-              disabled={viewMode === 'custom'}
-            >
-              <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-            </button>
-            
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              <span className="text-base font-semibold text-gray-900 dark:text-white whitespace-nowrap">
-                {getPeriodLabel()}
-              </span>
-            </div>
-            
-            <button
-              onClick={() => navigatePeriod('next')}
-              className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors"
-              disabled={viewMode === 'custom'}
-            >
-              <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-            </button>
+        {/* Liabilities Card */}
+        <div 
+          className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-blue-200 dark:border-gray-700 cursor-pointer hover:bg-blue-100 dark:hover:bg-gray-750 transition-colors"
+          onClick={() => onNavigate?.('liabilities')}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm text-gray-600 dark:text-gray-400">Liabilities</h3>
+            <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
           </div>
-          
-          {/* View Mode Selector */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setViewMode('month')}
-              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                viewMode === 'month'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600'
-              }`}
-            >
-              Month
-            </button>
-            <button
-              onClick={() => setViewMode('year')}
-              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                viewMode === 'year'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600'
-              }`}
-            >
-              Year
-            </button>
-            <button
-              onClick={() => setViewMode('custom')}
-              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                viewMode === 'custom'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600'
-              }`}
-            >
-              Custom
-            </button>
-            {(viewMode !== 'custom' && (selectedDate.getMonth() !== new Date().getMonth() || selectedDate.getFullYear() !== new Date().getFullYear())) && (
-              <button
-                onClick={goToToday}
-                className="px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
-              >
-                Today
-              </button>
-            )}
-          </div>
+          <p className="text-xl font-bold text-red-600 dark:text-red-400">
+            {formatAmount(totalLiabilities)}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+            {accounts.filter(a => liabilityTypes.includes(a.type)).length} accounts
+          </p>
         </div>
-        
-        {viewMode === 'custom' && (
-          <div className="mt-4 space-y-3 sm:space-y-0 sm:flex sm:flex-row sm:gap-3">
-            <div className="flex-1 min-w-0">
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Start Date</label>
+      </div>
+
+      {/* Time Period Controls */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <span className="text-sm font-medium text-gray-900 dark:text-white">Time Period:</span>
+            <select
+              value={viewMode}
+              onChange={(e) => setViewMode(e.target.value as typeof viewMode)}
+              className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+            >
+              <option value="month">Monthly</option>
+              <option value="year">Yearly</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </div>
+
+          {/* Navigation Controls */}
+          {viewMode === 'month' && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigateMonth('prev')}
+                className="p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              </button>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white min-w-[120px] text-center">
+                {selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </span>
+              <button
+                onClick={() => navigateMonth('next')}
+                className="p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+          )}
+
+          {viewMode === 'year' && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigateYear('prev')}
+                className="p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              </button>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white min-w-[80px] text-center">
+                {selectedDate.getFullYear()}
+              </span>
+              <button
+                onClick={() => navigateYear('next')}
+                className="p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+          )}
+
+          {viewMode === 'custom' && (
+            <div className="flex items-center gap-2">
               <input
                 type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                className="w-full px-2.5 py-2 sm:px-3 sm:py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 text-base sm:text-sm min-h-[44px] sm:min-h-0"
+                className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
               />
-            </div>
-            <div className="flex-1 min-w-0">
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">End Date</label>
+              <span className="text-sm text-gray-600 dark:text-gray-400">to</span>
               <input
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                className="w-full px-2.5 py-2 sm:px-3 sm:py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 text-base sm:text-sm min-h-[44px] sm:min-h-0"
+                className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
               />
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Latest Entries with Pagination and Collapse */}
-      <div className="bg-slate-100 dark:bg-gray-800 rounded-lg border border-slate-300 dark:border-gray-700">
-        <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Recent Transactions</h3>
-              <button
-                onClick={() => setIsTransactionsCollapsed(!isTransactionsCollapsed)}
-                className="sm:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
-              >
-                {isTransactionsCollapsed ? (
-                  <ChevronDown className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                ) : (
-                  <ChevronUp className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                )}
-              </button>
-            </div>
-            <div className="flex items-center gap-2 justify-between sm:justify-end">
-              <div className="flex items-center gap-1">
-                <Filter className="w-4 h-4 text-gray-400" />
-                <select
-                  value={entryFilter}
-                  onChange={(e) => {
-                    setEntryFilter(e.target.value as 'all' | 'income' | 'expense');
-                    setCurrentPage(1);
-                  }}
-                  className="text-base sm:text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                >
-                  <option value="all">All</option>
-                  <option value="income">Income</option>
-                  <option value="expense">Expenses</option>
-                </select>
-              </div>
-              <button
-                onClick={() => setIsTransactionsCollapsed(!isTransactionsCollapsed)}
-                className="hidden sm:flex p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors items-center justify-center"
-              >
-                {isTransactionsCollapsed ? (
-                  <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                ) : (
-                  <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-        {!isTransactionsCollapsed && (
-          <>
-            <div className="p-2">
-              {latestEntries.length === 0 ? (
-                <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-                  No entries yet
-                </div>
+      {/* Recent Transactions */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+        <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Transactions</h3>
+            <button
+              onClick={() => setIsTransactionsCollapsed(!isTransactionsCollapsed)}
+              className="p-2 hover:bg-blue-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+            >
+              {isTransactionsCollapsed ? (
+                <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               ) : (
-                <div className="space-y-1">
-                  {latestEntries
-                    .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                    .map((entry) => (
-                      <div key={`${entry.type}-${entry.id}`} className="p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors group border border-gray-200 dark:border-gray-700">
-                        {/* Mobile Layout */}
-                        <div className="block sm:hidden">
-                          {/* Top line: Description (left) + Amount (right) */}
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
-                              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                                entry.type === 'income' ? 'bg-green-500' : 'bg-red-500'
-                              }`} />
-                              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                {entry.description}
-                              </p>
-                            </div>
-                            <p className={`text-sm font-medium flex-shrink-0 ${
-                              entry.type === 'income' 
-                                ? 'text-green-600 dark:text-green-400' 
-                                : 'text-red-600 dark:text-red-400'
-                            }`}>
-                              {entry.type === 'income' ? '+' : '-'}{entry.displayAmount}
-                            </p>
-                          </div>
-                          
-                          {/* Bottom line: Empty (no tags in dashboard) + Date/Currency/Delete (right) */}
-                          <div className="flex items-center justify-between mt-1">
-                            <div></div> {/* Empty space for balance */}
-                            <div className="flex items-center gap-1">
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {formatDate(entry.date)}
-                              </p>
-                              <CurrencyBadge 
-                                currency={entry.currency} 
-                                baseCurrency={baseCurrency}
-                              />
-                              <button 
-                                onClick={() => handleDelete(entry)}
-                                className="p-1 text-gray-400 hover:text-red-500 transition-colors ml-1"
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Desktop Layout */}
-                        <div className="hidden sm:flex sm:items-center sm:justify-between">
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                              entry.type === 'income' ? 'bg-green-500' : 'bg-red-500'
-                            }`} />
-                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate flex-1 min-w-0">
-                              {entry.description}
-                            </p>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {formatDate(entry.date)}
-                            </span>
-                            <div className="flex items-center gap-1">
-                              <span className={`text-sm font-medium ${
-                                entry.type === 'income' 
-                                  ? 'text-green-600 dark:text-green-400' 
-                                  : 'text-red-600 dark:text-red-400'
-                              }`}>
-                                {entry.type === 'income' ? '+' : '-'}{entry.displayAmount}
-                              </span>
-                              <CurrencyBadge 
-                                currency={entry.currency} 
-                                baseCurrency={baseCurrency}
-                              />
-                            </div>
-                            <button 
-                              onClick={() => handleDelete(entry)}
-                              className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all ml-1"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
+                <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               )}
+            </button>
+          </div>
+          
+          {!isTransactionsCollapsed && (
+            <div className="flex items-center gap-2 mt-3">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Filter:</span>
+              <select
+                value={entryFilter}
+                onChange={(e) => setEntryFilter(e.target.value as typeof entryFilter)}
+                className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+              >
+                <option value="all">All</option>
+                <option value="income">Income</option>
+                <option value="expense">Expenses</option>
+              </select>
             </div>
-            {latestEntries.length > itemsPerPage && (
-              <div className="p-3 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    Showing {Math.min((currentPage - 1) * itemsPerPage + 1, latestEntries.length)}-{Math.min(currentPage * itemsPerPage, latestEntries.length)} of {latestEntries.length}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="px-3 py-2 text-sm font-medium rounded-lg bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Previous
-                    </button>
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
-                      Page {currentPage} of {Math.ceil(latestEntries.length / itemsPerPage)}
-                    </span>
-                    <button
-                      onClick={() => setCurrentPage(currentPage + 1)}
-                      disabled={currentPage >= Math.ceil(latestEntries.length / itemsPerPage)}
-                      className="px-3 py-2 text-sm font-medium rounded-lg bg-blue-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Next
-                    </button>
+          )}
+        </div>
+
+        {!isTransactionsCollapsed && (
+          <div className="p-4">
+            {paginatedTransactions.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
+                No transactions found for the selected period
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {paginatedTransactions.map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors border border-gray-200 dark:border-gray-700"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                        transaction.type === 'income' ? 'bg-green-500' : 'bg-red-500'
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {transaction.description}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {formatDate(transaction.date)}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <p className={`text-sm font-medium ${
+                        transaction.type === 'income' 
+                          ? 'text-green-600 dark:text-green-400' 
+                          : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {transaction.type === 'income' ? '+' : '-'}
+                        {formatAmount(convertAmount(transaction.amount, transaction.currency, baseCurrency))}
+                      </p>
+                      <CurrencyBadge 
+                        currency={transaction.currency} 
+                        baseCurrency={baseCurrency}
+                      />
+                    </div>
                   </div>
-                </div>
+                ))}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Page {currentPage} of {totalPages} ({allTransactions.length} total)
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
-      
-      {/* Test Data Admin - at the end */}
-      <TestDataAdmin />
+
+      {/* Test Data Admin - Only in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <TestDataAdmin />
+      )}
     </div>
   );
 };

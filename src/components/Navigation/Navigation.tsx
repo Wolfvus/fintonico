@@ -2,6 +2,7 @@ import React from 'react';
 import { 
   Home, 
   TrendingUp, 
+  TrendingDown,
   Wallet,
   Menu,
   X,
@@ -9,7 +10,8 @@ import {
   User,
   Moon,
   Sun,
-  DollarSign
+  DollarSign,
+  Landmark
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { CurrencySelector } from '../Currency/CurrencySelector';
@@ -39,9 +41,11 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'expenses', label: 'Expenses', icon: Wallet },
     { id: 'income', label: 'Income', icon: DollarSign },
-    { id: 'networth', label: 'Accounts', icon: TrendingUp },
+    { id: 'expenses', label: 'Expenses', icon: Wallet },
+    { id: 'networth', label: 'Net Worth', icon: Landmark },
+    { id: 'assets', label: 'Assets', icon: TrendingUp },
+    { id: 'liabilities', label: 'Liabilities', icon: TrendingDown },
   ];
 
   const handleSignOut = async () => {
