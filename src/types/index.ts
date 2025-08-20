@@ -6,6 +6,15 @@ export interface Currency {
 
 export type ExpenseRating = 'essential' | 'non_essential' | 'luxury';
 
+// Define Account Categories (AccountType)
+export type AccountType = 'cash' | 'bank' | 'exchange' | 'investment' | 'property' | 'loan' | 'credit-card' | 'mortgage' | 'other';
+
+// Define the Structure for Balances (AccountBalance)
+export interface AccountBalance {
+  currency: string;
+  amount: number;
+}
+
 export interface BaseFinancialRecord {
   id: string;
   amount: number;
@@ -25,21 +34,10 @@ export interface Income extends BaseFinancialRecord {
   frequency: 'one-time' | 'weekly' | 'monthly' | 'yearly';
 }
 
-export interface Asset {
+// Define the Main Account Interface
+export interface Account {
   id: string;
   name: string;
-  value: number;
-  currency: string;
-  type: 'cash' | 'investment' | 'property' | 'other';
-  yield?: number;
-}
-
-export interface Liability {
-  id: string;
-  name: string;
-  value: number;
-  currency: string;
-  type: 'loan' | 'credit-card' | 'mortgage' | 'other';
-  dueDate?: string;
-  isPaid?: boolean;
+  type: AccountType;
+  balances: AccountBalance[];
 }
