@@ -6,6 +6,7 @@ import { AuthForm } from './components/Auth/AuthForm';
 import { ExpenseForm } from './components/ExpenseForm/ExpenseForm';
 import { IncomeForm } from './components/IncomeForm/IncomeForm';
 import { Dashboard } from './components/Dashboard/Dashboard';
+import { AccountsPage } from './components/Accounts/AccountsPage';
 import { TransactionList } from './components/Shared/TransactionList';
 import { CurrencySelector } from './components/Currency/CurrencySelector';
 import { useExpenseStore } from './stores/expenseStore';
@@ -187,7 +188,7 @@ function App() {
 
           {activeTab === 'networth' && (
             <ErrorBoundary>
-              <NetWorthTracker />
+              <AccountsPage />
             </ErrorBoundary>
           )}
         </div>

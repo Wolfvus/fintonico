@@ -41,7 +41,7 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'expenses', label: 'Expenses', icon: Wallet },
     { id: 'income', label: 'Income', icon: DollarSign },
-    { id: 'networth', label: 'Net Worth', icon: TrendingUp },
+    { id: 'networth', label: 'Accounts', icon: TrendingUp },
   ];
 
   const handleSignOut = async () => {
