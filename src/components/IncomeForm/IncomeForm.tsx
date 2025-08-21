@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useIncomeStore } from '../../stores/incomeStore';
-import { Calendar, Briefcase, RefreshCw } from 'lucide-react';
+import { Calendar, DollarSign, Clock, ChevronDown } from 'lucide-react';
 import { getTodayLocalString } from '../../utils/dateFormat';
 import { sanitizeDescription } from '../../utils/sanitization';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
@@ -9,7 +9,8 @@ import { FormField } from '../Shared/FormField';
 
 export const IncomeForm: React.FC = () => {
   const [source, setSource] = useState('');
-  const [frequency, setFrequency] = useState<'one-time' | 'weekly' | 'monthly' | 'yearly'>('monthly');
+  const [frequency, setFrequency] = useState<'one-time' | 'weekly' | 'monthly' | 'yearly'>('one-time');
+  const [showFrequencyDropdown, setShowFrequencyDropdown] = useState(false);
   const [date, setDate] = useState(getTodayLocalString());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -24,12 +25,44 @@ export const IncomeForm: React.FC = () => {
     reset: resetCurrency
   } = useCurrencyInput();
 
-  const frequencyOptions = [
-    { value: 'one-time', label: 'One-Time', icon: '💰' },
-    { value: 'monthly', label: 'Monthly', icon: '📅' },
-    { value: 'weekly', label: 'Weekly', icon: '🗓️' },
-    { value: 'yearly', label: 'Yearly', icon: '📊' },
-  ];
+  const FREQUENCY_CONFIG = {
+    'one-time': {
+      label: 'One-Time',
+      color: '#10B981',
+      bgClass: 'bg-green-50 dark:bg-green-900/20',
+      textClass: 'text-green-700 dark:text-green-400',
+      borderClass: 'border-green-500',
+      description: 'Single payment',
+      icon: DollarSign
+    },
+    'weekly': {
+      label: 'Weekly',
+      color: '#10B981',
+      bgClass: 'bg-green-50 dark:bg-green-900/20',
+      textClass: 'text-green-700 dark:text-green-400',
+      borderClass: 'border-green-500',
+      description: 'Every week',
+      icon: Clock
+    },
+    'monthly': {
+      label: 'Monthly',
+      color: '#10B981',
+      bgClass: 'bg-green-50 dark:bg-green-900/20',
+      textClass: 'text-green-700 dark:text-green-400',
+      borderClass: 'border-green-500',
+      description: 'Every month',
+      icon: Clock
+    },
+    'yearly': {
+      label: 'Yearly',
+      color: '#10B981',
+      bgClass: 'bg-green-50 dark:bg-green-900/20',
+      textClass: 'text-green-700 dark:text-green-400',
+      borderClass: 'border-green-500',
+      description: 'Every year',
+      icon: Clock
+    }
+  };
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,7 +103,7 @@ export const IncomeForm: React.FC = () => {
       // Reset form
       setSource('');
       resetCurrency();
-      setFrequency('monthly');
+      setFrequency('one-time');
       setDate(getTodayLocalString());
       
     } catch (error) {
@@ -84,14 +117,14 @@ export const IncomeForm: React.FC = () => {
   return (
     <div className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg border border-blue-200 dark:border-gray-700 p-6">
       <div className="flex items-center gap-2 mb-6">
-        <Briefcase className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+        <DollarSign className="w-5 h-5 text-gray-600 dark:text-gray-400" />
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add Income</h2>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormField
           label="Income Source"
-          icon={Briefcase}
+          icon={DollarSign}
           value={source}
           onChange={setSource}
           placeholder="Main Salary, Freelance..."
@@ -109,23 +142,147 @@ export const IncomeForm: React.FC = () => {
         />
 
         <div>
-          <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-            <RefreshCw className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
             Frequency
           </label>
-          <select
-            value={frequency}
-            onChange={(e) => setFrequency(e.target.value as typeof frequency)}
-            className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                     transition-colors text-gray-900 dark:text-white
-                     border-blue-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
-          >
-            {frequencyOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.icon} {option.label}
-              </option>
-            ))}
-          </select>
+          
+          {/* One-Time Selected by Default */}
+          <div className="space-y-2">
+            <label className={`flex items-center p-2 rounded-md border cursor-pointer transition-all ${
+              frequency === 'one-time' 
+                ? `${FREQUENCY_CONFIG['one-time'].bgClass} ${FREQUENCY_CONFIG['one-time'].borderClass}` 
+                : 'border-gray-200 dark:border-gray-600 bg-blue-50 dark:bg-gray-700'
+            }`}>
+              <input
+                type="radio"
+                name="frequency"
+                value="one-time"
+                checked={frequency === 'one-time'}
+                onChange={(e) => {
+                  setFrequency(e.target.value as 'one-time' | 'weekly' | 'monthly' | 'yearly');
+                  setShowFrequencyDropdown(false);
+                }}
+                className="sr-only"
+              />
+              
+              <div className="mr-2 flex-shrink-0">
+                <DollarSign 
+                  className={`w-4 h-4 ${
+                    frequency === 'one-time' 
+                      ? FREQUENCY_CONFIG['one-time'].textClass 
+                      : 'text-gray-400 dark:text-gray-500'
+                  }`} 
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-medium ${
+                  frequency === 'one-time' 
+                    ? FREQUENCY_CONFIG['one-time'].textClass 
+                    : 'text-gray-900 dark:text-gray-100'
+                }`}>
+                  One-Time
+                </span>
+                <span className={`text-xs ${
+                  frequency === 'one-time' 
+                    ? 'text-gray-600 dark:text-gray-300' 
+                    : 'text-gray-500 dark:text-gray-400'
+                }`}>
+                  · Single payment
+                </span>
+              </div>
+            </label>
+
+            {/* Recurring Options Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowFrequencyDropdown(!showFrequencyDropdown)}
+                className={`w-full flex items-center justify-between p-2 border rounded-md transition-all ${
+                  frequency !== 'one-time' 
+                    ? `${FREQUENCY_CONFIG[frequency].bgClass} ${FREQUENCY_CONFIG[frequency].borderClass}` 
+                    : 'bg-blue-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Clock className={`w-4 h-4 ${
+                    frequency !== 'one-time' 
+                      ? FREQUENCY_CONFIG[frequency].textClass 
+                      : 'text-gray-400 dark:text-gray-500'
+                  }`} />
+                  <span className={`text-sm ${
+                    frequency !== 'one-time' 
+                      ? FREQUENCY_CONFIG[frequency].textClass 
+                      : 'text-gray-600 dark:text-gray-400'
+                  }`}>
+                    {frequency !== 'one-time' 
+                      ? `${FREQUENCY_CONFIG[frequency].label} · ${FREQUENCY_CONFIG[frequency].description}`
+                      : 'Or select recurring frequency...'
+                    }
+                  </span>
+                </div>
+                <ChevronDown className={`w-4 h-4 transition-transform ${
+                  frequency !== 'one-time' 
+                    ? FREQUENCY_CONFIG[frequency].textClass 
+                    : 'text-gray-400'
+                } ${showFrequencyDropdown ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showFrequencyDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg z-10">
+                  {Object.entries(FREQUENCY_CONFIG)
+                    .filter(([key]) => key !== 'one-time')
+                    .map(([key, config]) => (
+                    <label
+                      key={key}
+                      className={`flex items-center p-2 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                        frequency === key ? `${config.bgClass}` : ''
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="frequency"
+                        value={key}
+                        checked={frequency === key}
+                        onChange={(e) => {
+                          setFrequency(e.target.value as 'one-time' | 'weekly' | 'monthly' | 'yearly');
+                          setShowFrequencyDropdown(false);
+                        }}
+                        className="sr-only"
+                      />
+                      
+                      <div className="mr-2 flex-shrink-0">
+                        <Clock 
+                          className={`w-4 h-4 ${
+                            frequency === key 
+                              ? config.textClass 
+                              : 'text-gray-400 dark:text-gray-500'
+                          }`} 
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm font-medium ${
+                          frequency === key 
+                            ? config.textClass 
+                            : 'text-gray-900 dark:text-gray-100'
+                        }`}>
+                          {config.label}
+                        </span>
+                        <span className={`text-xs ${
+                          frequency === key 
+                            ? 'text-gray-600 dark:text-gray-300' 
+                            : 'text-gray-500 dark:text-gray-400'
+                        }`}>
+                          · {config.description}
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <FormField

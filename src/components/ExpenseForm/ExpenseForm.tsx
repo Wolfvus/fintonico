@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useExpenseStore } from '../../stores/expenseStore';
-import { Calendar, PenTool, Plus } from 'lucide-react';
+import { Calendar, PenTool, Plus, Home, Clapperboard, Sparkles } from 'lucide-react';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { validateRequired, validateAmount, validateDate } from '../../utils/validation';
 import { sanitizeDescription } from '../../utils/sanitization';
@@ -18,7 +18,8 @@ const RATING_CONFIG = {
     bgClass: 'bg-green-50 dark:bg-green-900/20',
     textClass: 'text-green-700 dark:text-green-400',
     borderClass: 'border-green-500',
-    description: 'Necessary expenses'
+    description: 'Necessary expenses',
+    icon: Home
   },
   non_essential: { 
     label: 'Non-Essential', 
@@ -26,7 +27,8 @@ const RATING_CONFIG = {
     bgClass: 'bg-yellow-50 dark:bg-yellow-900/20',
     textClass: 'text-yellow-700 dark:text-yellow-400',
     borderClass: 'border-yellow-500',
-    description: 'Can be reduced'
+    description: 'Can be reduced',
+    icon: Clapperboard
   },
   luxury: { 
     label: 'Luxury', 
@@ -34,7 +36,8 @@ const RATING_CONFIG = {
     bgClass: 'bg-red-50 dark:bg-red-900/20',
     textClass: 'text-red-700 dark:text-red-400',
     borderClass: 'border-red-500',
-    description: 'Optional purchases'
+    description: 'Optional purchases',
+    icon: Sparkles
   }
 };
 
@@ -165,41 +168,33 @@ export const ExpenseForm: React.FC = () => {
                   className="sr-only"
                 />
                 
-                {/* Custom radio button */}
-                <div 
-                  className="w-4 h-4 rounded-full border-2 mr-2 flex-shrink-0"
-                  style={{
-                    borderColor: form.rating === key ? config.color : '#9CA3AF',
-                    backgroundColor: form.rating === key ? config.color : 'transparent'
-                  }}
-                >
-                  {form.rating === key && (
-                    <div className="w-1.5 h-1.5 bg-white rounded-full m-0.5" />
-                  )}
+                {/* Priority Icon */}
+                <div className="mr-2 flex-shrink-0">
+                  <config.icon 
+                    className={`w-4 h-4 ${
+                      form.rating === key 
+                        ? config.textClass 
+                        : 'text-gray-400 dark:text-gray-500'
+                    }`} 
+                  />
                 </div>
 
                 {/* Content - single line */}
-                <div className="flex items-center justify-between flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-sm font-medium ${
-                      form.rating === key 
-                        ? config.textClass 
-                        : 'text-gray-900 dark:text-gray-100'
-                    }`}>
-                      {config.label}
-                    </span>
-                    <span className={`text-xs ${
-                      form.rating === key 
-                        ? 'text-gray-600 dark:text-gray-300' 
-                        : 'text-gray-500 dark:text-gray-400'
-                    }`}>
-                      · {config.description}
-                    </span>
-                  </div>
-                  <div 
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ backgroundColor: config.color }}
-                  />
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm font-medium ${
+                    form.rating === key 
+                      ? config.textClass 
+                      : 'text-gray-900 dark:text-gray-100'
+                  }`}>
+                    {config.label}
+                  </span>
+                  <span className={`text-xs ${
+                    form.rating === key 
+                      ? 'text-gray-600 dark:text-gray-300' 
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}>
+                    · {config.description}
+                  </span>
                 </div>
               </label>
             ))}
