@@ -1,3 +1,4 @@
+// Hook that calculates account totals, net worth, and categorizes assets vs liabilities
 import { useMemo } from 'react';
 import { useAccountStore } from '../../stores/accountStore';
 import { useCurrencyStore } from '../../stores/currencyStore';

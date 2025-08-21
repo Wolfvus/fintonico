@@ -1,3 +1,4 @@
+// Hook that calculates start and end dates based on view mode (month, year, custom)
 import { useMemo } from 'react';
 
 interface DateRangeParams {

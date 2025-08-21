@@ -1,3 +1,4 @@
+// Hook that calculates total expenses and income for filtered transactions with currency conversion
 import { useMemo } from 'react';
 import { useCurrencyStore } from '../../stores/currencyStore';
 

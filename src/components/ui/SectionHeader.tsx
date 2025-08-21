@@ -1,3 +1,4 @@
+// Section header component with title and optional right-side content (actions, buttons)
 import React from 'react';
 
 interface SectionHeaderProps {

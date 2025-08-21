@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useExpenseStore } from '../../stores/expenseStore';
 import { useIncomeStore } from '../../stores/incomeStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { TrendingUp, TrendingDown, Wallet, DollarSign, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Landmark, PiggyBank, ArrowUpDown, PieChart, Scissors, LayoutGrid } from 'lucide-react';
@@ -9,6 +8,7 @@ import { useFilteredTransactions } from '../../hooks/finance/useFilteredTransact
 import { useTotals } from '../../hooks/finance/useTotals';
 import { useAccountsSummary } from '../../hooks/finance/useAccountsSummary';
 import { useCombinedTransactions } from '../../hooks/finance/useCombinedTransactions';
+import { Card, SectionHeader, Tabs, Pagination } from '../ui';
 import { CurrencyBadge } from '../Shared/CurrencyBadge';
 import { TestDataAdmin } from '../Admin/TestDataAdmin';
 
@@ -33,7 +33,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     generateInvestmentYields();
   }, [generateInvestmentYields]);
 
-  // Calculate date range using hook
+  // Calculate date range using hook - converts view mode and dates into start/end range
   const { startDate, endDate } = useDateRange({
     viewMode,
     selectedDate,
@@ -41,19 +41,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     customEndDate
   });
   
-  // Filter transactions for date range using hook
+  // Filter transactions for date range using hook - gets expenses/incomes within date range
   const { filteredExpenses, filteredIncomes } = useFilteredTransactions({
     startDate,
     endDate
   });
   
-  // Calculate totals for the selected period using hook
+  // Calculate totals for the selected period using hook - sums filtered transactions with currency conversion
   const { periodExpenses, periodIncome } = useTotals({
     filteredExpenses,
     filteredIncomes
   });
 
-  // Calculate account totals using hook
+  // Calculate account totals using hook - computes net worth and categorizes accounts
   const { totalAssets, totalLiabilities, netWorth, assetTypes, liabilityTypes, accounts } = useAccountsSummary();
 
   // Calculate previous month's net worth for comparison
@@ -72,7 +72,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
   const { change: netWorthChange, changePercent: netWorthChangePercent } = getPreviousMonthNetWorth();
 
-  // Combine and sort transactions for display using hook
+  // Combine and sort transactions for display using hook - creates unified transaction view models
   const allTransactions = useCombinedTransactions({
     filteredExpenses,
     filteredIncomes,
@@ -113,35 +113,42 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   // State for insights tabs
   const [activeInsightTab, setActiveInsightTab] = useState<'overview' | 'analytics' | 'optimize'>('overview');
 
-  // Reusable styles
-  const kpiLabelStyle = "text-sm font-bold text-gray-900 dark:text-white";
-  const kpiIconStyle = "w-4 h-4 text-gray-900 dark:text-white";
-  const cardStyle = "bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700";
-  const hoverButtonStyle = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
-  const navigationButtonStyle = "p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors";
-  const chevronIconStyle = "w-4 h-4 text-gray-600 dark:text-gray-400";
-  const inputStyle = "text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300";
-  const secondaryTextStyle = "text-xs text-gray-500 dark:text-gray-400";
-  const primaryTextStyle = "text-gray-900 dark:text-white";
-  const borderStyle = "border-gray-200 dark:border-gray-700";
-  const heroGradientStyle = "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900";
-  const iconContainerStyle = "inline-flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 rounded-xl";
-  const netWorthButtonStyle = "hover:bg-blue-50 dark:hover:bg-gray-700 rounded-xl p-3 transition-colors";
+  // Local styles
+  const styles = {
+    kpiLabel: "text-sm font-bold text-gray-900 dark:text-white",
+    kpiIcon: "w-4 h-4 text-gray-900 dark:text-white",
+    heroGradient: "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900",
+    iconContainer: "inline-flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 rounded-xl",
+    navButton: "p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors",
+    netWorthButton: "hover:bg-blue-50 dark:hover:bg-gray-700 rounded-xl p-3 transition-colors",
+    input: "text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300",
+    clickableCard: "p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer",
+    sectionLabel: "text-sm text-gray-600 dark:text-gray-400",
+    sectionHeader: "text-sm font-semibold text-gray-900 dark:text-white",
+    transactionItem: "flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors border border-gray-200 dark:border-gray-700",
+    transactionDesc: "text-sm font-medium text-gray-900 dark:text-white truncate",
+    emptyState: "text-center py-8 text-gray-500 dark:text-gray-400 text-sm",
+    dateDisplay: "text-sm font-semibold text-gray-900 dark:text-white text-center",
+    amountLarge: "text-lg font-bold",
+    amountGreen: "text-lg font-bold text-green-600 dark:text-green-400",
+    amountRed: "text-lg font-bold text-red-600 dark:text-red-400",
+    amountYellow: "text-lg font-bold text-yellow-600 dark:text-yellow-400"
+  };
 
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* Hero Net Worth Section */}
-      <div className={`${heroGradientStyle} rounded-xl shadow-lg p-3 sm:p-4 border border-blue-200 dark:border-gray-700`}>
+      <div className={`${styles.heroGradient} rounded-xl shadow-lg p-3 sm:p-4 border border-blue-200 dark:border-gray-700`}>
         {/* Mobile Layout - Centered */}
         <div className="block lg:hidden">
           <button 
             onClick={() => onNavigate?.('networth')}
-            className={`text-center mb-2 w-full ${netWorthButtonStyle}`}
+            className={`text-center mb-2 w-full ${styles.netWorthButton}`}
           >
-            <div className={`${iconContainerStyle} p-2 mb-1`}>
+            <div className={`${styles.iconContainer} p-2 mb-1`}>
               <Landmark className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <h2 className={`text-xl font-bold ${primaryTextStyle} mb-1`}>Total Net Worth</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Total Net Worth</h2>
             <div className="flex items-center justify-center gap-3">
               <p className={`text-3xl sm:text-4xl font-bold ${
                 netWorth >= 0 
@@ -162,11 +169,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           </button>
           
           {/* Assets and Liabilities Summary - Mobile */}
-          <div className={`grid grid-cols-2 gap-4 pt-2 border-t ${borderStyle}`}>
+          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200 dark:border-gray-700">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Assets</p>
+                <p className={styles.sectionLabel}>Total Assets</p>
               </div>
               <p className="text-xl font-semibold text-green-600 dark:text-green-400">
                 {formatAmount(totalAssets)}
@@ -175,7 +182,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Liabilities</p>
+                <p className={styles.sectionLabel}>Total Liabilities</p>
               </div>
               <p className="text-xl font-semibold text-red-600 dark:text-red-400">
                 {formatAmount(totalLiabilities)}
@@ -189,9 +196,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           {/* Left Side - Net Worth */}
           <button 
             onClick={() => onNavigate?.('networth')}
-            className="flex items-center gap-4 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-xl p-3 transition-colors"
+            className={`flex items-center gap-4 ${styles.netWorthButton}`}
           >
-            <div className="inline-flex items-center justify-center p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+            <div className={`${styles.iconContainer} p-3`}>
               <Landmark className="w-8 h-8 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="min-w-0 flex-1">
@@ -222,7 +229,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <div className="flex items-center gap-3">
               <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Assets</p>
+                <p className={styles.sectionLabel}>Total Assets</p>
                 <p className="text-xl font-semibold text-green-600 dark:text-green-400">
                   {formatAmount(totalAssets)}
                 </p>
@@ -233,7 +240,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <div className="flex items-center gap-3">
               <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Liabilities</p>
+                <p className={styles.sectionLabel}>Total Liabilities</p>
                 <p className="text-xl font-semibold text-red-600 dark:text-red-400">
                   {formatAmount(totalLiabilities)}
                 </p>
@@ -244,7 +251,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       </div>
 
       {/* Time Period Controls */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+      <Card className="p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center justify-center sm:justify-start gap-2">
             <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -252,7 +259,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <select
               value={viewMode}
               onChange={(e) => setViewMode(e.target.value as typeof viewMode)}
-              className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+              className={styles.input}
             >
               <option value="month">Monthly</option>
               <option value="year">Yearly</option>
@@ -265,16 +272,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <div className="flex items-center justify-center sm:justify-start gap-2">
               <button
                 onClick={() => navigateMonth('prev')}
-                className="p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+                className={styles.navButton}
               >
                 <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
-              <span className="text-sm font-semibold text-gray-900 dark:text-white min-w-[120px] text-center">
+              <span className={`${styles.dateDisplay} min-w-[120px]`}>
                 {selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </span>
               <button
                 onClick={() => navigateMonth('next')}
-                className="p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+                className={styles.navButton}
               >
                 <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
@@ -285,16 +292,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <div className="flex items-center justify-center sm:justify-start gap-2">
               <button
                 onClick={() => navigateYear('prev')}
-                className="p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+                className={styles.navButton}
               >
                 <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
-              <span className="text-sm font-semibold text-gray-900 dark:text-white min-w-[80px] text-center">
+              <span className={`${styles.dateDisplay} min-w-[80px]`}>
                 {selectedDate.getFullYear()}
               </span>
               <button
                 onClick={() => navigateYear('next')}
-                className="p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+                className={styles.navButton}
               >
                 <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
@@ -307,27 +314,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                className={styles.input}
               />
-              <span className="text-sm text-gray-600 dark:text-gray-400">to</span>
+              <span className={styles.sectionLabel}>to</span>
               <input
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                className={styles.input}
               />
             </div>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* KPI Cards Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {/* Monthly Cash Flow */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-gray-200 dark:border-gray-700">
+        <Card className="p-4">
           <div className="flex items-center gap-2 mb-2">
-            <ArrowUpDown className={kpiIconStyle} />
-            <p className={kpiLabelStyle}>Cash Flow</p>
+            <ArrowUpDown className={styles.kpiIcon} />
+            <p className={styles.kpiLabel}>Cash Flow</p>
           </div>
           <p className={`text-lg font-bold ${
             monthlyCashFlow >= 0 
@@ -339,13 +346,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {monthlyCashFlow >= 0 ? 'Surplus' : 'Deficit'}
           </p>
-        </div>
+        </Card>
 
         {/* Savings Rate */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-gray-200 dark:border-gray-700">
+        <Card className="p-4">
           <div className="flex items-center gap-2 mb-2">
-            <PiggyBank className={kpiIconStyle} />
-            <p className={kpiLabelStyle}>Savings Rate</p>
+            <PiggyBank className={styles.kpiIcon} />
+            <p className={styles.kpiLabel}>Savings Rate</p>
           </div>
           <p className={`text-lg font-bold ${
             savingsRate >= 20 
@@ -359,40 +366,44 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           <p className="text-xs text-gray-500 dark:text-gray-400">
             of income
           </p>
-        </div>
+        </Card>
 
         {/* Monthly Income */}
         <button 
+          className="w-full text-left"
           onClick={() => onNavigate?.('income')}
-          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left w-full"
         >
-          <div className="flex items-center gap-2 mb-2">
-            <DollarSign className={kpiIconStyle} />
-            <p className={kpiLabelStyle}>Income</p>
-          </div>
-          <p className="text-lg font-bold text-green-600 dark:text-green-400">
-            {formatAmount(periodIncome)}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {filteredIncomes.length} transactions
-          </p>
+          <Card className={styles.clickableCard}>
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign className={styles.kpiIcon} />
+              <p className={styles.kpiLabel}>Income</p>
+            </div>
+            <p className={styles.amountGreen}>
+              {formatAmount(periodIncome)}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {filteredIncomes.length} transactions
+            </p>
+          </Card>
         </button>
 
         {/* Monthly Expenses */}
         <button 
+          className="w-full text-left"
           onClick={() => onNavigate?.('expenses')}
-          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left w-full"
         >
-          <div className="flex items-center gap-2 mb-2">
-            <Wallet className={kpiIconStyle} />
-            <p className={kpiLabelStyle}>Expenses</p>
-          </div>
-          <p className="text-lg font-bold text-red-600 dark:text-red-400">
-            {formatAmount(periodExpenses)}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {filteredExpenses.length} transactions
-          </p>
+          <Card className={styles.clickableCard}>
+            <div className="flex items-center gap-2 mb-2">
+              <Wallet className={styles.kpiIcon} />
+              <p className={styles.kpiLabel}>Expenses</p>
+            </div>
+            <p className={styles.amountRed}>
+              {formatAmount(periodExpenses)}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {filteredExpenses.length} transactions
+            </p>
+          </Card>
         </button>
       </div>
 
@@ -400,10 +411,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left Column: Recent Transactions (2/3 width) */}
         <div className="lg:col-span-2">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-            <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Transactions</h3>
+          <Card>
+            {/* SectionHeader primitive - provides consistent header with collapse toggle */}
+            <SectionHeader 
+              title="Recent Transactions"
+              right={
                 <button
                   onClick={() => setIsTransactionsCollapsed(!isTransactionsCollapsed)}
                   className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -414,159 +426,114 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                   )}
                 </button>
-              </div>
+              }
+              className="p-4 sm:p-5"
+            />
           
-          {!isTransactionsCollapsed && (
-            <div className="flex items-center gap-2 mt-3">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Filter:</span>
-              <select
-                value={entryFilter}
-                onChange={(e) => setEntryFilter(e.target.value as typeof entryFilter)}
-                className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-              >
-                <option value="all">All</option>
-                <option value="income">Income</option>
-                <option value="expense">Expenses</option>
-              </select>
-            </div>
-          )}
-        </div>
-
-        {!isTransactionsCollapsed && (
-          <div className="p-4">
-            {paginatedTransactions.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
-                No transactions found for the selected period
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {paginatedTransactions.map((transaction) => (
-                  <div
-                    key={transaction.id}
-                    className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors border border-gray-200 dark:border-gray-700"
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                        transaction.type === 'income' ? 'bg-green-500' : 'bg-red-500'
-                      }`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {transaction.description}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {formatDate(transaction.date)}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <p className={`text-sm font-medium ${
-                        transaction.type === 'income' 
-                          ? 'text-green-600 dark:text-green-400' 
-                          : 'text-red-600 dark:text-red-400'
-                      }`}>
-                        {transaction.formattedAmount}
-                      </p>
-                      <CurrencyBadge 
-                        currency={transaction.currency} 
-                        baseCurrency={baseCurrency}
-                      />
-                    </div>
+            {!isTransactionsCollapsed && (
+              <div>
+                <div className="px-4 sm:px-5 pt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={styles.sectionLabel}>Filter:</span>
+                    <select
+                      value={entryFilter}
+                      onChange={(e) => setEntryFilter(e.target.value as typeof entryFilter)}
+                      className={styles.input}
+                    >
+                      <option value="all">All</option>
+                      <option value="income">Income</option>
+                      <option value="expense">Expenses</option>
+                    </select>
                   </div>
-                ))}
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Page {currentPage} of {totalPages} ({allTransactions.length} total)
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                        disabled={currentPage === 1}
-                        className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                      >
-                        Previous
-                      </button>
-                      <button
-                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                        disabled={currentPage === totalPages}
-                        className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                      >
-                        Next
-                      </button>
+                </div>
+                <div className="p-4">
+                  {paginatedTransactions.length === 0 ? (
+                    <div className={styles.emptyState}>
+                      No transactions found for the selected period
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="space-y-2">
+                      {paginatedTransactions.map((transaction) => (
+                        <div
+                          key={transaction.id}
+                          className={styles.transactionItem}
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                              transaction.type === 'income' ? 'bg-green-500' : 'bg-red-500'
+                            }`} />
+                            <div className="flex-1 min-w-0">
+                              <p className={styles.transactionDesc}>
+                                {transaction.description}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {formatDate(transaction.date)}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <p className={`text-sm font-medium ${
+                              transaction.type === 'income' 
+                                ? 'text-green-600 dark:text-green-400' 
+                                : 'text-red-600 dark:text-red-400'
+                            }`}>
+                              {transaction.formattedAmount}
+                            </p>
+                            <CurrencyBadge 
+                              currency={transaction.currency} 
+                              baseCurrency={baseCurrency}
+                            />
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Pagination primitive - handles navigation with status label */}
+                      {totalPages > 1 && (
+                        <Pagination 
+                          page={currentPage}
+                          totalPages={totalPages}
+                          onPrev={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                          onNext={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                          label={`Page ${currentPage} of ${totalPages} (${allTransactions.length} total)`}
+                          className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
-          </div>
-        )}
-          </div>
+          </Card>
         </div>
 
         {/* Right Column: Insights Panel (1/3 width) */}
         <div className="lg:col-span-1">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-            {/* Tabs Header */}
-            <div className="border-b border-gray-200 dark:border-gray-700">
-              <div className="flex">
-                <button
-                  onClick={() => setActiveInsightTab('overview')}
-                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-                    activeInsightTab === 'overview'
-                      ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <LayoutGrid className="w-4 h-4" />
-                    <span className="hidden sm:inline">Overview</span>
-                  </div>
-                </button>
-                <button
-                  onClick={() => setActiveInsightTab('analytics')}
-                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-                    activeInsightTab === 'analytics'
-                      ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <PieChart className="w-4 h-4" />
-                    <span className="hidden sm:inline">Analytics</span>
-                  </div>
-                </button>
-                <button
-                  onClick={() => setActiveInsightTab('optimize')}
-                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-                    activeInsightTab === 'optimize'
-                      ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <Scissors className="w-4 h-4" />
-                    <span className="hidden sm:inline">Optimize</span>
-                  </div>
-                </button>
-              </div>
-            </div>
+          <Card>
+            {/* Tabs primitive - navigation with icons and responsive labels */}
+            <Tabs 
+              value={activeInsightTab}
+              onChange={(value) => setActiveInsightTab(value as typeof activeInsightTab)}
+              items={[
+                { value: 'overview', label: 'Overview', icon: LayoutGrid },
+                { value: 'analytics', label: 'Analytics', icon: PieChart },
+                { value: 'optimize', label: 'Optimize', icon: Scissors }
+              ]}
+            />
 
             {/* Tab Content */}
             <div className="p-4">
               {activeInsightTab === 'overview' && (
                 <div className="space-y-4">
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Quick Stats</h4>
+                  <h4 className={styles.sectionHeader}>Quick Stats</h4>
                   
                   {/* Top Categories */}
                   <div>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Top Expense Categories</p>
                     <div className="space-y-2">
                       {['essential', 'non_essential', 'luxury'].map((rating) => {
-                        const categoryExpenses = filteredExpenses.filter(e => e.rating === rating);
-                        const categoryTotal = categoryExpenses.reduce((sum, e) => 
+                        const categoryExpenses = filteredExpenses.filter((e: any) => e.rating === rating);
+                        const categoryTotal = categoryExpenses.reduce((sum: number, e: any) => 
                           sum + convertAmount(e.amount, e.currency, baseCurrency), 0
                         );
                         const percentage = periodExpenses > 0 ? (categoryTotal / periodExpenses) * 100 : 0;
@@ -603,15 +570,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     <div className="grid grid-cols-2 gap-2">
                       <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-2 text-center">
                         <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                          {accounts.filter(a => assetTypes.includes(a.type)).length}
+                          {accounts.filter((a: any) => assetTypes.includes(a.type)).length}
                         </p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">Assets</p>
+                        <p className={styles.sectionLabel}>Assets</p>
                       </div>
                       <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-2 text-center">
                         <p className="text-lg font-bold text-red-600 dark:text-red-400">
-                          {accounts.filter(a => liabilityTypes.includes(a.type)).length}
+                          {accounts.filter((a: any) => liabilityTypes.includes(a.type)).length}
                         </p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">Liabilities</p>
+                        <p className={styles.sectionLabel}>Liabilities</p>
                       </div>
                     </div>
                   </div>
@@ -620,7 +587,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
               {activeInsightTab === 'analytics' && (
                 <div className="space-y-4">
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Spending Analysis</h4>
+                  <h4 className={styles.sectionHeader}>Spending Analysis</h4>
                   <p className="text-xs text-gray-600 dark:text-gray-400">
                     Detailed analytics coming soon. Track spending patterns, identify trends, and visualize your financial habits.
                   </p>
@@ -635,7 +602,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
               {activeInsightTab === 'optimize' && (
                 <div className="space-y-4">
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Optimization Tips</h4>
+                  <h4 className={styles.sectionHeader}>Optimization Tips</h4>
                   
                   {/* Savings Potential */}
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3">
@@ -645,20 +612,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     </div>
                     {(() => {
                       const nonEssentialTotal = filteredExpenses
-                        .filter(e => e.rating === 'non_essential' || e.rating === 'luxury')
-                        .reduce((sum, e) => sum + convertAmount(e.amount, e.currency, baseCurrency), 0);
+                        .filter((e: any) => e.rating === 'non_essential' || e.rating === 'luxury')
+                        .reduce((sum: number, e: any) => sum + convertAmount(e.amount, e.currency, baseCurrency), 0);
                       
                       return nonEssentialTotal > 0 ? (
                         <>
                           <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
                             {formatAmount(nonEssentialTotal)}
                           </p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                          <p className={styles.sectionLabel}>
                             in non-essential spending
                           </p>
                         </>
                       ) : (
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                        <p className={styles.sectionLabel}>
                           Great job! All spending is essential.
                         </p>
                       );
@@ -667,7 +634,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
                   {/* Tips */}
                   <div className="space-y-2">
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Quick Tips:</p>
+                    <p className={styles.sectionLabel}>Quick Tips:</p>
                     <ul className="space-y-1 text-xs text-gray-700 dark:text-gray-300">
                       <li className="flex items-start gap-1">
                         <span className="text-green-500">•</span>
@@ -686,7 +653,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 </div>
               )}
             </div>
-          </div>
+          </Card>
         </div>
       </div>
 

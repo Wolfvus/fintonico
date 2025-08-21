@@ -1,3 +1,4 @@
+// Hook that combines and sorts filtered expenses/incomes into unified transaction view models
 import { useMemo } from 'react';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import type { TransactionVM } from '../../types/view/TransactionVM';

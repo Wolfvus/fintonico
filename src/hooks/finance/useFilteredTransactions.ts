@@ -1,3 +1,4 @@
+// Hook that filters expenses and incomes by date range using store data
 import { useMemo } from 'react';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useIncomeStore } from '../../stores/incomeStore';

@@ -1,3 +1,4 @@
+// Tab navigation component with icon support and responsive design
 import React from 'react';
 
 interface TabItem {

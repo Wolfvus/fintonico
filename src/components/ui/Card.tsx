@@ -1,3 +1,4 @@
+// Reusable card component with consistent styling and dark mode support
 import React from 'react';
 
 interface CardProps {

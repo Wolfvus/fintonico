@@ -1,3 +1,4 @@
+// Pagination component with prev/next navigation and optional status label
 import React from 'react';
 
 interface PaginationProps {
