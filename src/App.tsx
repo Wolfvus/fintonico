@@ -181,8 +181,8 @@ function App() {
       </div>
 
 
-      <main className="pt-20 lg:pt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:pl-20">
+      <main className="pt-16 lg:pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 sm:py-3 lg:pl-20">
           {activeTab === 'dashboard' && (
             <ErrorBoundary>
               <Dashboard onNavigate={(tab) => setActiveTab(tab)} />

@@ -13,7 +13,7 @@ interface DashboardProps {
   onNavigate?: (tab: 'income' | 'expenses' | 'assets' | 'liabilities' | 'networth') => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = () => {
+export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const { expenses } = useExpenseStore();
   const { incomes, generateInvestmentYields } = useIncomeStore();
   const { accounts } = useAccountStore();
@@ -25,7 +25,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   const [customEndDate, setCustomEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isTransactionsCollapsed, setIsTransactionsCollapsed] = useState(false);
-  const itemsPerPage = 20;
+  const itemsPerPage = 10;
   
   // Generate investment yields on dashboard load
   React.useEffect(() => {
@@ -188,17 +188,24 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   // State for insights tabs
   const [activeInsightTab, setActiveInsightTab] = useState<'overview' | 'analytics' | 'optimize'>('overview');
 
+  // Reusable styles
+  const kpiLabelStyle = "text-sm font-bold text-gray-900 dark:text-white";
+  const kpiIconStyle = "w-4 h-4 text-gray-900 dark:text-white";
+
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-3 sm:space-y-4">
       {/* Hero Net Worth Section */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg p-4 sm:p-5 border border-blue-200 dark:border-gray-700">
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg p-3 sm:p-4 border border-blue-200 dark:border-gray-700">
         {/* Mobile Layout - Centered */}
         <div className="block lg:hidden">
-          <div className="text-center mb-4">
-            <div className="inline-flex items-center justify-center p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl mb-3">
+          <button 
+            onClick={() => onNavigate?.('networth')}
+            className="text-center mb-2 w-full hover:bg-blue-50 dark:hover:bg-gray-700 rounded-xl p-3 transition-colors"
+          >
+            <div className="inline-flex items-center justify-center p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl mb-1">
               <Landmark className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Total Net Worth</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Total Net Worth</h2>
             <div className="flex items-center justify-center gap-3">
               <p className={`text-3xl sm:text-4xl font-bold ${
                 netWorth >= 0 
@@ -216,10 +223,10 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                 {Math.abs(netWorthChangePercent).toFixed(1)}%
               </div>
             </div>
-          </div>
+          </button>
           
           {/* Assets and Liabilities Summary - Mobile */}
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-blue-200 dark:border-gray-700">
+          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-blue-200 dark:border-gray-700">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
@@ -244,12 +251,15 @@ export const Dashboard: React.FC<DashboardProps> = () => {
         {/* Desktop Layout - Left/Right Split */}
         <div className="hidden lg:flex lg:items-center lg:justify-between">
           {/* Left Side - Net Worth */}
-          <div className="flex items-center gap-4">
+          <button 
+            onClick={() => onNavigate?.('networth')}
+            className="flex items-center gap-4 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-xl p-3 transition-colors"
+          >
             <div className="inline-flex items-center justify-center p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
               <Landmark className="w-8 h-8 text-blue-600 dark:text-blue-400" />
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Total Net Worth</h2>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1 text-left">Total Net Worth</h2>
               <div className="flex items-center gap-3">
                 <p className={`text-3xl font-bold ${
                   netWorth >= 0 
@@ -268,10 +278,10 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </button>
 
           {/* Right Side - Assets and Liabilities Stack */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             {/* Assets */}
             <div className="flex items-center gap-3">
               <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -297,80 +307,10 @@ export const Dashboard: React.FC<DashboardProps> = () => {
         </div>
       </div>
 
-      {/* KPI Cards Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {/* Monthly Cash Flow */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2 mb-2">
-            <ArrowUpDown className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <p className="text-xs text-gray-600 dark:text-gray-400">Cash Flow</p>
-          </div>
-          <p className={`text-lg font-bold ${
-            monthlyCashFlow >= 0 
-              ? 'text-green-600 dark:text-green-400' 
-              : 'text-red-600 dark:text-red-400'
-          }`}>
-            {formatAmount(monthlyCashFlow)}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {monthlyCashFlow >= 0 ? 'Surplus' : 'Deficit'}
-          </p>
-        </div>
-
-        {/* Savings Rate */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2 mb-2">
-            <PiggyBank className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-            <p className="text-xs text-gray-600 dark:text-gray-400">Savings Rate</p>
-          </div>
-          <p className={`text-lg font-bold ${
-            savingsRate >= 20 
-              ? 'text-green-600 dark:text-green-400' 
-              : savingsRate >= 10
-              ? 'text-yellow-600 dark:text-yellow-400'
-              : 'text-red-600 dark:text-red-400'
-          }`}>
-            {savingsRate.toFixed(1)}%
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            of income
-          </p>
-        </div>
-
-        {/* Monthly Income */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
-            <p className="text-xs text-gray-600 dark:text-gray-400">Income</p>
-          </div>
-          <p className="text-lg font-bold text-green-600 dark:text-green-400">
-            {formatAmount(periodIncome)}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {filteredIncomes.length} transactions
-          </p>
-        </div>
-
-        {/* Monthly Expenses */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2 mb-2">
-            <Wallet className="w-4 h-4 text-red-600 dark:text-red-400" />
-            <p className="text-xs text-gray-600 dark:text-gray-400">Expenses</p>
-          </div>
-          <p className="text-lg font-bold text-red-600 dark:text-red-400">
-            {formatAmount(periodExpenses)}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {filteredExpenses.length} transactions
-          </p>
-        </div>
-      </div>
-
-
       {/* Time Period Controls */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center sm:justify-start gap-2">
             <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             <span className="text-sm font-medium text-gray-900 dark:text-white">Time Period:</span>
             <select
@@ -386,7 +326,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
 
           {/* Navigation Controls */}
           {viewMode === 'month' && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center sm:justify-start gap-2">
               <button
                 onClick={() => navigateMonth('prev')}
                 className="p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
@@ -406,7 +346,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
           )}
 
           {viewMode === 'year' && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center sm:justify-start gap-2">
               <button
                 onClick={() => navigateYear('prev')}
                 className="p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
@@ -426,7 +366,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
           )}
 
           {viewMode === 'custom' && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center sm:justify-start gap-2">
               <input
                 type="date"
                 value={customStartDate}
@@ -443,6 +383,81 @@ export const Dashboard: React.FC<DashboardProps> = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* KPI Cards Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {/* Monthly Cash Flow */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2 mb-2">
+            <ArrowUpDown className={kpiIconStyle} />
+            <p className={kpiLabelStyle}>Cash Flow</p>
+          </div>
+          <p className={`text-lg font-bold ${
+            monthlyCashFlow >= 0 
+              ? 'text-green-600 dark:text-green-400' 
+              : 'text-red-600 dark:text-red-400'
+          }`}>
+            {formatAmount(monthlyCashFlow)}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {monthlyCashFlow >= 0 ? 'Surplus' : 'Deficit'}
+          </p>
+        </div>
+
+        {/* Savings Rate */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2 mb-2">
+            <PiggyBank className={kpiIconStyle} />
+            <p className={kpiLabelStyle}>Savings Rate</p>
+          </div>
+          <p className={`text-lg font-bold ${
+            savingsRate >= 20 
+              ? 'text-green-600 dark:text-green-400' 
+              : savingsRate >= 10
+              ? 'text-yellow-600 dark:text-yellow-400'
+              : 'text-red-600 dark:text-red-400'
+          }`}>
+            {savingsRate.toFixed(1)}%
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            of income
+          </p>
+        </div>
+
+        {/* Monthly Income */}
+        <button 
+          onClick={() => onNavigate?.('income')}
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left w-full"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <DollarSign className={kpiIconStyle} />
+            <p className={kpiLabelStyle}>Income</p>
+          </div>
+          <p className="text-lg font-bold text-green-600 dark:text-green-400">
+            {formatAmount(periodIncome)}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {filteredIncomes.length} transactions
+          </p>
+        </button>
+
+        {/* Monthly Expenses */}
+        <button 
+          onClick={() => onNavigate?.('expenses')}
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left w-full"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Wallet className={kpiIconStyle} />
+            <p className={kpiLabelStyle}>Expenses</p>
+          </div>
+          <p className="text-lg font-bold text-red-600 dark:text-red-400">
+            {formatAmount(periodExpenses)}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {filteredExpenses.length} transactions
+          </p>
+        </button>
       </div>
 
       {/* Two Column Layout: Transactions and Insights */}
