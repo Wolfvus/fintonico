@@ -191,21 +191,32 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   // Reusable styles
   const kpiLabelStyle = "text-sm font-bold text-gray-900 dark:text-white";
   const kpiIconStyle = "w-4 h-4 text-gray-900 dark:text-white";
+  const cardStyle = "bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700";
+  const hoverButtonStyle = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
+  const navigationButtonStyle = "p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors";
+  const chevronIconStyle = "w-4 h-4 text-gray-600 dark:text-gray-400";
+  const inputStyle = "text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300";
+  const secondaryTextStyle = "text-xs text-gray-500 dark:text-gray-400";
+  const primaryTextStyle = "text-gray-900 dark:text-white";
+  const borderStyle = "border-gray-200 dark:border-gray-700";
+  const heroGradientStyle = "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900";
+  const iconContainerStyle = "inline-flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 rounded-xl";
+  const netWorthButtonStyle = "hover:bg-blue-50 dark:hover:bg-gray-700 rounded-xl p-3 transition-colors";
 
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* Hero Net Worth Section */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg p-3 sm:p-4 border border-blue-200 dark:border-gray-700">
+      <div className={`${heroGradientStyle} rounded-xl shadow-lg p-3 sm:p-4 border border-blue-200 dark:border-gray-700`}>
         {/* Mobile Layout - Centered */}
         <div className="block lg:hidden">
           <button 
             onClick={() => onNavigate?.('networth')}
-            className="text-center mb-2 w-full hover:bg-blue-50 dark:hover:bg-gray-700 rounded-xl p-3 transition-colors"
+            className={`text-center mb-2 w-full ${netWorthButtonStyle}`}
           >
-            <div className="inline-flex items-center justify-center p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl mb-1">
+            <div className={`${iconContainerStyle} p-2 mb-1`}>
               <Landmark className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Total Net Worth</h2>
+            <h2 className={`text-xl font-bold ${primaryTextStyle} mb-1`}>Total Net Worth</h2>
             <div className="flex items-center justify-center gap-3">
               <p className={`text-3xl sm:text-4xl font-bold ${
                 netWorth >= 0 
@@ -226,7 +237,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           </button>
           
           {/* Assets and Liabilities Summary - Mobile */}
-          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-blue-200 dark:border-gray-700">
+          <div className={`grid grid-cols-2 gap-4 pt-2 border-t ${borderStyle}`}>
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
