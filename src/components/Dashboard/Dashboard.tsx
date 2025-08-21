@@ -1,22 +1,23 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useIncomeStore } from '../../stores/incomeStore';
-import { useAccountStore } from '../../stores/accountStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { TrendingUp, TrendingDown, Wallet, DollarSign, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Landmark, PiggyBank, ArrowUpDown, PieChart, Scissors, LayoutGrid } from 'lucide-react';
-import { formatDate, parseLocalDate } from '../../utils/dateFormat';
+import { formatDate } from '../../utils/dateFormat';
+import { useDateRange } from '../../hooks/finance/useDateRange';
+import { useFilteredTransactions } from '../../hooks/finance/useFilteredTransactions';
+import { useTotals } from '../../hooks/finance/useTotals';
+import { useAccountsSummary } from '../../hooks/finance/useAccountsSummary';
+import { useCombinedTransactions } from '../../hooks/finance/useCombinedTransactions';
 import { CurrencyBadge } from '../Shared/CurrencyBadge';
 import { TestDataAdmin } from '../Admin/TestDataAdmin';
-import type { AccountType } from '../../types';
 
 interface DashboardProps {
   onNavigate?: (tab: 'income' | 'expenses' | 'assets' | 'liabilities' | 'networth') => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
-  const { expenses } = useExpenseStore();
-  const { incomes, generateInvestmentYields } = useIncomeStore();
-  const { accounts } = useAccountStore();
+  const { generateInvestmentYields } = useIncomeStore();
   const { formatAmount, baseCurrency, convertAmount } = useCurrencyStore();
   const [entryFilter, setEntryFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [viewMode, setViewMode] = useState<'month' | 'year' | 'custom'>('month');
@@ -32,78 +33,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     generateInvestmentYields();
   }, [generateInvestmentYields]);
 
-  // Calculate date range based on view mode
-  const getDateRange = () => {
-    let startDate: Date;
-    let endDate: Date;
-    
-    if (viewMode === 'month') {
-      const year = selectedDate.getFullYear();
-      const month = selectedDate.getMonth();
-      startDate = new Date(year, month, 1);
-      endDate = new Date(year, month + 1, 0, 23, 59, 59);
-    } else if (viewMode === 'year') {
-      const year = selectedDate.getFullYear();
-      startDate = new Date(year, 0, 1);
-      endDate = new Date(year, 11, 31, 23, 59, 59);
-    } else {
-      startDate = customStartDate ? new Date(customStartDate) : new Date();
-      endDate = customEndDate ? new Date(customEndDate) : new Date();
-    }
-    
-    return { startDate, endDate };
-  };
-  
-  const { startDate, endDate } = getDateRange();
-  
-  // Filter transactions for date range
-  const filteredExpenses = expenses.filter(expense => {
-    const expenseDate = parseLocalDate(expense.date);
-    return expenseDate >= startDate && expenseDate <= endDate;
+  // Calculate date range using hook
+  const { startDate, endDate } = useDateRange({
+    viewMode,
+    selectedDate,
+    customStartDate,
+    customEndDate
   });
   
-  const filteredIncomes = incomes.filter(income => {
-    const incomeDate = parseLocalDate(income.date);
-    return incomeDate >= startDate && incomeDate <= endDate;
+  // Filter transactions for date range using hook
+  const { filteredExpenses, filteredIncomes } = useFilteredTransactions({
+    startDate,
+    endDate
   });
   
-  // Calculate totals for the selected period
-  const periodExpenses = filteredExpenses.reduce((sum, expense) => 
-    sum + convertAmount(expense.amount, expense.currency, baseCurrency), 0
-  );
-  
-  const periodIncome = filteredIncomes.reduce((sum, income) => 
-    sum + convertAmount(income.amount, income.currency, baseCurrency), 0
-  );
+  // Calculate totals for the selected period using hook
+  const { periodExpenses, periodIncome } = useTotals({
+    filteredExpenses,
+    filteredIncomes
+  });
 
-  // Calculate account totals
-  const assetTypes: AccountType[] = ['cash', 'bank', 'exchange', 'investment', 'property', 'other'];
-  const liabilityTypes: AccountType[] = ['loan', 'credit-card', 'mortgage'];
-
-  const calculateAccountTotals = () => {
-    let totalAssets = 0;
-    let totalLiabilities = 0;
-
-    accounts.forEach(account => {
-      const accountTotal = account.balances.reduce((sum, balance) => {
-        return sum + convertAmount(balance.amount, balance.currency, baseCurrency);
-      }, 0);
-
-      if (assetTypes.includes(account.type)) {
-        totalAssets += accountTotal;
-      } else if (liabilityTypes.includes(account.type)) {
-        totalLiabilities += accountTotal;
-      }
-    });
-
-    return {
-      totalAssets,
-      totalLiabilities,
-      netWorth: totalAssets - totalLiabilities
-    };
-  };
-
-  const { totalAssets, totalLiabilities, netWorth } = calculateAccountTotals();
+  // Calculate account totals using hook
+  const { totalAssets, totalLiabilities, netWorth, assetTypes, liabilityTypes, accounts } = useAccountsSummary();
 
   // Calculate previous month's net worth for comparison
   const getPreviousMonthNetWorth = () => {
@@ -121,38 +72,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
   const { change: netWorthChange, changePercent: netWorthChangePercent } = getPreviousMonthNetWorth();
 
-  // Combine and sort transactions for display
-  const allTransactions = useMemo(() => {
-    const allItems = [
-      ...filteredExpenses.map(expense => ({
-        id: expense.id,
-        type: 'expense' as const,
-        description: expense.what,
-        amount: expense.amount,
-        currency: expense.currency,
-        date: expense.date,
-        category: expense.rating,
-        recurring: expense.recurring
-      })),
-      ...filteredIncomes.map(income => ({
-        id: income.id,
-        type: 'income' as const,
-        description: income.source,
-        amount: income.amount,
-        currency: income.currency,
-        date: income.date,
-        category: income.frequency,
-        recurring: false
-      }))
-    ];
-
-    return allItems
-      .filter(item => {
-        if (entryFilter === 'all') return true;
-        return item.type === entryFilter;
-      })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [filteredExpenses, filteredIncomes, entryFilter]);
+  // Combine and sort transactions for display using hook
+  const allTransactions = useCombinedTransactions({
+    filteredExpenses,
+    filteredIncomes,
+    entryFilter
+  });
 
   // Navigation helpers
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -540,8 +465,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                           ? 'text-green-600 dark:text-green-400' 
                           : 'text-red-600 dark:text-red-400'
                       }`}>
-                        {transaction.type === 'income' ? '+' : '-'}
-                        {formatAmount(convertAmount(transaction.amount, transaction.currency, baseCurrency))}
+                        {transaction.formattedAmount}
                       </p>
                       <CurrencyBadge 
                         currency={transaction.currency} 
