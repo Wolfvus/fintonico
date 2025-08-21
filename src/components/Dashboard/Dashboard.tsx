@@ -191,50 +191,108 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Hero Net Worth Section */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg p-4 sm:p-6 border border-blue-200 dark:border-gray-700">
-        <div className="text-center mb-4">
-          <div className="inline-flex items-center justify-center p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl mb-3">
-            <Landmark className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg p-4 sm:p-5 border border-blue-200 dark:border-gray-700">
+        {/* Mobile Layout - Centered */}
+        <div className="block lg:hidden">
+          <div className="text-center mb-4">
+            <div className="inline-flex items-center justify-center p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl mb-3">
+              <Landmark className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Total Net Worth</h2>
+            <div className="flex items-center justify-center gap-3">
+              <p className={`text-3xl sm:text-4xl font-bold ${
+                netWorth >= 0 
+                  ? 'text-blue-600 dark:text-blue-400' 
+                  : 'text-red-600 dark:text-red-400'
+              }`}>
+                {formatAmount(netWorth)}
+              </p>
+              <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-medium ${
+                netWorthChange >= 0 
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' 
+                  : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+              }`}>
+                {netWorthChange >= 0 ? '↑' : '↓'}
+                {Math.abs(netWorthChangePercent).toFixed(1)}%
+              </div>
+            </div>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Total Net Worth</h2>
-          <div className="flex items-center justify-center gap-3">
-            <p className={`text-3xl sm:text-4xl font-bold ${
-              netWorth >= 0 
-                ? 'text-blue-600 dark:text-blue-400' 
-                : 'text-red-600 dark:text-red-400'
-            }`}>
-              {formatAmount(netWorth)}
-            </p>
-            <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-medium ${
-              netWorthChange >= 0 
-                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' 
-                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-            }`}>
-              {netWorthChange >= 0 ? '↑' : '↓'}
-              {Math.abs(netWorthChangePercent).toFixed(1)}%
+          
+          {/* Assets and Liabilities Summary - Mobile */}
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-blue-200 dark:border-gray-700">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Assets</p>
+              </div>
+              <p className="text-xl font-semibold text-green-600 dark:text-green-400">
+                {formatAmount(totalAssets)}
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Liabilities</p>
+              </div>
+              <p className="text-xl font-semibold text-red-600 dark:text-red-400">
+                {formatAmount(totalLiabilities)}
+              </p>
             </div>
           </div>
         </div>
-        
-        {/* Assets and Liabilities Summary */}
-        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-blue-200 dark:border-gray-700">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Assets</p>
+
+        {/* Desktop Layout - Left/Right Split */}
+        <div className="hidden lg:flex lg:items-center lg:justify-between">
+          {/* Left Side - Net Worth */}
+          <div className="flex items-center gap-4">
+            <div className="inline-flex items-center justify-center p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+              <Landmark className="w-8 h-8 text-blue-600 dark:text-blue-400" />
             </div>
-            <p className="text-xl font-semibold text-green-600 dark:text-green-400">
-              {formatAmount(totalAssets)}
-            </p>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Total Net Worth</h2>
+              <div className="flex items-center gap-3">
+                <p className={`text-3xl font-bold ${
+                  netWorth >= 0 
+                    ? 'text-blue-600 dark:text-blue-400' 
+                    : 'text-red-600 dark:text-red-400'
+                }`}>
+                  {formatAmount(netWorth)}
+                </p>
+                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-medium ${
+                  netWorthChange >= 0 
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' 
+                    : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                }`}>
+                  {netWorthChange >= 0 ? '↑' : '↓'}
+                  {Math.abs(netWorthChangePercent).toFixed(1)}%
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Liabilities</p>
+
+          {/* Right Side - Assets and Liabilities Stack */}
+          <div className="flex flex-col gap-3">
+            {/* Assets */}
+            <div className="flex items-center gap-3">
+              <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Assets</p>
+                <p className="text-xl font-semibold text-green-600 dark:text-green-400">
+                  {formatAmount(totalAssets)}
+                </p>
+              </div>
             </div>
-            <p className="text-xl font-semibold text-red-600 dark:text-red-400">
-              {formatAmount(totalLiabilities)}
-            </p>
+            
+            {/* Liabilities */}
+            <div className="flex items-center gap-3">
+              <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Liabilities</p>
+                <p className="text-xl font-semibold text-red-600 dark:text-red-400">
+                  {formatAmount(totalLiabilities)}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
