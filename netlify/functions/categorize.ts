@@ -1,10 +1,4 @@
 import type { Handler } from '@netlify/functions';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-);
 
 const SYSTEM_PROMPT = `You are a financial categorization expert. Given a short expense description, categorize it deterministically.
 
@@ -64,17 +58,7 @@ export const handler: Handler = async (event) => {
     const data = await response.json();
     const result = JSON.parse(data.choices[0].message.content);
 
-    const { error } = await supabase
-      .from('expenses')
-      .update({
-        category: result.category,
-        subcategory: result.subcategory,
-        confidence: result.confidence,
-        explanation: result.explanation,
-      })
-      .eq('id', expenseId);
-
-    if (error) throw error;
+    // Note: Database update removed - Supabase not being used
 
     return {
       statusCode: 200,
