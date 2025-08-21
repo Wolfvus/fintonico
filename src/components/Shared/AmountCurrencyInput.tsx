@@ -1,5 +1,5 @@
 import React from 'react';
-import { Coins, Globe } from 'lucide-react';
+import { DollarSign, Globe } from 'lucide-react';
 import { useCurrencyStore } from '../../stores/currencyStore';
 
 interface AmountCurrencyInputProps {
@@ -25,7 +25,7 @@ export const AmountCurrencyInput: React.FC<AmountCurrencyInputProps> = ({
     <div className={className}>
       <div>
         <label className="flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-          <Coins className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          <DollarSign className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           Amount
         </label>
         <input

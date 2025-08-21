@@ -151,22 +151,15 @@ export const ExpenseForm: React.FC = () => {
           </label>
           <div className="space-y-1.5">
             {Object.entries(RATING_CONFIG).map(([key, config]) => (
-              <label
+              <div
                 key={key}
+                onClick={() => setForm(prev => ({ ...prev, rating: key as keyof typeof RATING_CONFIG }))}
                 className={`flex items-center p-2 rounded-md border cursor-pointer transition-all
                   ${form.rating === key 
                     ? `${config.bgClass} ${config.borderClass}` 
                     : 'border-gray-200 dark:border-gray-600 bg-blue-50 dark:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500'
                   }`}
               >
-                <input
-                  type="radio"
-                  name="rating"
-                  value={key}
-                  checked={form.rating === key}
-                  onChange={(e) => setForm(prev => ({ ...prev, rating: e.target.value as keyof typeof RATING_CONFIG }))}
-                  className="sr-only"
-                />
                 
                 {/* Priority Icon */}
                 <div className="mr-2 flex-shrink-0">
@@ -196,7 +189,7 @@ export const ExpenseForm: React.FC = () => {
                     · {config.description}
                   </span>
                 </div>
-              </label>
+              </div>
             ))}
           </div>
         </div>

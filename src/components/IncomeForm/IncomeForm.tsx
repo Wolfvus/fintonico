@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useIncomeStore } from '../../stores/incomeStore';
-import { Calendar, DollarSign, Clock, ChevronDown } from 'lucide-react';
+import { Calendar, DollarSign, Clock, ChevronDown, Plus, PenTool } from 'lucide-react';
 import { getTodayLocalString } from '../../utils/dateFormat';
 import { sanitizeDescription } from '../../utils/sanitization';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { AmountCurrencyInput } from '../Shared/AmountCurrencyInput';
 import { FormField } from '../Shared/FormField';
+import { formStyles } from '../../styles/formStyles';
 
 export const IncomeForm: React.FC = () => {
   const [source, setSource] = useState('');
   const [frequency, setFrequency] = useState<'one-time' | 'weekly' | 'monthly' | 'yearly'>('one-time');
   const [showFrequencyDropdown, setShowFrequencyDropdown] = useState(false);
   const [date, setDate] = useState(getTodayLocalString());
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -24,6 +26,23 @@ export const IncomeForm: React.FC = () => {
     handleCurrencyChange,
     reset: resetCurrency
   } = useCurrencyInput();
+
+  // Handle outside click to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowFrequencyDropdown(false);
+      }
+    };
+
+    if (showFrequencyDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showFrequencyDropdown]);
 
   const FREQUENCY_CONFIG = {
     'one-time': {
@@ -115,22 +134,23 @@ export const IncomeForm: React.FC = () => {
   };
 
   return (
-    <div className="bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg border border-blue-200 dark:border-gray-700 p-6">
+    <div className={formStyles.card}>
       <div className="flex items-center gap-2 mb-6">
-        <DollarSign className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+        <Plus className="w-5 h-5 text-gray-600 dark:text-gray-400" />
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add Income</h2>
       </div>
       
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-4">
         <FormField
           label="Income Source"
-          icon={DollarSign}
+          icon={PenTool}
           value={source}
           onChange={setSource}
           placeholder="Main Salary, Freelance..."
           maxLength={30}
           autoFocus
           error={errors.source}
+          className="space-y-2.5 sm:space-y-2"
         />
 
         <AmountCurrencyInput
@@ -148,22 +168,16 @@ export const IncomeForm: React.FC = () => {
           
           {/* One-Time Selected by Default */}
           <div className="space-y-2">
-            <label className={`flex items-center p-2 rounded-md border cursor-pointer transition-all ${
+            <div 
+              onClick={() => {
+                setFrequency('one-time');
+                setShowFrequencyDropdown(false);
+              }}
+              className={`flex items-center p-2 rounded-md border cursor-pointer transition-all ${
               frequency === 'one-time' 
                 ? `${FREQUENCY_CONFIG['one-time'].bgClass} ${FREQUENCY_CONFIG['one-time'].borderClass}` 
                 : 'border-gray-200 dark:border-gray-600 bg-blue-50 dark:bg-gray-700'
             }`}>
-              <input
-                type="radio"
-                name="frequency"
-                value="one-time"
-                checked={frequency === 'one-time'}
-                onChange={(e) => {
-                  setFrequency(e.target.value as 'one-time' | 'weekly' | 'monthly' | 'yearly');
-                  setShowFrequencyDropdown(false);
-                }}
-                className="sr-only"
-              />
               
               <div className="mr-2 flex-shrink-0">
                 <DollarSign 
@@ -191,10 +205,10 @@ export const IncomeForm: React.FC = () => {
                   · Single payment
                 </span>
               </div>
-            </label>
+            </div>
 
             {/* Recurring Options Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
                 onClick={() => setShowFrequencyDropdown(!showFrequencyDropdown)}
@@ -233,23 +247,16 @@ export const IncomeForm: React.FC = () => {
                   {Object.entries(FREQUENCY_CONFIG)
                     .filter(([key]) => key !== 'one-time')
                     .map(([key, config]) => (
-                    <label
+                    <div
                       key={key}
+                      onClick={() => {
+                        setFrequency(key as 'one-time' | 'weekly' | 'monthly' | 'yearly');
+                        setShowFrequencyDropdown(false);
+                      }}
                       className={`flex items-center p-2 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-700 ${
                         frequency === key ? `${config.bgClass}` : ''
                       }`}
                     >
-                      <input
-                        type="radio"
-                        name="frequency"
-                        value={key}
-                        checked={frequency === key}
-                        onChange={(e) => {
-                          setFrequency(e.target.value as 'one-time' | 'weekly' | 'monthly' | 'yearly');
-                          setShowFrequencyDropdown(false);
-                        }}
-                        className="sr-only"
-                      />
                       
                       <div className="mr-2 flex-shrink-0">
                         <Clock 
@@ -277,7 +284,7 @@ export const IncomeForm: React.FC = () => {
                           · {config.description}
                         </span>
                       </div>
-                    </label>
+                    </div>
                   ))}
                 </div>
               )}
@@ -292,6 +299,7 @@ export const IncomeForm: React.FC = () => {
           value={date}
           onChange={setDate}
           error={errors.date}
+          className="space-y-2.5 sm:space-y-2"
         />
 
         <button
