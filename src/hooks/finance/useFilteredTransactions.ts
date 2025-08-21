@@ -1,8 +1,7 @@
-// Hook that filters expenses and incomes by date range using store data
+// Hook that provides memoized filtered transactions using finance selectors
 import { useMemo } from 'react';
-import { useExpenseStore } from '../../stores/expenseStore';
-import { useIncomeStore } from '../../stores/incomeStore';
-import { parseLocalDate } from '../../utils/dateFormat';
+import { getCombinedTransactions } from '../../selectors/finance';
+import type { TransactionVM } from '../../types/view/TransactionVM';
 
 interface FilteredTransactionsParams {
   startDate: Date;
@@ -10,28 +9,20 @@ interface FilteredTransactionsParams {
 }
 
 interface FilteredTransactionsResult {
-  filteredExpenses: ReturnType<typeof useExpenseStore>['expenses'];
-  filteredIncomes: ReturnType<typeof useIncomeStore>['incomes'];
+  filteredExpenses: TransactionVM[];
+  filteredIncomes: TransactionVM[];
 }
 
 export const useFilteredTransactions = ({
   startDate,
   endDate
 }: FilteredTransactionsParams): FilteredTransactionsResult => {
-  const { expenses } = useExpenseStore();
-  const { incomes } = useIncomeStore();
-
   return useMemo(() => {
-    const filteredExpenses = expenses.filter(expense => {
-      const expenseDate = parseLocalDate(expense.date);
-      return expenseDate >= startDate && expenseDate <= endDate;
-    });
+    const allTransactions = getCombinedTransactions(startDate, endDate, 'all');
     
-    const filteredIncomes = incomes.filter(income => {
-      const incomeDate = parseLocalDate(income.date);
-      return incomeDate >= startDate && incomeDate <= endDate;
-    });
+    const filteredExpenses = allTransactions.filter(tx => tx.type === 'expense');
+    const filteredIncomes = allTransactions.filter(tx => tx.type === 'income');
 
     return { filteredExpenses, filteredIncomes };
-  }, [expenses, incomes, startDate, endDate]);
+  }, [startDate, endDate]);
 };

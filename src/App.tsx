@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from './stores/authStore';
+import { useLedgerStore } from './stores/ledgerStore';
 import { checkAndGenerateRecurring } from './utils/recurringUtils';
 import { AuthForm } from './components/Auth/AuthForm';
 import { ExpenseForm } from './components/ExpenseForm/ExpenseForm';
@@ -18,7 +19,11 @@ import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 
 // Expenses Tab Component
 function ExpensesTab() {
-  const { expenses, deleteExpense } = useExpenseStore();
+  const expenseStore = useExpenseStore();
+  const { deleteExpense } = expenseStore;
+  
+  // Get derived expenses from ledger
+  const expenses = expenseStore._deriveExpensesFromLedger();
   
   const expenseTransactions: Transaction[] = expenses.map(expense => ({
     id: expense.id,
@@ -61,7 +66,11 @@ function ExpensesTab() {
 
 // Income Tab Component
 function IncomeTab() {
-  const { incomes, deleteIncome } = useIncomeStore();
+  const incomeStore = useIncomeStore();
+  const { deleteIncome } = incomeStore;
+  
+  // Get derived incomes from ledger
+  const incomes = incomeStore._deriveIncomesFromLedger();
   
   const incomeTransactions: Transaction[] = incomes.map(income => ({
     id: income.id,
@@ -103,6 +112,7 @@ function IncomeTab() {
 
 function App() {
   const { user, loading, checkUser } = useAuthStore();
+  const { initializeDefaultAccounts } = useLedgerStore();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'expenses' | 'income' | 'assets' | 'liabilities' | 'networth'>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => {
@@ -112,9 +122,11 @@ function App() {
 
   useEffect(() => {
     checkUser();
+    // Initialize ledger with default chart of accounts
+    initializeDefaultAccounts();
     // Check and generate recurring transactions on app load
     checkAndGenerateRecurring();
-  }, [checkUser]);
+  }, [checkUser, initializeDefaultAccounts]);
 
   useEffect(() => {
     if (isDark) {

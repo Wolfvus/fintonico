@@ -3,6 +3,7 @@ import { useCurrencyStore } from '../../stores/currencyStore';
 import { RefreshCw } from 'lucide-react';
 
 export const CurrencySelector: React.FC = () => {
+  const [isChangingCurrency, setIsChangingCurrency] = React.useState(false);
   const { 
     baseCurrency, 
     currencies, 
@@ -20,8 +21,17 @@ export const CurrencySelector: React.FC = () => {
     fetchExchangeRates();
   }, [fetchExchangeRates]);
 
-  const handleCurrencyChange = (newCurrency: string) => {
-    setBaseCurrency(newCurrency);
+  const handleCurrencyChange = async (newCurrency: string) => {
+    if (isChangingCurrency || newCurrency === baseCurrency) return;
+    
+    setIsChangingCurrency(true);
+    try {
+      await setBaseCurrency(newCurrency);
+    } catch (error) {
+      console.error('Failed to change currency:', error);
+    } finally {
+      setIsChangingCurrency(false);
+    }
   };
 
   const formatLastUpdated = () => {
@@ -41,8 +51,9 @@ export const CurrencySelector: React.FC = () => {
       <select
         value={baseCurrency}
         onChange={(e) => handleCurrencyChange(e.target.value)}
+        disabled={isChangingCurrency || loading}
         className="text-sm font-medium border-none bg-transparent text-gray-900 dark:text-white 
-                 focus:outline-none focus:ring-0 cursor-pointer appearance-none"
+                 focus:outline-none focus:ring-0 cursor-pointer appearance-none disabled:opacity-50"
         title={error || `Last updated: ${formatLastUpdated()}`}
       >
         {currencies.map((currency) => (

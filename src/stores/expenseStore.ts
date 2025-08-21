@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { useCurrencyStore } from './currencyStore';
+import { useLedgerStore } from './ledgerStore';
+import { Money } from '../domain/money';
 import type { Expense, ExpenseRating } from '../types';
 import { sanitizeDescription, validateAmount, validateDate } from '../utils/sanitization';
 
@@ -19,6 +21,8 @@ interface ExpenseState {
   deleteExpense: (id: string) => void;
   getMonthlyTotal: () => number;
   getExpensesByRating: () => Record<ExpenseRating, number>;
+  // Internal method to derive from ledger
+  _deriveExpensesFromLedger: () => Expense[];
 }
 
 const STORAGE_KEY = 'fintonico-expenses';
@@ -67,47 +71,132 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
   expenses: storage.get(),
   loading: false,
 
-  addExpense: async (data: NewExpense) => {
-    const expense: Expense = {
-      id: crypto.randomUUID(),
-      what: data.what,
-      amount: data.amount,
-      currency: data.currency,
-      rating: data.rating,
-      date: data.date || new Date().toISOString().split('T')[0],
-      created_at: new Date().toISOString(),
-      recurring: data.recurring || false,
-    };
+  // Derive expenses from ledger transactions
+  _deriveExpensesFromLedger: () => {
+    const ledgerStore = useLedgerStore.getState();
+    const transactions = ledgerStore.getTransactions();
+    const expenseAccounts = ledgerStore.getAccountsByNature('expense');
+    
+    // Convert transactions with expense postings to Expense format
+    const derivedExpenses: Expense[] = [];
+    
+    for (const transaction of transactions) {
+      for (const posting of transaction.postings) {
+        // Use original amount for display, check if this is an expense posting
+        const originalAmount = posting.originalDebitAmount;
+        if (originalAmount && expenseAccounts.some(acc => acc.id === posting.accountId)) {
+          const account = ledgerStore.getAccount(posting.accountId);
+          if (account) {
+            // Map account names to expense ratings
+            const getExpenseRating = (accountName: string): ExpenseRating => {
+              const name = accountName.toLowerCase();
+              if (name.includes('food') || name.includes('housing') || name.includes('utilities') || name.includes('healthcare')) {
+                return 'essential';
+              } else if (name.includes('transport') || name.includes('shopping')) {
+                return 'important';
+              } else {
+                return 'non_essential';
+              }
+            };
+            
+            derivedExpenses.push({
+              id: `${transaction.id}-${posting.id}`,
+              what: transaction.description,
+              amount: originalAmount.toMajorUnits(),
+              currency: originalAmount.getCurrency(),
+              rating: getExpenseRating(account.name),
+              date: transaction.date.toISOString().split('T')[0],
+              created_at: transaction.createdAt.toISOString(),
+              recurring: false
+            });
+          }
+        }
+      }
+    }
+    
+    return derivedExpenses.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  },
 
-    const expenses = [expense, ...get().expenses];
-    set({ expenses });
-    storage.set(expenses);
+  addExpense: async (data: NewExpense) => {
+    const ledgerStore = useLedgerStore.getState();
+    
+    // Ensure default accounts exist
+    ledgerStore.initializeDefaultAccounts();
+    
+    // Map expense rating to appropriate expense account
+    const getExpenseAccountId = (rating: ExpenseRating): string => {
+      switch (rating) {
+        case 'essential':
+          return 'food'; // Default to food for essential
+        case 'important':
+          return 'transport'; // Default to transport for important
+        case 'non_essential':
+          return 'entertainment'; // Default to entertainment for non-essential
+        default:
+          return 'other-expense';
+      }
+    };
+    
+    // Find or use default accounts
+    const cashAccount = ledgerStore.getAccount('cash') || ledgerStore.getAccountsByNature('asset')[0];
+    const expenseAccountId = getExpenseAccountId(data.rating);
+    const expenseAccount = ledgerStore.getAccount(expenseAccountId) || ledgerStore.getAccountsByNature('expense')[0];
+    
+    if (!cashAccount || !expenseAccount) {
+      throw new Error('Required accounts not found');
+    }
+    
+    const amount = Money.fromMajorUnits(data.amount, data.currency);
+    const date = data.date ? new Date(data.date) : new Date();
+    
+    // Add transaction to ledger
+    ledgerStore.addExpenseTransaction(
+      data.what,
+      amount,
+      expenseAccount.id,
+      cashAccount.id,
+      date
+    );
+    
+    // Update local state to reflect changes
+    set({ expenses: get()._deriveExpensesFromLedger() });
   },
 
   deleteExpense: (id: string) => {
-    const expenses = get().expenses.filter(e => e.id !== id);
-    set({ expenses });
-    storage.set(expenses);
+    const ledgerStore = useLedgerStore.getState();
+    
+    // Extract transaction ID from composite expense ID (format: transactionId-postingId)
+    const transactionId = id.split('-')[0];
+    
+    if (transactionId) {
+      ledgerStore.deleteTransaction(transactionId);
+      // Update local state
+      set({ expenses: get()._deriveExpensesFromLedger() });
+    } else {
+      // Fallback: delete from legacy storage
+      const expenses = get().expenses.filter(e => e.id !== id);
+      set({ expenses });
+      storage.set(expenses);
+    }
   },
 
   getMonthlyTotal: () => {
     const now = new Date();
-    const { baseCurrency, convertAmount } = useCurrencyStore.getState();
-    return get().expenses
-      .filter(e => {
-        const date = new Date(e.date);
-        return date.getMonth() === now.getMonth() && 
-               date.getFullYear() === now.getFullYear();
-      })
-      .reduce((sum, e) => {
-        const convertedAmount = convertAmount(e.amount, e.currency, baseCurrency);
-        return sum + convertedAmount;
-      }, 0);
+    const { baseCurrency } = useCurrencyStore.getState();
+    
+    // Get expenses from ledger for current month
+    const ledgerStore = useLedgerStore.getState();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    const incomeStatement = ledgerStore.getIncomeStatement(startOfMonth, endOfMonth, baseCurrency);
+    return incomeStatement.totalExpenses.toMajorUnits();
   },
 
   getExpensesByRating: () => {
     const { baseCurrency, convertAmount } = useCurrencyStore.getState();
-    return get().expenses.reduce((acc, e) => {
+    const expenses = get()._deriveExpensesFromLedger();
+    return expenses.reduce((acc, e) => {
       const convertedAmount = convertAmount(e.amount, e.currency, baseCurrency);
       acc[e.rating] = (acc[e.rating] || 0) + convertedAmount;
       return acc;

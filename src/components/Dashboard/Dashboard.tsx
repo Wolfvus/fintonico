@@ -1,24 +1,23 @@
-import React, { useState } from 'react';
-import { useIncomeStore } from '../../stores/incomeStore';
+import React, { useState, useMemo } from 'react';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { TrendingUp, TrendingDown, Wallet, DollarSign, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Landmark, PiggyBank, ArrowUpDown, PieChart, Scissors, LayoutGrid } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, DollarSign, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Landmark, PiggyBank, ArrowUpDown, Scissors, LayoutGrid } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormat';
 import { useDateRange } from '../../hooks/finance/useDateRange';
 import { useFilteredTransactions } from '../../hooks/finance/useFilteredTransactions';
-import { useTotals } from '../../hooks/finance/useTotals';
-import { useAccountsSummary } from '../../hooks/finance/useAccountsSummary';
 import { useCombinedTransactions } from '../../hooks/finance/useCombinedTransactions';
 import { Card, SectionHeader, Tabs, Pagination } from '../ui';
 import { CurrencyBadge } from '../Shared/CurrencyBadge';
-import { TestDataAdmin } from '../Admin/TestDataAdmin';
+import { getMoMChange } from '../../selectors/finance';
+import { useSnapshotStore } from '../../stores/snapshotStore';
+import { Money } from '../../domain/money';
 
 interface DashboardProps {
   onNavigate?: (tab: 'income' | 'expenses' | 'assets' | 'liabilities' | 'networth') => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
-  const { generateInvestmentYields } = useIncomeStore();
-  const { formatAmount, baseCurrency, convertAmount } = useCurrencyStore();
+  const { formatAmount, baseCurrency } = useCurrencyStore();
+  const snapshotStore = useSnapshotStore();
   const [entryFilter, setEntryFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [viewMode, setViewMode] = useState<'month' | 'year' | 'custom'>('month');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -29,9 +28,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const itemsPerPage = 10;
   
   // Generate investment yields on dashboard load
-  React.useEffect(() => {
-    generateInvestmentYields();
-  }, [generateInvestmentYields]);
+  // React.useEffect(() => {
+  //   generateInvestmentYields();
+  // }, [generateInvestmentYields]);
 
   // Calculate date range using hook - converts view mode and dates into start/end range
   const { startDate, endDate } = useDateRange({
@@ -41,41 +40,110 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     customEndDate
   });
   
-  // Filter transactions for date range using hook - gets expenses/incomes within date range
+  // Get financial data using pure selectors - simple fallback for now
+  const netWorthData = useMemo(() => {
+    try {
+      console.log('Creating simple fallback net worth data...');
+      const { baseCurrency } = useCurrencyStore.getState();
+      return {
+        totalAssets: Money.fromMajorUnits(0, baseCurrency),
+        totalLiabilities: Money.fromMajorUnits(0, baseCurrency),
+        netWorth: Money.fromMajorUnits(0, baseCurrency),
+        asOfDate: new Date(),
+        breakdown: {
+          ledger: {
+            assets: Money.fromMajorUnits(0, baseCurrency),
+            liabilities: Money.fromMajorUnits(0, baseCurrency)
+          },
+          external: {
+            assets: Money.fromMajorUnits(0, baseCurrency),
+            liabilities: Money.fromMajorUnits(0, baseCurrency)
+          }
+        }
+      };
+    } catch (error) {
+      console.error('Error creating fallback net worth data:', error);
+      throw error;
+    }
+  }, []);
+  
+  // const periodData = useMemo(() => {
+  //   try {
+  //     console.log('Calling getPL...');
+  //     const result = getPL(startDate, endDate);
+  //     console.log('getPL successful');
+  //     return result;
+  //   } catch (error) {
+  //     console.error('Error in getPL:', error);
+  //     throw error;
+  //   }
+  // }, [startDate, endDate]);
+  
+  // const expenseData = useMemo(() => {
+  //   try {
+  //     console.log('Calling getExpenseBreakdown...');
+  //     const result = getExpenseBreakdown(startDate, endDate);
+  //     console.log('getExpenseBreakdown successful');
+  //     return result;
+  //   } catch (error) {
+  //     console.error('Error in getExpenseBreakdown:', error);
+  //     throw error;
+  //   }
+  // }, [startDate, endDate]);
+  
+  // const savingsData = useMemo(() => {
+  //   try {
+  //     console.log('Calling getSavingsPotential...');
+  //     const result = getSavingsPotential(startDate, endDate);
+  //     console.log('getSavingsPotential successful');
+  //     return result;
+  //   } catch (error) {
+  //     console.error('Error in getSavingsPotential:', error);
+  //     throw error;
+  //   }
+  // }, [startDate, endDate]);
+  
+  // Temporary fallback data
+  const periodData = { totalIncome: { toMajorUnits: () => 0 }, totalExpenses: { toMajorUnits: () => 0 } };
+  const expenseData = { byCategory: {} as Record<string, Money> };
+  const savingsData = { nonEssentialExpenses: { toMajorUnits: () => 0 } };
+  
+  // Legacy compatibility - maintain filtered transactions for existing UI
   const { filteredExpenses, filteredIncomes } = useFilteredTransactions({
     startDate,
     endDate
   });
-  
-  // Calculate totals for the selected period using hook - sums filtered transactions with currency conversion
-  const { periodExpenses, periodIncome } = useTotals({
-    filteredExpenses,
-    filteredIncomes
-  });
 
-  // Calculate account totals using hook - computes net worth and categorizes accounts
-  const { totalAssets, totalLiabilities, netWorth, assetTypes, liabilityTypes, accounts } = useAccountsSummary();
 
-  // Calculate previous month's net worth for comparison
-  const getPreviousMonthNetWorth = () => {
-    // For now, return a static comparison since we don't have historical data
-    // In a real app, you'd calculate from stored historical net worth data
-    const previousNetWorth = netWorth * 0.95; // Assume 5% growth for demo
-    const change = netWorth - previousNetWorth;
-    const changePercent = previousNetWorth > 0 ? (change / previousNetWorth) * 100 : 0;
-    return {
-      previousNetWorth,
-      change,
-      changePercent
+  // Ensure current month snapshot exists and get MoM change
+  React.useEffect(() => {
+    snapshotStore.ensureCurrentMonthSnapshot();
+  }, [snapshotStore]);
+
+  // Calculate net worth change using snapshots
+  const netWorthChange = useMemo(() => {
+    const momChange = getMoMChange();
+    
+    if (!momChange.hasPreviousData) {
+      // Fallback when no previous data available
+      return { 
+        change: 0, 
+        changePercent: 0,
+        hasPreviousData: false 
+      };
+    }
+    
+    return { 
+      change: momChange.deltaAbs || 0, 
+      changePercent: momChange.deltaPct || 0,
+      hasPreviousData: true
     };
-  };
-
-  const { change: netWorthChange, changePercent: netWorthChangePercent } = getPreviousMonthNetWorth();
+  }, []);
 
   // Combine and sort transactions for display using hook - creates unified transaction view models
   const allTransactions = useCombinedTransactions({
-    filteredExpenses,
-    filteredIncomes,
+    startDate,
+    endDate,
     entryFilter
   });
 
@@ -106,12 +174,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const endIndex = startIndex + itemsPerPage;
   const paginatedTransactions = allTransactions.slice(startIndex, endIndex);
 
+  // Extract values from selector data
+  const periodIncome = periodData.totalIncome.toMajorUnits();
+  const periodExpenses = periodData.totalExpenses.toMajorUnits();
+  const netWorth = netWorthData.netWorth.toMajorUnits();
+  const totalAssets = netWorthData.totalAssets.toMajorUnits();
+  const totalLiabilities = netWorthData.totalLiabilities.toMajorUnits();
+  
+  
   // Calculate KPIs
   const monthlyCashFlow = periodIncome - periodExpenses;
   const savingsRate = periodIncome > 0 ? ((periodIncome - periodExpenses) / periodIncome) * 100 : 0;
   
   // State for insights tabs
-  const [activeInsightTab, setActiveInsightTab] = useState<'overview' | 'analytics' | 'optimize'>('overview');
+  const [activeInsightTab, setActiveInsightTab] = useState<'overview' | 'optimize'>('overview');
 
   // Local styles
   const styles = {
@@ -158,12 +234,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 {formatAmount(netWorth)}
               </p>
               <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-medium ${
-                netWorthChange >= 0 
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' 
-                  : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                !netWorthChange.hasPreviousData
+                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                  : netWorthChange.change >= 0 
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' 
+                    : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
               }`}>
-                {netWorthChange >= 0 ? '↑' : '↓'}
-                {Math.abs(netWorthChangePercent).toFixed(1)}%
+                {!netWorthChange.hasPreviousData 
+                  ? '—' 
+                  : netWorthChange.change >= 0 ? '↑' : '↓'
+                }
+                {!netWorthChange.hasPreviousData 
+                  ? 'No data' 
+                  : `${Math.abs(netWorthChange.changePercent).toFixed(1)}%`
+                }
               </div>
             </div>
           </button>
@@ -212,12 +296,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                   {formatAmount(netWorth)}
                 </p>
                 <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-medium ${
-                  netWorthChange >= 0 
-                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' 
-                    : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                  !netWorthChange.hasPreviousData
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                    : netWorthChange.change >= 0 
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' 
+                      : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
                 }`}>
-                  {netWorthChange >= 0 ? '↑' : '↓'}
-                  {Math.abs(netWorthChangePercent).toFixed(1)}%
+                  {!netWorthChange.hasPreviousData 
+                    ? '—' 
+                    : netWorthChange.change >= 0 ? '↑' : '↓'
+                  }
+                  {!netWorthChange.hasPreviousData 
+                    ? 'No data' 
+                    : `${Math.abs(netWorthChange.changePercent).toFixed(1)}%`
+                  }
                 </div>
               </div>
             </div>
@@ -516,7 +608,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               onChange={(value) => setActiveInsightTab(value as typeof activeInsightTab)}
               items={[
                 { value: 'overview', label: 'Overview', icon: LayoutGrid },
-                { value: 'analytics', label: 'Analytics', icon: PieChart },
                 { value: 'optimize', label: 'Optimize', icon: Scissors }
               ]}
             />
@@ -531,24 +622,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                   <div>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Top Expense Categories</p>
                     <div className="space-y-2">
-                      {['essential', 'non_essential', 'luxury'].map((rating) => {
-                        const categoryExpenses = filteredExpenses.filter((e: any) => e.rating === rating);
-                        const categoryTotal = categoryExpenses.reduce((sum: number, e: any) => 
-                          sum + convertAmount(e.amount, e.currency, baseCurrency), 0
-                        );
+                      {Object.entries(expenseData.byCategory).map(([category, amount]) => {
+                        const categoryTotal = amount.toMajorUnits();
                         const percentage = periodExpenses > 0 ? (categoryTotal / periodExpenses) * 100 : 0;
                         
                         return categoryTotal > 0 ? (
-                          <div key={rating} className="flex items-center justify-between">
+                          <div key={category} className="flex items-center justify-between">
                             <span className="text-xs capitalize text-gray-700 dark:text-gray-300">
-                              {rating.replace('_', ' ')}
+                              {category.replace('_', ' ')}
                             </span>
                             <div className="flex items-center gap-2">
                               <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                 <div 
                                   className={`h-2 rounded-full ${
-                                    rating === 'essential' ? 'bg-green-500' :
-                                    rating === 'non_essential' ? 'bg-yellow-500' :
+                                    category === 'essential' ? 'bg-green-500' :
+                                    category === 'non_essential' ? 'bg-yellow-500' :
                                     'bg-red-500'
                                   }`}
                                   style={{ width: `${percentage}%` }}
@@ -562,40 +650,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                         ) : null;
                       })}
                     </div>
-                  </div>
-
-                  {/* Account Summary */}
-                  <div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Account Distribution</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-2 text-center">
-                        <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                          {accounts.filter((a: any) => assetTypes.includes(a.type)).length}
-                        </p>
-                        <p className={styles.sectionLabel}>Assets</p>
-                      </div>
-                      <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-2 text-center">
-                        <p className="text-lg font-bold text-red-600 dark:text-red-400">
-                          {accounts.filter((a: any) => liabilityTypes.includes(a.type)).length}
-                        </p>
-                        <p className={styles.sectionLabel}>Liabilities</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeInsightTab === 'analytics' && (
-                <div className="space-y-4">
-                  <h4 className={styles.sectionHeader}>Spending Analysis</h4>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    Detailed analytics coming soon. Track spending patterns, identify trends, and visualize your financial habits.
-                  </p>
-                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
-                    <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Charts and graphs will appear here
-                    </p>
                   </div>
                 </div>
               )}
@@ -611,9 +665,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                       <p className="text-xs font-medium text-gray-900 dark:text-white">Savings Potential</p>
                     </div>
                     {(() => {
-                      const nonEssentialTotal = filteredExpenses
-                        .filter((e: any) => e.rating === 'non_essential' || e.rating === 'luxury')
-                        .reduce((sum: number, e: any) => sum + convertAmount(e.amount, e.currency, baseCurrency), 0);
+                      const nonEssentialTotal = savingsData.nonEssentialExpenses.toMajorUnits();
                       
                       return nonEssentialTotal > 0 ? (
                         <>
@@ -657,10 +709,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Test Data Admin - Only in development */}
-      {process.env.NODE_ENV === 'development' && (
-        <TestDataAdmin />
-      )}
     </div>
   );
 };

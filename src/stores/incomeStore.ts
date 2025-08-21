@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { useCurrencyStore } from './currencyStore';
 import { useAccountStore } from './accountStore';
+import { useLedgerStore } from './ledgerStore';
+import { Money } from '../domain/money';
 import type { Income } from '../types';
 import { sanitizeDescription, validateAmount, validateDate } from '../utils/sanitization';
 
@@ -21,15 +23,11 @@ interface IncomeState {
   deleteIncome: (id: string) => void;
   getMonthlyTotal: () => number;
   generateInvestmentYields: () => void;
+  // Internal method to derive from ledger
+  _deriveIncomesFromLedger: () => Income[];
 }
 
 const STORAGE_KEY = 'fintonico-incomes';
-const FREQUENCY_MULTIPLIERS: Record<IncomeFrequency, number> = {
-  monthly: 1,
-  weekly: 4.33,
-  yearly: 1/12,
-  'one-time': 0
-};
 
 const storage = {
   get: (): Income[] => {
@@ -74,64 +72,98 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
   incomes: storage.get(),
   loading: false,
 
-  addIncome: async (data: NewIncome) => {
-    const income: Income = {
-      id: crypto.randomUUID(),
-      source: data.source,
-      amount: data.amount,
-      currency: data.currency,
-      frequency: data.frequency,
-      date: data.date || new Date().toISOString().split('T')[0],
-      created_at: new Date().toISOString(),
-    };
+  // Derive incomes from ledger transactions
+  _deriveIncomesFromLedger: () => {
+    const ledgerStore = useLedgerStore.getState();
+    const transactions = ledgerStore.getTransactions();
+    const incomeAccounts = ledgerStore.getAccountsByNature('income');
+    
+    // Convert transactions with income postings to Income format
+    const derivedIncomes: Income[] = [];
+    
+    for (const transaction of transactions) {
+      for (const posting of transaction.postings) {
+        // Use original amount for display, check if this is an income posting
+        const originalAmount = posting.originalCreditAmount;
+        if (originalAmount && incomeAccounts.some(acc => acc.id === posting.accountId)) {
+          const account = ledgerStore.getAccount(posting.accountId);
+          if (account) {
+            derivedIncomes.push({
+              id: `${transaction.id}-${posting.id}`,
+              source: transaction.description,
+              amount: originalAmount.toMajorUnits(),
+              currency: originalAmount.getCurrency(),
+              frequency: 'one-time',
+              date: transaction.date.toISOString().split('T')[0],
+              created_at: transaction.createdAt.toISOString()
+            });
+          }
+        }
+      }
+    }
+    
+    return derivedIncomes.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  },
 
-    const incomes = [income, ...get().incomes];
-    set({ incomes });
-    storage.set(incomes);
+  addIncome: async (data: NewIncome) => {
+    const ledgerStore = useLedgerStore.getState();
+    
+    // Ensure default accounts exist
+    ledgerStore.initializeDefaultAccounts();
+    
+    // Find or use default accounts
+    const cashAccount = ledgerStore.getAccount('cash') || ledgerStore.getAccountsByNature('asset')[0];
+    const incomeAccount = ledgerStore.getAccount('salary') || ledgerStore.getAccountsByNature('income')[0];
+    
+    if (!cashAccount || !incomeAccount) {
+      throw new Error('Required accounts not found');
+    }
+    
+    const amount = Money.fromMajorUnits(data.amount, data.currency);
+    const date = data.date ? new Date(data.date) : new Date();
+    
+    // Add transaction to ledger
+    ledgerStore.addIncomeTransaction(
+      data.source,
+      amount,
+      cashAccount.id,
+      incomeAccount.id,
+      date
+    );
+    
+    // Update local state to reflect changes
+    set({ incomes: get()._deriveIncomesFromLedger() });
   },
 
   deleteIncome: (id: string) => {
-    const incomes = get().incomes.filter(i => i.id !== id);
-    set({ incomes });
-    storage.set(incomes);
+    const ledgerStore = useLedgerStore.getState();
+    
+    // Extract transaction ID from composite income ID (format: transactionId-postingId)
+    const transactionId = id.split('-')[0];
+    
+    if (transactionId) {
+      ledgerStore.deleteTransaction(transactionId);
+      // Update local state
+      set({ incomes: get()._deriveIncomesFromLedger() });
+    } else {
+      // Fallback: delete from legacy storage
+      const incomes = get().incomes.filter(i => i.id !== id);
+      set({ incomes });
+      storage.set(incomes);
+    }
   },
 
   getMonthlyTotal: () => {
     const now = new Date();
-    const { baseCurrency, convertAmount } = useCurrencyStore.getState();
+    const { baseCurrency } = useCurrencyStore.getState();
     
-    // Calculate regular income
-    const regularIncome = get().incomes.reduce((total, income) => {
-      const convertedAmount = convertAmount(income.amount, income.currency, baseCurrency);
-      if (income.frequency === 'one-time') {
-        const incomeDate = new Date(income.date);
-        if (incomeDate.getMonth() === now.getMonth() && 
-            incomeDate.getFullYear() === now.getFullYear()) {
-          return total + convertedAmount;
-        }
-        return total;
-      }
-      return total + (convertedAmount * FREQUENCY_MULTIPLIERS[income.frequency]);
-    }, 0);
-
-    // Calculate investment yields from accounts
-    const getInvestmentYields = () => {
-      const { accounts } = useAccountStore.getState();
-      const investmentAccounts = accounts.filter(account => account.type === 'investment');
-      
-      return investmentAccounts.reduce((total: number, account) => {
-        // Sum all balances for this investment account
-        const accountTotal = account.balances.reduce((sum, balance) => {
-          return sum + convertAmount(balance.amount, balance.currency, baseCurrency);
-        }, 0);
-        
-        // For now, assume a 5% annual yield for investment accounts
-        const monthlyYield = (accountTotal * 0.05) / 12;
-        return total + monthlyYield;
-      }, 0);
-    };
-
-    return regularIncome + getInvestmentYields();
+    // Get income from ledger for current month
+    const ledgerStore = useLedgerStore.getState();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    const incomeStatement = ledgerStore.getIncomeStatement(startOfMonth, endOfMonth, baseCurrency);
+    return incomeStatement.totalIncome.toMajorUnits();
   },
 
   generateInvestmentYields: () => {

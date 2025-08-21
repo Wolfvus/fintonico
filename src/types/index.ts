@@ -4,7 +4,7 @@ export interface Currency {
   exchangeRate: number;
 }
 
-export type ExpenseRating = 'essential' | 'non_essential' | 'luxury';
+export type ExpenseRating = 'essential' | 'important' | 'non_essential' | 'luxury';
 
 // Define Account Categories (AccountType)
 export type AccountType = 'cash' | 'bank' | 'exchange' | 'investment' | 'property' | 'loan' | 'credit-card' | 'mortgage' | 'other';
