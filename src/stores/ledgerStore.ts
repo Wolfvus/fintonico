@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { CommonTransactions } from '../domain/ledger';
+import { useCurrencyStore } from './currencyStore';
 import type { Account, Transaction, AccountBalance, TrialBalance, BalanceSheet, IncomeStatement, AccountNature } from '../domain/ledger';
 import { Money } from '../domain/money';
 
@@ -43,6 +44,7 @@ interface LedgerState {
   
   // Utility
   reset: () => void;
+  clearAllData: () => void;
 }
 
 interface TransactionFilters {
@@ -192,7 +194,12 @@ export const useLedgerStore = create<LedgerState>()(
           );
         }
 
-        return transactions.sort((a, b) => b.date.getTime() - a.date.getTime());
+        return transactions.sort((a, b) => {
+          // Handle invalid dates gracefully
+          const aTime = a.date instanceof Date ? a.date.getTime() : 0;
+          const bTime = b.date instanceof Date ? b.date.getTime() : 0;
+          return bTime - aTime;
+        });
       },
 
       // Balance calculations using booked amounts for historical consistency
@@ -213,21 +220,33 @@ export const useLedgerStore = create<LedgerState>()(
             if (posting.accountId === accountId) {
               // Use booked amounts for historical consistency
               if (posting.bookedDebitAmount) {
+                // Convert to base currency if needed
+                let debitAmount = posting.bookedDebitAmount;
+                if (debitAmount.getCurrency() !== baseCurrency) {
+                  debitAmount = Money.fromMajorUnits(debitAmount.toMajorUnits(), baseCurrency);
+                }
+                
                 // For assets and expenses, debits increase balance
                 // For liabilities, income, and equity, debits decrease balance
                 if (['asset', 'expense'].includes(account.nature)) {
-                  balance = balance.add(posting.bookedDebitAmount);
+                  balance = balance.add(debitAmount);
                 } else {
-                  balance = balance.subtract(posting.bookedDebitAmount);
+                  balance = balance.subtract(debitAmount);
                 }
               }
               if (posting.bookedCreditAmount) {
+                // Convert to base currency if needed
+                let creditAmount = posting.bookedCreditAmount;
+                if (creditAmount.getCurrency() !== baseCurrency) {
+                  creditAmount = Money.fromMajorUnits(creditAmount.toMajorUnits(), baseCurrency);
+                }
+                
                 // For assets and expenses, credits decrease balance
                 // For liabilities, income, and equity, credits increase balance
                 if (['asset', 'expense'].includes(account.nature)) {
-                  balance = balance.subtract(posting.bookedCreditAmount);
+                  balance = balance.subtract(creditAmount);
                 } else {
-                  balance = balance.add(posting.bookedCreditAmount);
+                  balance = balance.add(creditAmount);
                 }
               }
             }
@@ -331,20 +350,62 @@ export const useLedgerStore = create<LedgerState>()(
           amount: get().getAccountBalance(account.id, toDate)
         }));
 
-        const totalIncome = income.reduce((sum, item) => sum.add(item.amount), Money.fromMinorUnits(0, baseCurrency));
-        const totalExpenses = expenses.reduce((sum, item) => sum.add(item.amount), Money.fromMinorUnits(0, baseCurrency));
+        const { convertAmount } = useCurrencyStore.getState();
+        
+        const totalIncome = income.reduce((sum, item) => {
+          const convertedAmount = convertAmount(item.amount.toMajorUnits(), item.amount.getCurrency(), baseCurrency);
+          return sum.add(Money.fromMajorUnits(convertedAmount, baseCurrency));
+        }, Money.fromMinorUnits(0, baseCurrency));
+        
+        const totalExpenses = expenses.reduce((sum, item) => {
+          const convertedAmount = convertAmount(item.amount.toMajorUnits(), item.amount.getCurrency(), baseCurrency);
+          return sum.add(Money.fromMajorUnits(convertedAmount, baseCurrency));
+        }, Money.fromMinorUnits(0, baseCurrency));
         const netIncome = totalIncome.subtract(totalExpenses);
+
+        // Convert breakdown items to base currency
+        const convertedIncome = income.map(item => ({
+          account: item.account,
+          amount: Money.fromMajorUnits(
+            convertAmount(item.amount.toMajorUnits(), item.amount.getCurrency(), baseCurrency),
+            baseCurrency
+          )
+        }));
+        
+        const convertedExpenses = expenses.map(item => ({
+          account: item.account,
+          amount: Money.fromMajorUnits(
+            convertAmount(item.amount.toMajorUnits(), item.amount.getCurrency(), baseCurrency),
+            baseCurrency
+          )
+        }));
 
         return {
           asOfDate: toDate,
           fromDate,
           currency: baseCurrency,
-          income,
-          expenses,
+          income: convertedIncome,
+          expenses: convertedExpenses,
           totalIncome,
           totalExpenses,
           netIncome
         };
+      },
+
+      // Utility functions
+      clearAllData: () => {
+        console.log('Clearing all ledger data...');
+        set({
+          accounts: [],
+          transactions: []
+        });
+        // Clear all localStorage keys
+        localStorage.removeItem('ledger-store'); // Zustand persist key
+        localStorage.removeItem('fintonico-incomes'); // Income store key
+        localStorage.removeItem('fintonico-expenses'); // Expense store key
+        localStorage.removeItem('fintonico-snapshots'); // Snapshot store key
+        localStorage.removeItem('fintonico-ledger'); // Legacy key
+        console.log('All data cleared');
       },
 
       // Common transaction helpers
@@ -384,7 +445,108 @@ export const useLedgerStore = create<LedgerState>()(
     }),
     {
       name: 'ledger-store',
-      version: 1
+      version: 1,
+      storage: {
+        getItem: (name) => {
+          try {
+            const str = localStorage.getItem(name);
+            if (!str) return null;
+            
+            // Parse and reconstruct Money objects
+            const parsed = JSON.parse(str);
+            if (!parsed || !parsed.state) return null;
+            
+            const { state } = parsed;
+            
+            if (state.transactions) {
+            state.transactions = state.transactions.map((tx: any) => ({
+              ...tx,
+              date: new Date(tx.date),
+              createdAt: new Date(tx.createdAt),
+              updatedAt: new Date(tx.updatedAt),
+              postings: tx.postings.map((posting: any) => ({
+                ...posting,
+                originalDebitAmount: posting.originalDebitAmount 
+                  ? Money.fromMinorUnits(posting.originalDebitAmount.amountMinor || posting.originalDebitAmount._amountMinor || 0, 
+                                        posting.originalDebitAmount.currency || posting.originalDebitAmount._currency || 'USD')
+                  : null,
+                originalCreditAmount: posting.originalCreditAmount
+                  ? Money.fromMinorUnits(posting.originalCreditAmount.amountMinor || posting.originalCreditAmount._amountMinor || 0,
+                                         posting.originalCreditAmount.currency || posting.originalCreditAmount._currency || 'USD')
+                  : null,
+                bookedDebitAmount: posting.bookedDebitAmount
+                  ? Money.fromMinorUnits(posting.bookedDebitAmount.amountMinor || posting.bookedDebitAmount._amountMinor || 0,
+                                        posting.bookedDebitAmount.currency || posting.bookedDebitAmount._currency || 'USD')
+                  : null,
+                bookedCreditAmount: posting.bookedCreditAmount
+                  ? Money.fromMinorUnits(posting.bookedCreditAmount.amountMinor || posting.bookedCreditAmount._amountMinor || 0,
+                                         posting.bookedCreditAmount.currency || posting.bookedCreditAmount._currency || 'USD')
+                  : null,
+              }))
+            }));
+          }
+          
+          if (state.accounts) {
+            state.accounts = state.accounts.map((acc: any) => ({
+              ...acc,
+              createdAt: new Date(acc.createdAt),
+              updatedAt: new Date(acc.updatedAt)
+            }));
+          }
+          
+            return { state };
+          } catch (error) {
+            console.error('Error loading ledger store from localStorage:', error);
+            return null;
+          }
+        },
+        setItem: (name, value) => {
+          try {
+            // Serialize Money objects to plain objects
+            const serialized = JSON.parse(JSON.stringify(value));
+            
+            if (serialized.state.transactions) {
+            serialized.state.transactions = serialized.state.transactions.map((tx: any) => ({
+              ...tx,
+              postings: tx.postings.map((posting: any) => ({
+                ...posting,
+                originalDebitAmount: posting.originalDebitAmount 
+                  ? { 
+                      amountMinor: posting.originalDebitAmount.getAmountMinor ? posting.originalDebitAmount.getAmountMinor() : posting.originalDebitAmount.amountMinor, 
+                      currency: posting.originalDebitAmount.getCurrency ? posting.originalDebitAmount.getCurrency() : posting.originalDebitAmount.currency 
+                    }
+                  : null,
+                originalCreditAmount: posting.originalCreditAmount
+                  ? { 
+                      amountMinor: posting.originalCreditAmount.getAmountMinor ? posting.originalCreditAmount.getAmountMinor() : posting.originalCreditAmount.amountMinor,
+                      currency: posting.originalCreditAmount.getCurrency ? posting.originalCreditAmount.getCurrency() : posting.originalCreditAmount.currency 
+                    }
+                  : null,
+                bookedDebitAmount: posting.bookedDebitAmount
+                  ? { 
+                      amountMinor: posting.bookedDebitAmount.getAmountMinor ? posting.bookedDebitAmount.getAmountMinor() : posting.bookedDebitAmount.amountMinor,
+                      currency: posting.bookedDebitAmount.getCurrency ? posting.bookedDebitAmount.getCurrency() : posting.bookedDebitAmount.currency 
+                    }
+                  : null,
+                bookedCreditAmount: posting.bookedCreditAmount
+                  ? { 
+                      amountMinor: posting.bookedCreditAmount.getAmountMinor ? posting.bookedCreditAmount.getAmountMinor() : posting.bookedCreditAmount.amountMinor,
+                      currency: posting.bookedCreditAmount.getCurrency ? posting.bookedCreditAmount.getCurrency() : posting.bookedCreditAmount.currency 
+                    }
+                  : null,
+              }))
+            }));
+          }
+          
+            localStorage.setItem(name, JSON.stringify(serialized));
+          } catch (error) {
+            console.error('Error saving ledger store to localStorage:', error);
+          }
+        },
+        removeItem: (name) => {
+          localStorage.removeItem(name);
+        }
+      }
     }
   )
 );

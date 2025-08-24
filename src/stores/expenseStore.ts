@@ -99,14 +99,30 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
               }
             };
             
+            // Ensure originalAmount is a Money object
+            const amount = typeof originalAmount.toMajorUnits === 'function' 
+              ? originalAmount.toMajorUnits() 
+              : Number(originalAmount) || 0;
+            const currency = typeof originalAmount.getCurrency === 'function'
+              ? originalAmount.getCurrency()
+              : 'MXN'; // Default to MXN
+              
+            // Ensure dates are valid Date objects
+            const transactionDate = transaction.date instanceof Date 
+              ? transaction.date 
+              : new Date(transaction.date || Date.now());
+            const createdAtDate = transaction.createdAt instanceof Date 
+              ? transaction.createdAt 
+              : new Date(transaction.createdAt || Date.now());
+              
             derivedExpenses.push({
               id: `${transaction.id}-${posting.id}`,
               what: transaction.description,
-              amount: originalAmount.toMajorUnits(),
-              currency: originalAmount.getCurrency(),
+              amount,
+              currency,
               rating: getExpenseRating(account.name),
-              date: transaction.date.toISOString().split('T')[0],
-              created_at: transaction.createdAt.toISOString(),
+              date: transactionDate.toISOString().split('T')[0],
+              created_at: createdAtDate.toISOString(),
               recurring: false
             });
           }
@@ -165,10 +181,22 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
   deleteExpense: (id: string) => {
     const ledgerStore = useLedgerStore.getState();
     
-    // Extract transaction ID from composite expense ID (format: transactionId-postingId)
-    const transactionId = id.split('-')[0];
+    // The ID format is: transactionId-postingId where both are UUIDs
+    // UUIDs are in format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (36 chars)
+    // So we need to extract the first 36 characters as the transaction ID
+    let transactionId: string;
     
-    if (transactionId) {
+    if (id.length > 36) {
+      // Composite ID format: extract first UUID
+      transactionId = id.substring(0, 36);
+    } else {
+      // Just a transaction ID
+      transactionId = id;
+    }
+    
+    const transaction = ledgerStore.getTransaction(transactionId);
+    
+    if (transaction) {
       ledgerStore.deleteTransaction(transactionId);
       // Update local state
       set({ expenses: get()._deriveExpensesFromLedger() });

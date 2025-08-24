@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useCurrencyStore } from '../../stores/currencyStore';
+import { useLedgerStore } from '../../stores/ledgerStore';
 import { TrendingUp, TrendingDown, Wallet, DollarSign, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Landmark, PiggyBank, ArrowUpDown, Scissors, LayoutGrid } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormat';
 import { useDateRange } from '../../hooks/finance/useDateRange';
@@ -7,7 +8,7 @@ import { useFilteredTransactions } from '../../hooks/finance/useFilteredTransact
 import { useCombinedTransactions } from '../../hooks/finance/useCombinedTransactions';
 import { Card, SectionHeader, Tabs, Pagination } from '../ui';
 import { CurrencyBadge } from '../Shared/CurrencyBadge';
-import { getMoMChange } from '../../selectors/finance';
+import { getNetWorthAt, getMoMChange, getPL, getExpenseBreakdown, getSavingsPotential } from '../../selectors/finance';
 import { useSnapshotStore } from '../../stores/snapshotStore';
 import { Money } from '../../domain/money';
 
@@ -17,7 +18,10 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const { formatAmount, baseCurrency } = useCurrencyStore();
+  const ledgerStore = useLedgerStore();
   const snapshotStore = useSnapshotStore();
+  
+  
   const [entryFilter, setEntryFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [viewMode, setViewMode] = useState<'month' | 'year' | 'custom'>('month');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -40,10 +44,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     customEndDate
   });
   
-  // Get financial data using pure selectors - simple fallback for now
+  // Get transactions to trigger recalculation when they change
+  const transactions = ledgerStore.getTransactions();
+  const accounts = ledgerStore.accounts;
+  
+  
+  // Initialize default accounts if needed
+  React.useEffect(() => {
+    if (accounts.length === 0) {
+      ledgerStore.initializeDefaultAccounts();
+    }
+  }, [accounts.length, ledgerStore]);
+  
+  // Get financial data using pure selectors
   const netWorthData = useMemo(() => {
     try {
-      console.log('Creating simple fallback net worth data...');
+      return getNetWorthAt(new Date());
+    } catch (error) {
+      console.error('Dashboard: Error in getNetWorthAt:', error);
+      // Fallback to zero values if selector fails
       const { baseCurrency } = useCurrencyStore.getState();
       return {
         totalAssets: Money.fromMajorUnits(0, baseCurrency),
@@ -61,52 +80,73 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           }
         }
       };
-    } catch (error) {
-      console.error('Error creating fallback net worth data:', error);
-      throw error;
     }
-  }, []);
+  }, [transactions.length]);
   
-  // const periodData = useMemo(() => {
-  //   try {
-  //     console.log('Calling getPL...');
-  //     const result = getPL(startDate, endDate);
-  //     console.log('getPL successful');
-  //     return result;
-  //   } catch (error) {
-  //     console.error('Error in getPL:', error);
-  //     throw error;
-  //   }
-  // }, [startDate, endDate]);
+  const periodData = useMemo(() => {
+    try {
+      return getPL(startDate, endDate);
+    } catch (error) {
+      console.error('Error in getPL:', error);
+      // Fallback data
+      const { baseCurrency } = useCurrencyStore.getState();
+      return { 
+        totalIncome: Money.fromMajorUnits(0, baseCurrency), 
+        totalExpenses: Money.fromMajorUnits(0, baseCurrency),
+        netIncome: Money.fromMajorUnits(0, baseCurrency),
+        incomeBreakdown: [],
+        expenseBreakdown: [],
+        fromDate: startDate,
+        toDate: endDate,
+        currency: baseCurrency
+      };
+    }
+  }, [startDate, endDate, transactions.length]);
   
-  // const expenseData = useMemo(() => {
-  //   try {
-  //     console.log('Calling getExpenseBreakdown...');
-  //     const result = getExpenseBreakdown(startDate, endDate);
-  //     console.log('getExpenseBreakdown successful');
-  //     return result;
-  //   } catch (error) {
-  //     console.error('Error in getExpenseBreakdown:', error);
-  //     throw error;
-  //   }
-  // }, [startDate, endDate]);
+  const expenseData = useMemo(() => {
+    try {
+      return getExpenseBreakdown(startDate, endDate);
+    } catch (error) {
+      console.error('Error in getExpenseBreakdown:', error);
+      // Fallback data
+      const { baseCurrency } = useCurrencyStore.getState();
+      return { 
+        byCategory: {} as Record<string, Money>,
+        byAccount: [],
+        totalExpenses: Money.fromMajorUnits(0, baseCurrency),
+        averageDaily: Money.fromMajorUnits(0, baseCurrency),
+        fromDate: startDate,
+        toDate: endDate,
+        currency: baseCurrency
+      };
+    }
+  }, [startDate, endDate, transactions.length]);
   
-  // const savingsData = useMemo(() => {
-  //   try {
-  //     console.log('Calling getSavingsPotential...');
-  //     const result = getSavingsPotential(startDate, endDate);
-  //     console.log('getSavingsPotential successful');
-  //     return result;
-  //   } catch (error) {
-  //     console.error('Error in getSavingsPotential:', error);
-  //     throw error;
-  //   }
-  // }, [startDate, endDate]);
-  
-  // Temporary fallback data
-  const periodData = { totalIncome: { toMajorUnits: () => 0 }, totalExpenses: { toMajorUnits: () => 0 } };
-  const expenseData = { byCategory: {} as Record<string, Money> };
-  const savingsData = { nonEssentialExpenses: { toMajorUnits: () => 0 } };
+  const savingsData = useMemo(() => {
+    try {
+      return getSavingsPotential(startDate, endDate);
+    } catch (error) {
+      console.error('Error in getSavingsPotential:', error);
+      // Fallback data
+      const { baseCurrency } = useCurrencyStore.getState();
+      return { 
+        nonEssentialExpenses: Money.fromMajorUnits(0, baseCurrency),
+        currentSavings: Money.fromMajorUnits(0, baseCurrency),
+        savingsRate: 0,
+        potentialSavings: Money.fromMajorUnits(0, baseCurrency),
+        projectedMonthlySavings: Money.fromMajorUnits(0, baseCurrency),
+        projectedYearlySavings: Money.fromMajorUnits(0, baseCurrency),
+        recommendations: {
+          reduceNonEssential: Money.fromMajorUnits(0, baseCurrency),
+          targetSavingsRate: 0.2,
+          gapToTarget: Money.fromMajorUnits(0, baseCurrency)
+        },
+        fromDate: startDate,
+        toDate: endDate,
+        currency: baseCurrency
+      };
+    }
+  }, [startDate, endDate, transactions.length]);
   
   // Legacy compatibility - maintain filtered transactions for existing UI
   const { filteredExpenses, filteredIncomes } = useFilteredTransactions({
@@ -118,7 +158,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   // Ensure current month snapshot exists and get MoM change
   React.useEffect(() => {
     snapshotStore.ensureCurrentMonthSnapshot();
-  }, [snapshotStore]);
+  }, [snapshotStore, transactions.length]);
 
   // Calculate net worth change using snapshots
   const netWorthChange = useMemo(() => {
@@ -138,7 +178,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       changePercent: momChange.deltaPct || 0,
       hasPreviousData: true
     };
-  }, []);
+  }, [transactions.length]);
 
   // Combine and sort transactions for display using hook - creates unified transaction view models
   const allTransactions = useCombinedTransactions({
@@ -146,6 +186,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     endDate,
     entryFilter
   });
+  
 
   // Navigation helpers
   const navigateMonth = (direction: 'prev' | 'next') => {

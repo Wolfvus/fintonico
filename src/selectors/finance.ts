@@ -434,7 +434,14 @@ export const getCombinedTransactions = (
       let category: string;
       
       // Convert amount to base currency for consistency
-      const convertedAmount = convertAmount(originalAmount.toMajorUnits(), originalAmount.getCurrency(), baseCurrency);
+      // Ensure originalAmount is a Money object
+      const amount = typeof originalAmount.toMajorUnits === 'function' 
+        ? originalAmount.toMajorUnits() 
+        : Number(originalAmount) || 0;
+      const currency = typeof originalAmount.getCurrency === 'function'
+        ? originalAmount.getCurrency()
+        : baseCurrency;
+      const convertedAmount = convertAmount(amount, currency, baseCurrency);
       
       if (account.nature === 'income' && posting.originalCreditAmount) {
         type = 'income';
@@ -448,13 +455,18 @@ export const getCombinedTransactions = (
         continue; // Skip non-income/expense accounts
       }
       
+      // Ensure transaction date is a valid Date object
+      const transactionDate = transaction.date instanceof Date 
+        ? transaction.date 
+        : new Date(transaction.date || Date.now());
+        
       allItems.push({
         id: `${transaction.id}-${posting.id}`,
         type,
         description: transaction.description,
         amount: convertedAmount,
         currency: baseCurrency,
-        date: transaction.date.toISOString().split('T')[0],
+        date: transactionDate.toISOString().split('T')[0],
         category,
         recurring: false,
         formattedAmount
