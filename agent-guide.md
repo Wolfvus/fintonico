@@ -161,7 +161,25 @@ Manual link: `reconcile.link(entryId, statementLineId)`.
 
 ---
 
-## 8) Reports (Local, In-Memory)
+## 8) Settings Modal & Currency Display
+
+### Instruction
+Add a workspace “Settings” modal reachable from global navigation. Split it into:
+- **Account Profile**: show basic read-only info (display name/email placeholder) and allow choosing the base currency via a single-select control.
+- **Display Preferences**: list all supported currencies with checkboxes to toggle visibility; the base currency is always selected/disabled. Persist both choices via the shared `currencyStore` (add helpers such as `setDefaultCurrency` and `toggleVisibleCurrency`).
+- Surface the active base and visible currencies in each board header (e.g., `Base: MXN · Showing: MXN, USD`) using a shared badge component.
+Ensure the store prevents deselecting the last visible currency and updates propagate without reloading.
+
+### Local Tests
+- `currencyStore.test.ts`:
+  - Setting a new default currency keeps it in the visible set and updates selectors.
+  - Toggling a secondary currency adds/removes it without affecting the base.
+  - Attempting to hide the final visible currency is ignored with a warning.
+- Manual: open the Settings modal, change default/visible currencies, and verify badges refresh across dashboard, assets, liabilities, and accounts views.
+
+---
+
+## 9) Reports (Local, In-Memory)
 
 ### Instruction
 - `reports.cashflow({ from, to, period='monthly' })`:
@@ -177,7 +195,7 @@ Manual link: `reconcile.link(entryId, statementLineId)`.
 
 ---
 
-## 9) Minimal Local HTTP Surface (Optional)
+## 10) Minimal Local HTTP Surface (Optional)
 
 ### Instruction
 Expose minimal endpoints via Fastify/Express (no auth yet):
@@ -194,7 +212,7 @@ Expose minimal endpoints via Fastify/Express (no auth yet):
 
 ---
 
-## 10) Frontend Smoke (Optional Local Harness)
+## 11) Frontend Smoke (Optional Local Harness)
 
 ### Instruction
 Add a tiny React page that hits the local HTTP surface:
@@ -207,7 +225,7 @@ This is **not** production UI—just a harness to verify end-to-end locally.
 
 ---
 
-## 11) Definition of Done (Local v0)
+## 12) Definition of Done (Local v0)
 
 You are done when **all** are true:
 
@@ -217,13 +235,14 @@ You are done when **all** are true:
 4. Import pipeline reports `{inserted, duplicates, failed}` correctly.  
 5. Auto-reconcile links exact matches; manual link works for edge cases.  
 6. Rules apply before agent; agent gated by confidence.  
-7. Cashflow and net worth match fixtures.  
-8. Optional HTTP layer passes supertest suite.  
-9. All tests pass locally (`pnpm test`).
+7. Settings modal updates default/visible currencies and board badges reflect choices.  
+8. Cashflow and net worth match fixtures.  
+9. Optional HTTP layer passes supertest suite.  
+10. All tests pass locally (`pnpm test`).  
 
 ---
 
-## 12) Commands & Tooling
+## 13) Commands & Tooling
 
 ### Suggested scripts (package.json)
 ```json
@@ -243,7 +262,7 @@ You are done when **all** are true:
 
 ---
 
-## 13) Gherkin Acceptance (Local Parity)
+## 14) Gherkin Acceptance (Local Parity)
 
 **Create expense**
 ```
@@ -296,7 +315,7 @@ Then no category is applied and it is flagged for review
 
 ---
 
-## 14) Next Phase Hooks (when DB arrives)
+## 15) Next Phase Hooks (when DB arrives)
 
 - Replace `/src/store/memory.ts` with repository interfaces backed by Postgres.  
 - Transform `validateBalanced` into a DB trigger **plus** service-side check.  
