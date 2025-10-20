@@ -122,6 +122,8 @@ export class EntriesService {
     }
 
     const magnitudeNative = Math.abs(line.nativeAmount);
+    const nativeAmountSigned =
+      line.direction === 'debit' ? magnitudeNative : -magnitudeNative;
 
     let fxRate: number;
     if (nativeCurrency === normalizedBase) {
@@ -145,8 +147,7 @@ export class EntriesService {
       baseAmount = line.baseAmount;
     } else {
       const converted = magnitudeNative * fxRate;
-      baseAmount =
-        line.direction === 'debit' ? Math.abs(converted) : -Math.abs(converted);
+      baseAmount = line.direction === 'debit' ? converted : -converted;
     }
 
     if (line.direction === 'debit' && baseAmount <= 0) {
@@ -160,7 +161,7 @@ export class EntriesService {
       id: randomUUID(),
       entryId,
       accountId: line.accountId,
-      nativeAmount: magnitudeNative,
+      nativeAmount: nativeAmountSigned,
       nativeCurrency,
       baseAmount,
       baseCurrency: normalizedBase,

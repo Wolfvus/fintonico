@@ -68,6 +68,8 @@ describe('EntriesService.create', () => {
     expect(aggregate.lines).toHaveLength(2);
     expect(sumBase(aggregate)).toBeCloseTo(0);
     expect(aggregate.category?.categoryId).toBe('cat-food');
+    const checkingLine = aggregate.lines.find((line) => line.accountId === 'acct-checking');
+    expect(checkingLine?.nativeAmount).toBeCloseTo(-250);
   });
 
   it('creates a balanced cross-currency transfer using FX snapshots', () => {
@@ -114,6 +116,7 @@ describe('EntriesService.create', () => {
     const usdLine = aggregate.lines.find((line) => line.accountId === 'acct-usd');
     expect(usdLine?.fxRate).toBe(18.5);
     expect(usdLine?.baseAmount).toBeCloseTo(-1850);
+    expect(usdLine?.nativeAmount).toBeCloseTo(-100);
     expect(sumBase(aggregate)).toBeCloseTo(0);
   });
 

@@ -15,6 +15,7 @@ import {
   EntryLineInput,
   EntryLineSchema,
   EntrySchema,
+  EntryStatus,
   FxRate,
   FxRateInput,
   FxRateSchema,
@@ -144,11 +145,22 @@ export class EntriesRepository {
     if (!ids) return [];
     return Array.from(ids).map((id) => this.entriesById.get(id)!);
   }
+
+  setStatus(entryId: string, status: EntryStatus): Entry {
+    const entry = this.getById(entryId);
+    const parsed = EntrySchema.safeParse({ ...entry, status });
+    if (!parsed.success) {
+      throw new ValidationError(formatZodError(parsed.error));
+    }
+    this.entriesById.set(entryId, parsed.data);
+    return parsed.data;
+  }
 }
 
 export class EntryLinesRepository {
   private linesById = new Map<string, EntryLine>();
   private linesByEntry = new Map<string, Set<string>>();
+  private linesByAccount = new Map<string, Set<string>>();
 
   constructor(private readonly accountsRepo: AccountsRepository) {}
 
@@ -171,12 +183,22 @@ export class EntryLinesRepository {
       this.linesByEntry.set(line.entryId, new Set());
     }
     this.linesByEntry.get(line.entryId)!.add(line.id);
+    if (!this.linesByAccount.has(line.accountId)) {
+      this.linesByAccount.set(line.accountId, new Set());
+    }
+    this.linesByAccount.get(line.accountId)!.add(line.id);
 
     return line;
   }
 
   listByEntry(entryId: string): EntryLine[] {
     const ids = this.linesByEntry.get(entryId);
+    if (!ids) return [];
+    return Array.from(ids).map((id) => this.linesById.get(id)!);
+  }
+
+  listByAccount(accountId: string): EntryLine[] {
+    const ids = this.linesByAccount.get(accountId);
     if (!ids) return [];
     return Array.from(ids).map((id) => this.linesById.get(id)!);
   }
@@ -266,6 +288,14 @@ export class StatementLinesRepository {
     if (!ids) return [];
     return Array.from(ids).map((id) => this.linesById.get(id)!);
   }
+
+  getById(id: string): StatementLine {
+    const line = this.linesById.get(id);
+    if (!line) {
+      throw new NotFoundError(`StatementLine ${id} not found`);
+    }
+    return line;
+  }
 }
 
 export class RulesRepository {
@@ -294,7 +324,7 @@ export class RulesRepository {
     if (!ids) return [];
     return Array.from(ids)
       .map((id) => this.rulesById.get(id)!)
-      .sort((a, b) => b.priority - a.priority);
+      .sort((a, b) => a.priority - b.priority);
   }
 }
 
@@ -323,6 +353,52 @@ export class FxRatesRepository {
   }
 }
 
+export interface ReconciliationLink {
+  entryId: string;
+  statementLineId: string;
+  linkedAt: string;
+  manual: boolean;
+}
+
+export class ReconciliationsRepository {
+  private entryToStatement = new Map<string, ReconciliationLink>();
+  private statementToEntry = new Map<string, ReconciliationLink>();
+
+  link(entryId: string, statementLineId: string, manual: boolean): ReconciliationLink {
+    if (this.entryToStatement.has(entryId)) {
+      throw new DuplicateError(`Entry ${entryId} is already reconciled`);
+    }
+    if (this.statementToEntry.has(statementLineId)) {
+      throw new DuplicateError(`Statement line ${statementLineId} is already linked`);
+    }
+    const link: ReconciliationLink = {
+      entryId,
+      statementLineId,
+      linkedAt: new Date().toISOString(),
+      manual,
+    };
+    this.entryToStatement.set(entryId, link);
+    this.statementToEntry.set(statementLineId, link);
+    return link;
+  }
+
+  getByEntry(entryId: string): ReconciliationLink | undefined {
+    return this.entryToStatement.get(entryId);
+  }
+
+  getByStatementLine(statementLineId: string): ReconciliationLink | undefined {
+    return this.statementToEntry.get(statementLineId);
+  }
+
+  isEntryLinked(entryId: string): boolean {
+    return this.entryToStatement.has(entryId);
+  }
+
+  isStatementLinked(statementLineId: string): boolean {
+    return this.statementToEntry.has(statementLineId);
+  }
+}
+
 export class MemoryStore {
   readonly accounts = new AccountsRepository();
   readonly entries = new EntriesRepository();
@@ -332,6 +408,7 @@ export class MemoryStore {
   readonly statementLines = new StatementLinesRepository();
   readonly rules = new RulesRepository();
   readonly fxRates = new FxRatesRepository();
+  readonly reconciliations = new ReconciliationsRepository();
 }
 
 export const createMemoryStore = () => new MemoryStore();

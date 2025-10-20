@@ -85,17 +85,13 @@ export const StatementLineSchema = z.object({
 export type StatementLine = z.infer<typeof StatementLineSchema>;
 export type StatementLineInput = z.input<typeof StatementLineSchema>;
 
-const jsonValue: z.ZodType<unknown> = z.lazy(() =>
-  z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(jsonValue), z.record(jsonValue)]),
-);
-
 export const RuleSchema = z.object({
   id: z.string().min(1),
   userId: z.string().min(1),
   active: z.boolean().default(true),
   priority: z.number().int(),
-  matcher: jsonValue,
-  action: jsonValue,
+  matcher: z.unknown(),
+  action: z.unknown(),
 });
 export type Rule = z.infer<typeof RuleSchema>;
 export type RuleInput = z.input<typeof RuleSchema>;
