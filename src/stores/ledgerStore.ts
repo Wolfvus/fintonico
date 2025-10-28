@@ -336,56 +336,87 @@ export const useLedgerStore = create<LedgerState>()(
 
       getIncomeStatement: (fromDate, toDate, baseCurrency) => {
         const accounts = get().accounts;
-        
+        const { convertAmount } = useCurrencyStore.getState();
+
+        const rangeStart = new Date(fromDate);
+        rangeStart.setHours(0, 0, 0, 0);
+
+        const rangeEnd = new Date(toDate);
+        rangeEnd.setHours(23, 59, 59, 999);
+
         const incomeAccounts = accounts.filter(acc => acc.nature === 'income');
         const expenseAccounts = accounts.filter(acc => acc.nature === 'expense');
 
-        const income = incomeAccounts.map(account => ({
-          account,
-          amount: get().getAccountBalance(account.id, toDate)
-        }));
-        
-        const expenses = expenseAccounts.map(account => ({
-          account,
-          amount: get().getAccountBalance(account.id, toDate)
-        }));
+        const incomeTotals = new Map<string, number>();
+        const expenseTotals = new Map<string, number>();
 
-        const { convertAmount } = useCurrencyStore.getState();
-        
-        const totalIncome = income.reduce((sum, item) => {
-          const convertedAmount = convertAmount(item.amount.toMajorUnits(), item.amount.getCurrency(), baseCurrency);
-          return sum.add(Money.fromMajorUnits(convertedAmount, baseCurrency));
-        }, Money.fromMinorUnits(0, baseCurrency));
-        
-        const totalExpenses = expenses.reduce((sum, item) => {
-          const convertedAmount = convertAmount(item.amount.toMajorUnits(), item.amount.getCurrency(), baseCurrency);
-          return sum.add(Money.fromMajorUnits(convertedAmount, baseCurrency));
-        }, Money.fromMinorUnits(0, baseCurrency));
-        const netIncome = totalIncome.subtract(totalExpenses);
+        const transactions = get().getTransactions({
+          dateFrom: rangeStart,
+          dateTo: rangeEnd
+        });
 
-        // Convert breakdown items to base currency
-        const convertedIncome = income.map(item => ({
-          account: item.account,
-          amount: Money.fromMajorUnits(
-            convertAmount(item.amount.toMajorUnits(), item.amount.getCurrency(), baseCurrency),
-            baseCurrency
-          )
-        }));
-        
-        const convertedExpenses = expenses.map(item => ({
-          account: item.account,
-          amount: Money.fromMajorUnits(
-            convertAmount(item.amount.toMajorUnits(), item.amount.getCurrency(), baseCurrency),
-            baseCurrency
-          )
-        }));
+        const toBaseNumber = (money: Money | null): number => {
+          if (!money) return 0;
+          const amount = money.toMajorUnits();
+          if (money.getCurrency() === baseCurrency) {
+            return amount;
+          }
+          return convertAmount(amount, money.getCurrency(), baseCurrency);
+        };
+
+        const addToMap = (map: Map<string, number>, accountId: string, delta: number) => {
+          if (delta === 0) return;
+          map.set(accountId, (map.get(accountId) || 0) + delta);
+        };
+
+        for (const transaction of transactions) {
+          for (const posting of transaction.postings) {
+            const account = get().getAccount(posting.accountId);
+            if (!account) continue;
+
+            if (account.nature === 'income') {
+              const credit = toBaseNumber(posting.bookedCreditAmount);
+              const debit = toBaseNumber(posting.bookedDebitAmount);
+              addToMap(incomeTotals, account.id, credit);
+              addToMap(incomeTotals, account.id, -debit);
+            } else if (account.nature === 'expense') {
+              const debit = toBaseNumber(posting.bookedDebitAmount);
+              const credit = toBaseNumber(posting.bookedCreditAmount);
+              addToMap(expenseTotals, account.id, debit);
+              addToMap(expenseTotals, account.id, -credit);
+            }
+          }
+        }
+
+        const toMoney = (value: number) => Money.fromMajorUnits(value, baseCurrency);
+
+        const income = incomeAccounts
+          .map(account => ({
+            account,
+            amount: toMoney(incomeTotals.get(account.id) || 0)
+          }))
+          .filter(item => !item.amount.isZero());
+
+        const expenses = expenseAccounts
+          .map(account => ({
+            account,
+            amount: toMoney(expenseTotals.get(account.id) || 0)
+          }))
+          .filter(item => !item.amount.isZero());
+
+        const totalIncomeValue = income.reduce((sum, item) => sum + item.amount.toMajorUnits(), 0);
+        const totalExpensesValue = expenses.reduce((sum, item) => sum + item.amount.toMajorUnits(), 0);
+
+        const totalIncome = toMoney(totalIncomeValue);
+        const totalExpenses = toMoney(totalExpensesValue);
+        const netIncome = toMoney(totalIncomeValue - totalExpensesValue);
 
         return {
           asOfDate: toDate,
           fromDate,
           currency: baseCurrency,
-          income: convertedIncome,
-          expenses: convertedExpenses,
+          income,
+          expenses,
           totalIncome,
           totalExpenses,
           netIncome

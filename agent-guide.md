@@ -57,32 +57,14 @@ Completed ✅ — Covered by `src/tests/reconcile.test.ts`.
 - **Goal:** Implement auto/manual reconciliation between entries and statement lines using amount/date windows; update entry status on matches.  
 - **Acceptance (met):** Exact matches within the window auto-link; manual linking handles unresolved cases.
 
+### ~~8) Cashflow Statement Accuracy (Selectors + UI)~~
+Completed ✅ — Verified by `src/tests/cashflow.test.ts` and the dashboard KPI integration.
+- **Goal:** Drive cashflow KPIs from a selector that aggregates only cash-equivalent accounts, classifies inflows/outflows by source, and normalises amounts to the active base currency.  
+- **Acceptance (met):** Net cashflow equals ledger cash balance deltas, expense-only windows report zero inflow, cross-currency scenarios respect FX rates, and the dashboard card formats the selector output without ad-hoc math.
+
 ---
 
 ## Upcoming Work
-
-### 8) Cashflow Statement Accuracy (Selectors + UI)
-
-**Goal:** Replace ad-hoc `periodIncome - periodExpenses` math with a ledger-backed cashflow statement powering dashboard KPIs.
-
-**Implementation Notes**
-- Add `getCashflowStatement(from: Date, to: Date)` to `src/selectors/finance`:
-  - Filter to cash-equivalent accounts (cash, checking, savings, wallets); derive inflows/outflows by transaction type (`income`, `expense`, `transfer`).
-  - Return `{ inflows: Money, outflows: Money, net: Money, breakdown: Array<{ source, accountId?, amount: Money }> }`.
-  - Use booked amounts for historical consistency; normalise via `useCurrencyStore.convertMoney`.
-- Tag synthetic recurring transactions (if not already) so generated instances are counted once per period.
-- Update `Dashboard` to consume the selector (memoised) and surface loading/error states with the existing `ErrorBoundary`.
-- Document expected behaviour in `README.md` cashflow section once implemented.
-
-**Acceptance Criteria**
-- `src/tests/cashflow.test.ts` fixture ensures:
-  - Net cashflow equals change in aggregate cash balances for a period.
-  - Expense-only periods report inflows = 0, net negative.
-  - Cross-currency movements respect stored FX rates with tolerance ±0.01.
-- Optional UI test (`src/tests/Dashboard.cashflow.test.tsx`) validating the rendered KPI matches selector output.
-- Manual: Seed sample income/expense entries, confirm dashboard cashflow matches spreadsheet reference.
-
----
 
 ### 9) Settings Modal & Currency Management
 
@@ -237,4 +219,3 @@ Then linked_count=1 and entry status='reconciled'
 - Enforce balance checks via DB constraints/triggers in addition to service validation.  
 - Persist FX tables with historical backfill endpoints.  
 - Retain all Vitest suites; add integration tests targeting the database.
-

@@ -6,6 +6,7 @@ import { useSnapshotStore } from '../stores/snapshotStore';
 import { Money } from '../domain/money';
 import type { AccountNature } from '../domain/ledger';
 import type { AccountType } from '../types';
+import type { Transaction } from '../domain/ledger';
 
 // Date utility for consistent date handling
 const startOfDay = (date: Date): Date => {
@@ -163,71 +164,207 @@ export const getPL = (startDate: Date, endDate: Date) => {
   };
 };
 
-// Cash flow selectors
-export const getCashflow = (startDate: Date, endDate: Date) => {
-  const ledgerStore = useLedgerStore.getState();
-  const { baseCurrency } = useCurrencyStore.getState();
-  
-  const start = startOfDay(startDate);
-  const end = endOfDay(endDate);
-  
-  // Get cash accounts (assets with 'cash' in name or code starting with 1001-1099)
-  const cashAccounts = ledgerStore.getAccountsByNature('asset')
-    .filter(account => 
-      account.name.toLowerCase().includes('cash') || 
-      account.code.startsWith('100')
-    );
-  
-  let totalCashInflow = Money.fromMinorUnits(0, baseCurrency);
-  let totalCashOutflow = Money.fromMinorUnits(0, baseCurrency);
-  
-  const transactions = ledgerStore.getTransactions({
-    dateFrom: start,
-    dateTo: end,
-    accountIds: cashAccounts.map(acc => acc.id)
-  });
-  
-  const cashFlowDetails: Array<{
-    date: Date;
-    description: string;
-    amount: Money;
-    type: 'inflow' | 'outflow';
-    counterpartyAccount?: string;
-  }> = [];
-  
-  for (const transaction of transactions) {
-    for (const posting of transaction.postings) {
-      const isCashAccount = cashAccounts.some(acc => acc.id === posting.accountId);
-      
-      if (isCashAccount && posting.bookedDebitAmount) {
-        // Cash increased (inflow)
-        totalCashInflow = totalCashInflow.add(posting.bookedDebitAmount);
-        cashFlowDetails.push({
-          date: transaction.date,
-          description: transaction.description,
-          amount: posting.bookedDebitAmount,
-          type: 'inflow'
-        });
-      } else if (isCashAccount && posting.bookedCreditAmount) {
-        // Cash decreased (outflow)
-        totalCashOutflow = totalCashOutflow.add(posting.bookedCreditAmount);
-        cashFlowDetails.push({
-          date: transaction.date,
-          description: transaction.description,
-          amount: posting.bookedCreditAmount,
-          type: 'outflow'
-        });
-      }
+type CashflowSource = 'income' | 'expense' | 'transfer' | 'other';
+
+export interface CashflowBreakdown {
+  source: CashflowSource;
+  inflow: Money;
+  outflow: Money;
+}
+
+export interface CashflowDetail {
+  transactionId: string;
+  description: string;
+  date: Date;
+  amount: Money;
+  direction: 'inflow' | 'outflow';
+  source: CashflowSource;
+  accountId: string;
+  accountName: string;
+  counterpartyAccountId?: string;
+  counterpartyAccountName?: string;
+}
+
+export interface CashflowStatement {
+  inflows: Money;
+  outflows: Money;
+  net: Money;
+  breakdown: CashflowBreakdown[];
+  details: CashflowDetail[];
+  fromDate: Date;
+  toDate: Date;
+  currency: string;
+}
+
+const cashLikeAccountKeywords = ['cash', 'checking', 'savings', 'wallet', 'bank', 'card'];
+
+const isCashLikeAccount = (account: { nature: AccountNature; name: string; code: string }): boolean => {
+  if (account.nature !== 'asset' && account.nature !== 'liability') {
+    return false;
+  }
+
+  const normalizedName = account.name.toLowerCase();
+  const matchesKeyword = cashLikeAccountKeywords.some(keyword => normalizedName.includes(keyword));
+  const isCashCode = /^10\d{2}/.test(account.code);
+
+  if (account.nature === 'asset') {
+    return matchesKeyword || isCashCode;
+  }
+
+  // Include selected liability accounts (e.g., credit cards) to reflect cash-equivalent funding
+  return matchesKeyword;
+};
+
+const determineCashflowSource = (
+  transaction: Transaction,
+  cashAccountIds: Set<string>,
+  ledgerAccountLookup: (id: string) => { name: string; nature: AccountNature } | undefined,
+  direction: 'inflow' | 'outflow'
+): CashflowSource => {
+  const nonCashPostings = transaction.postings.filter(posting => !cashAccountIds.has(posting.accountId));
+
+  for (const posting of nonCashPostings) {
+    const account = ledgerAccountLookup(posting.accountId);
+    if (!account) {
+      continue;
+    }
+
+    if (account.nature === 'income') {
+      return 'income';
+    }
+
+    if (account.nature === 'expense') {
+      return 'expense';
+    }
+
+    if (account.nature === 'liability') {
+      return 'transfer';
     }
   }
-  
-  const netCashFlow = totalCashInflow.subtract(totalCashOutflow);
-  
+
+  // If no clear classification, fall back to transfer (movement between cash-like accounts)
+  return direction === 'inflow' ? 'transfer' : 'transfer';
+};
+
+const convertToBase = (money: Money, baseCurrency: string, convertAmount: (amount: number, from: string, to: string) => number): Money => {
+  if (money.getCurrency() === baseCurrency) {
+    return money;
+  }
+
+  const convertedAmount = convertAmount(money.toMajorUnits(), money.getCurrency(), baseCurrency);
+  return Money.fromMajorUnits(convertedAmount, baseCurrency);
+};
+
+// Cash flow selectors
+export const getCashflowStatement = (startDate: Date, endDate: Date): CashflowStatement => {
+  const ledgerStore = useLedgerStore.getState();
+  const { baseCurrency, convertAmount } = useCurrencyStore.getState();
+
+  const start = startOfDay(startDate);
+  const end = endOfDay(endDate);
+
+  const cashAccounts = [
+    ...ledgerStore.getAccountsByNature('asset'),
+    ...ledgerStore.getAccountsByNature('liability')
+  ].filter(isCashLikeAccount);
+
+  const cashAccountIds = new Set(cashAccounts.map(account => account.id));
+  const getAccountMeta = (accountId: string) => {
+    const account = ledgerStore.getAccount(accountId);
+    if (!account) {
+      return undefined;
+    }
+    return { name: account.name, nature: account.nature };
+  };
+
+  let totalInflows = Money.fromMinorUnits(0, baseCurrency);
+  let totalOutflows = Money.fromMinorUnits(0, baseCurrency);
+
+  const breakdownMap = new Map<CashflowSource, { inflow: Money; outflow: Money }>();
+  const ensureBreakdown = (source: CashflowSource) => {
+    if (!breakdownMap.has(source)) {
+      breakdownMap.set(source, {
+        inflow: Money.fromMinorUnits(0, baseCurrency),
+        outflow: Money.fromMinorUnits(0, baseCurrency)
+      });
+    }
+    return breakdownMap.get(source)!;
+  };
+
+  const details: CashflowDetail[] = [];
+
+  const transactions = ledgerStore.getTransactions({
+    dateFrom: start,
+    dateTo: end
+  });
+
+  for (const transaction of transactions) {
+    const cashPostings = transaction.postings.filter(posting => cashAccountIds.has(posting.accountId));
+    if (cashPostings.length === 0) {
+      continue;
+    }
+
+    for (const posting of cashPostings) {
+      let direction: 'inflow' | 'outflow' | null = null;
+      let amountInBase: Money | null = null;
+
+      if (posting.bookedDebitAmount) {
+        direction = 'inflow';
+        amountInBase = convertToBase(posting.bookedDebitAmount, baseCurrency, convertAmount);
+      } else if (posting.bookedCreditAmount) {
+        direction = 'outflow';
+        amountInBase = convertToBase(posting.bookedCreditAmount, baseCurrency, convertAmount);
+      }
+
+      if (!direction || !amountInBase) {
+        continue;
+      }
+
+      const source = determineCashflowSource(transaction, cashAccountIds, getAccountMeta, direction);
+
+      if (direction === 'inflow') {
+        totalInflows = totalInflows.add(amountInBase);
+        const entry = ensureBreakdown(source);
+        entry.inflow = entry.inflow.add(amountInBase);
+        breakdownMap.set(source, entry);
+      } else {
+        totalOutflows = totalOutflows.add(amountInBase);
+        const entry = ensureBreakdown(source);
+        entry.outflow = entry.outflow.add(amountInBase);
+        breakdownMap.set(source, entry);
+      }
+
+      const accountMeta = getAccountMeta(posting.accountId);
+      const counterpartyPosting = transaction.postings.find(p => !cashAccountIds.has(p.accountId));
+      const counterpartyMeta = counterpartyPosting ? getAccountMeta(counterpartyPosting.accountId) : undefined;
+
+      details.push({
+        transactionId: transaction.id,
+        description: transaction.description,
+        date: transaction.date instanceof Date ? transaction.date : new Date(transaction.date),
+        amount: amountInBase,
+        direction,
+        source,
+        accountId: posting.accountId,
+        accountName: accountMeta?.name || posting.accountId,
+        counterpartyAccountId: counterpartyPosting?.accountId,
+        counterpartyAccountName: counterpartyMeta?.name
+      });
+    }
+  }
+
+  const net = totalInflows.subtract(totalOutflows);
+
   return {
-    totalInflow: totalCashInflow,
-    totalOutflow: totalCashOutflow,
-    netCashFlow,
-    details: cashFlowDetails.sort((a, b) => b.date.getTime() - a.date.getTime()),
+    inflows: totalInflows,
+    outflows: totalOutflows,
+    net,
+    breakdown: Array.from(breakdownMap.entries()).map(([source, value]) => ({
+      source,
+      inflow: value.inflow,
+      outflow: value.outflow
+    })),
+    details: details.sort((a, b) => b.date.getTime() - a.date.getTime()),
     fromDate: start,
     toDate: end,
     currency: baseCurrency
@@ -339,7 +476,7 @@ export const getCurrentMonthExpenseBreakdown = () => {
 
 export const getCurrentMonthCashflow = () => {
   const now = new Date();
-  return getCashflow(startOfMonth(now), endOfMonth(now));
+  return getCashflowStatement(startOfMonth(now), endOfMonth(now));
 };
 
 export const getCurrentMonthSavingsPotential = () => {

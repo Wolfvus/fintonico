@@ -8,7 +8,8 @@ import { useFilteredTransactions } from '../../hooks/finance/useFilteredTransact
 import { useCombinedTransactions } from '../../hooks/finance/useCombinedTransactions';
 import { Card, SectionHeader, Tabs, Pagination } from '../ui';
 import { CurrencyBadge } from '../Shared/CurrencyBadge';
-import { getNetWorthAt, getMoMChange, getPL, getExpenseBreakdown, getSavingsPotential } from '../../selectors/finance';
+import { getNetWorthAt, getMoMChange, getPL, getExpenseBreakdown, getSavingsPotential, getCashflowStatement } from '../../selectors/finance';
+import type { CashflowStatement } from '../../selectors/finance';
 import { useSnapshotStore } from '../../stores/snapshotStore';
 import { Money } from '../../domain/money';
 
@@ -147,6 +148,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       };
     }
   }, [startDate, endDate, transactions.length]);
+
+  const cashflowData = useMemo(() => {
+    try {
+      return getCashflowStatement(startDate, endDate);
+    } catch (error) {
+      console.error('Error in getCashflowStatement:', error);
+      const { baseCurrency } = useCurrencyStore.getState();
+      const zero = Money.fromMajorUnits(0, baseCurrency);
+      return {
+        inflows: zero,
+        outflows: zero,
+        net: zero,
+        breakdown: [],
+        details: [],
+        fromDate: startDate,
+        toDate: endDate,
+        currency: baseCurrency
+      } as CashflowStatement;
+    }
+  }, [startDate, endDate, transactions.length]);
   
   // Legacy compatibility - maintain filtered transactions for existing UI
   const { filteredExpenses, filteredIncomes } = useFilteredTransactions({
@@ -221,10 +242,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const netWorth = netWorthData.netWorth.toMajorUnits();
   const totalAssets = netWorthData.totalAssets.toMajorUnits();
   const totalLiabilities = netWorthData.totalLiabilities.toMajorUnits();
+  const cashflowNet = cashflowData.net.toMajorUnits();
   
   
   // Calculate KPIs
-  const monthlyCashFlow = periodIncome - periodExpenses;
+  const monthlyCashFlow = cashflowNet;
   const savingsRate = periodIncome > 0 ? ((periodIncome - periodExpenses) / periodIncome) * 100 : 0;
   
   // State for insights tabs
@@ -474,7 +496,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               ? 'text-green-600 dark:text-green-400' 
               : 'text-red-600 dark:text-red-400'
           }`}>
-            {formatAmount(monthlyCashFlow)}
+            {formatAmount(monthlyCashFlow, cashflowData.currency)}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {monthlyCashFlow >= 0 ? 'Surplus' : 'Deficit'}
