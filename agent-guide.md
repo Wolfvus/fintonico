@@ -1,255 +1,187 @@
-# Fintonico — Agent Execution Guide (Local-Only v0)
+# Fintonico — Agent Execution Guide (Local v0)
 
-> **Purpose**: This file is the step-by-step playbook your Agent follows to bring the app from “prototype” to a **locally testable** double‑entry finance system.  
-> **Important**: In this phase there is **no real database**. We simulate persistence with an in-memory store (or a temporary JSON/SQLite file). You’ll wire Supabase/Postgres later.
+> **Purpose:** This guide is the playbook for agents extending Fintonico toward a reliable, locally testable double-entry finance system.  
+> **Status:** Foundations through **Step 7** are complete and verified (`npm run test` on 2025‑02‑14 00:54 UTC). The next focus areas are cashflow accuracy and settings management.
 
 ---
 
 ## 0) Rules of Engagement
 
-- **Deterministic first**: Double-entry rules, idempotent imports, explicit reconciliation. No “magic.”  
-- **Local only**: Node 20+, pnpm preferred. No external APIs except optional FX fixture loader.  
-- **Tests every step**: Each section ends with **Local Tests** you must run and pass.  
-- **Single source of truth**: The server/service layer computes balances; UI never “authoritatively” sums.
+- **Deterministic first:** Enforce double-entry invariants, idempotent imports, and explicit reconciliation—no hidden magic.  
+- **Local only:** Node 20+, npm (or pnpm). Avoid external APIs except the optional FX fixture loader.  
+- **Tests every step:** Each section lists acceptance checks—add/extend Vitest suites accordingly.  
+- **Single source of truth:** The service layer and ledger selectors own financial calculations; UI should only render derived data.
 
-Recommended stack for this phase:
-- TypeScript + Node (ts-node / tsx)  
-- Vitest or Jest for tests (examples use **Vitest**)  
-- Zod for input validation  
-- Tiny local web server (Express/Fastify) **or** pure services invoked by tests
-
-File/Dir skeleton (local):
-```
-/agent-spec.md (this file)
-/src/domain/types.ts
-/src/domain/errors.ts
-/src/lib/fx.ts
-/src/lib/idempotency.ts
-/src/lib/rules.ts
-/src/lib/reconcile.ts
-/src/store/memory.ts        # in-memory repositories
-/src/services/entries.ts
-/src/services/imports.ts
-/src/services/reports.ts
-/src/services/accounts.ts
-/src/tests/**/*.test.ts
-```
+Baseline stack:
+- TypeScript + Node (tsx/ts-node)
+- Vitest for tests
+- Zod for validation
+- Express/Fastify optional for local HTTP harness
 
 ---
 
-## 1) Domain Types & In-Memory Store
+## Completed Foundations (Steps 1‑7)
 
-### Instruction
-Define the minimal domain objects and repositories with **invariants** coded in TypeScript types.
+### ~~1) Domain Types & In-Memory Store~~
+Completed ✅ — Validated by `src/tests/types.test.ts`.
+- **Goal:** Define core domain types (Account, Entry, EntryLine, Category, StatementLine, Rule, FxRate) with invariants enforced via Zod; back them with in-memory repositories keyed by deterministic IDs.  
+- **Acceptance (met):** Invalid account types and currency mismatches are rejected at creation time.
 
-- `Account { id, userId, name, type, currency, isActive }`
-- `Entry { id, ledgerId, externalId?, bookedAt, description?, status }`
-- `EntryLine { id, entryId, accountId, nativeAmount, nativeCurrency, baseAmount, baseCurrency, fxRate, direction }`
-- `Category { id, userId, name, parentId? }`
-- `EntryCategory { entryId, categoryId, confidence }`
-- `StatementLine { id, accountId, postedAt, amountNative, currency, memo?, externalId }`
-- `Rule { id, userId, active, priority, matcher: JSON, action: JSON }`
-- `FxRate { base, quote, asOf, rate }`
+### ~~2) Balancing & Currency Integrity~~
+Completed ✅ — Covered by `src/tests/balance.test.ts`.
+- **Goal:** Implement `validateBalanced(entryId, lines[], baseCurrency)` enforcing zero-sum base balances, direction/sign consistency, and base-currency alignment.  
+- **Acceptance (met):** Unbalanced entries, inverted debit signs, or mixed base currencies throw typed errors.
 
-Create **in-memory repositories** with CRUD and simple indexes (Maps keyed by id and composite keys).
+### ~~3) FX Snapshot Module (Local Fixture)~~
+Completed ✅ — Exercised in `src/tests/fx.test.ts`.
+- **Goal:** Provide `fx.ensure` and `fx.getRate` utilities using in-memory storage with deterministic lookups; no network access.  
+- **Acceptance (met):** Missing rates raise `FxMissingError`; stored rates return consistently; same-currency shortcuts return `1`.
 
-### Local Tests
-- `types.test.ts`:
-  - Creating an `Account` with unknown `type` fails validation (Zod).  
-  - `EntryLine.nativeCurrency` must equal referenced `Account.currency` (reject on mismatch).
+### ~~4) Entry Creation Service (Double-Entry Only)~~
+Completed ✅ — See `src/tests/entries.create.test.ts`.
+- **Goal:** Build `entries.create` to derive base amounts via FX, validate balance, enforce `externalId` idempotency, and attach categories with full confidence.  
+- **Acceptance (met):** Balanced entries persist, cross-currency transfers respect FX snapshots, duplicate `externalId`s no-op.
 
----
+### ~~5) Import Pipeline (CSV → Statement Lines)~~
+Completed ✅ — Verified by `src/tests/imports.test.ts`.
+- **Goal:** Parse CSV files to deterministic `StatementLine`s with `externalId` hashes, upserting into the statement store.  
+- **Acceptance (met):** Re-importing identical files yields duplicates without reinsertion, malformed rows are reported with reasons.
 
-## 2) Balancing & Currency Integrity
+### ~~6) Rules Engine & Agent Stub~~
+Completed ✅ — Confirmed in `src/tests/rules.test.ts`.
+- **Goal:** Evaluate ordered rules with basic matchers before falling back to a deterministic keyword agent; apply categories only when confidence ≥ 0.85.  
+- **Acceptance (met):** Rules override agent suggestions; low-confidence agent hints are surfaced for review.
 
-### Instruction
-Implement a pure function `validateBalanced(entryId, lines[], baseCurrency)`:
-- Ensures `sum(lines.baseAmount) === 0` (epsilon 1e-6).
-- Ensures each line.direction matches sign: `debit => baseAmount > 0`, `credit => baseAmount < 0`.
-- Ensures `line.baseCurrency === baseCurrency` for all lines.
-
-### Local Tests
-- `balance.test.ts`:
-  - Unbalanced (+100 and -90) → throws `UnbalancedEntryError`.
-  - Debit with negative baseAmount → throws `DirectionError`.
-  - Mixed base currencies → throws `BaseCurrencyError`.
-
----
-
-## 3) FX Snapshot Module (Local Fixture)
-
-### Instruction
-Build `fx.getRate({ base, quote, asOf }): number`:
-- Uses an in-memory table (Map `<base|quote|asOf -> rate>`).  
-- `fx.ensure({ base, quote, asOf, rate })` upserts a rate.  
-- No network calls. Load a small fixture in tests.
-
-### Local Tests
-- `fx.test.ts`:
-  - Missing rate → throws `FxMissingError`.  
-  - Present rate returns deterministic value.  
-  - Cross-currency transfer uses **asOf booked date** snapshot.
+### ~~7) Reconciliation Engine~~
+Completed ✅ — Covered by `src/tests/reconcile.test.ts`.
+- **Goal:** Implement auto/manual reconciliation between entries and statement lines using amount/date windows; update entry status on matches.  
+- **Acceptance (met):** Exact matches within the window auto-link; manual linking handles unresolved cases.
 
 ---
 
-## 4) Entry Creation Service (Double-Entry Only)
+## Upcoming Work
 
-### Instruction
-Implement `entries.create({ bookedAt, description?, externalId?, lines[], categoryId?, status })`:
-- For each line missing `baseAmount`/`fxRate`, derive using `fx.getRate` and `baseCurrency`.  
-- Validate currency integrity and **balance** via module in §2.  
-- If `externalId` present, enforce **idempotency** in the repository (unique per ledger).  
-- If `categoryId` provided, attach `EntryCategory` with `confidence=1.0`.
+### 8) Cashflow Statement Accuracy (Selectors + UI)
 
-### Local Tests
-- `entries.create.test.ts`:
-  - Expense: Checking credit -250 MXN, Food debit +250 MXN → **passes**; sum(base)=0.  
-  - Transfer USD→MXN with rate fixture → **passes**, two lines, balanced.  
-  - Duplicate `externalId` → second call is **no-op** (returns existing).
+**Goal:** Replace ad-hoc `periodIncome - periodExpenses` math with a ledger-backed cashflow statement powering dashboard KPIs.
 
----
+**Implementation Notes**
+- Add `getCashflowStatement(from: Date, to: Date)` to `src/selectors/finance`:
+  - Filter to cash-equivalent accounts (cash, checking, savings, wallets); derive inflows/outflows by transaction type (`income`, `expense`, `transfer`).
+  - Return `{ inflows: Money, outflows: Money, net: Money, breakdown: Array<{ source, accountId?, amount: Money }> }`.
+  - Use booked amounts for historical consistency; normalise via `useCurrencyStore.convertMoney`.
+- Tag synthetic recurring transactions (if not already) so generated instances are counted once per period.
+- Update `Dashboard` to consume the selector (memoised) and surface loading/error states with the existing `ErrorBoundary`.
+- Document expected behaviour in `README.md` cashflow section once implemented.
 
-## 5) Import Pipeline (CSV → Statement Lines)
-
-### Instruction
-Implement `imports.fromCsv({ accountId, csv, mapping })`:
-- Parse CSV (use `papaparse` or a tiny custom parser).  
-- Normalize records to `StatementLine` with deterministic `externalId = hash(accountId, postedAt, amountNative, memo?)`.  
-- Upsert with uniqueness on `(accountId, externalId)`. Return `{ inserted, duplicates, failed[] }`.
-
-### Local Tests
-- `imports.test.ts`:
-  - First upload inserts N lines.  
-  - Second upload of same file → `duplicates=N, inserted=0`.  
-  - Malformed row → listed in `failed[]` with reason.
+**Acceptance Criteria**
+- `src/tests/cashflow.test.ts` fixture ensures:
+  - Net cashflow equals change in aggregate cash balances for a period.
+  - Expense-only periods report inflows = 0, net negative.
+  - Cross-currency movements respect stored FX rates with tolerance ±0.01.
+- Optional UI test (`src/tests/Dashboard.cashflow.test.tsx`) validating the rendered KPI matches selector output.
+- Manual: Seed sample income/expense entries, confirm dashboard cashflow matches spreadsheet reference.
 
 ---
 
-## 6) Rules Engine (Deterministic) & Agent Suggestion Stub
+### 9) Settings Modal & Currency Management
 
-### Instruction
-- **Rules**: `evaluateRules(entry): { categoryId?, confidence }`
-  - Support ops: `contains`, `equals`, `regex`, `amount_between`.  
-  - Order by `priority ASC`. Apply first match; set `confidence=1.0`.
-- **Agent Stub**: `agent.categorize(entry): { categoryId, confidence }`
-  - For now: a simple keyword -> category map (no LLM).  
-  - Only auto-apply if `confidence >= 0.85`. Else mark as “needs review”.
+**Goal:** Provide a central modal for toggling visible currencies and adjusting finance UI preferences.
 
-### Local Tests
-- `rules.test.ts`:
-  - A rule “description contains UBER EATS → Food” overrides agent.  
-  - Without matching rules, agent returns Groceries @0.72 → **not applied**.
+**Implementation Notes**
+- Create `src/components/Settings/SettingsModal.tsx`, triggered from navigation (gear icon). Modal should include:
+  - **Currency Visibility:** Checkbox list for each supported currency; base currency is fixed/disabled. Persist selections via extended `useCurrencyStore` state (`enabledCurrencies`, `toggleCurrency`, `resetCurrencies`), stored with `persist`.
+  - **General Preferences:** Placeholder toggles (e.g., “Show savings opportunities”) to expand later.
+  - Actions: `Save`, `Cancel`, `Reset to defaults` (confirm dialog optional).
+- Update `CurrencySelector` and currency badges to rely on `enabledCurrencies`, falling back to registry only when list empty.
+- Surface warnings when API keys for FX/LLM are missing so users understand disabled capabilities.
 
----
-
-## 7) Reconciliation Engine
-
-### Instruction
-Implement `reconcile.auto({ accountId, windowDays=3 })`:
-- Match unreconciled `Entry` ↔ unmatched `StatementLine` by:
-  - same `accountId`
-  - exact native amount (sign-aware) **or** base-amount equal within 0.01
-  - `|bookedAt - postedAt| <= windowDays`
-- On 1:1 exact match → create link and set `entry.status='reconciled'`.
-
-Manual link: `reconcile.link(entryId, statementLineId)`.
-
-### Local Tests
-- `reconcile.test.ts`:
-  - Exact amount/date ±2 → auto-linked; status becomes `reconciled`.  
-  - Many-to-one case → **not auto**; manual link succeeds.
+**Acceptance Criteria**
+- `src/tests/currency-visibility.test.ts`:
+  - Toggling currencies updates `enabledCurrencies` without removing the base currency.
+  - State survives store rehydration (`persist` re-creates store with saved toggles).
+- `src/tests/settings-modal.test.tsx` (React Testing Library):
+  - Modal reflects store state on open, commits `Save`, honours `Reset`.
+- Manual: Disable all but one currency, reload page, verify selection persists and UI reflects changes.
 
 ---
 
-## 8) Settings Modal & Currency Display
+### 10) Reports API (Cashflow & Net Worth)
 
-### Instruction
-Add a workspace “Settings” modal reachable from global navigation. Split it into:
-- **Account Profile**: show basic read-only info (display name/email placeholder) and allow choosing the base currency via a single-select control.
-- **Display Preferences**: list all supported currencies with checkboxes to toggle visibility; the base currency is always selected/disabled. Persist both choices via the shared `currencyStore` (add helpers such as `setDefaultCurrency` and `toggleVisibleCurrency`).
-- Surface the active base and visible currencies in each board header (e.g., `Base: MXN · Showing: MXN, USD`) using a shared badge component.
-Ensure the store prevents deselecting the last visible currency and updates propagate without reloading.
+**Goal:** Expose repeatable reporting services for cashflow timelines and point-in-time net worth, using the improved selectors.
 
-### Local Tests
-- `currencyStore.test.ts`:
-  - Setting a new default currency keeps it in the visible set and updates selectors.
-  - Toggling a secondary currency adds/removes it without affecting the base.
-  - Attempting to hide the final visible currency is ignored with a warning.
-- Manual: open the Settings modal, change default/visible currencies, and verify badges refresh across dashboard, assets, liabilities, and accounts views.
+**Implementation Notes**
+- Build `reports.cashflow({ from, to, interval })` aggregating `getCashflowStatement` by interval (monthly default).
+- Implement `reports.networth({ asOf })` leveraging ledger balances for assets/liabilities, converting to base currency.
+- Ensure services accept optional filters (account IDs, categories) for future dashboards.
 
----
-
-## 9) Reports (Local, In-Memory)
-
-### Instruction
-- `reports.cashflow({ from, to, period='monthly' })`:
-  - Sum `EntryLine.baseAmount` by category & month (use `entry_category`).  
-  - Expenses negative, income positive; present absolute by convention.
-- `reports.networth({ asOf })`:
-  - Running balance per account from all entries `<= asOf`, sum in base.
-
-### Local Tests
-- `reports.test.ts`:
-  - Known fixture with 6 entries → expected monthly totals.  
-  - Net worth as of date equals manual calculation in fixture.
+**Acceptance Criteria**
+- `src/tests/reports.test.ts`:
+  - Fixture-driven expectations for cashflow buckets across multiple months.
+  - Net worth at `asOf` matches manual ledger tally.
+- Updated documentation in `docs/reports.md` (or inline comments) describing API usage.
 
 ---
 
-## 10) Minimal Local HTTP Surface (Optional)
+### 11) Minimal Local HTTP Surface (Optional but Recommended)
 
-### Instruction
-Expose minimal endpoints via Fastify/Express (no auth yet):
-- `POST /entries` → `entries.create`
-- `GET /reports/cashflow`
-- `POST /imports/csv`
-- `POST /reconcile/auto`
+**Goal:** Offer a thin Express/Fastify layer for manual and automated regression checks.
 
-### Local Tests
-- `http.test.ts` (supertest):
-  - 201 on balanced entry; 400 on unbalanced.  
-  - Import same CSV twice → duplicates reported.  
-  - Reconcile returns linked_count > 0 on exact matches.
+**Implementation Notes**
+- Endpoints: `POST /entries`, `POST /imports/csv`, `POST /reconcile/auto`, `GET /reports/cashflow`.
+- Validate payloads with Zod; return structured errors mirroring service exceptions.
+- Wire to in-memory services; no authentication yet.
 
----
-
-## 11) Frontend Smoke (Optional Local Harness)
-
-### Instruction
-Add a tiny React page that hits the local HTTP surface:
-- “Add Expense”, “Add Transfer”, “Run Import”, “Auto-Reconcile”, “View Cashflow”.  
-This is **not** production UI—just a harness to verify end-to-end locally.
-
-### Local Tests
-- Manual: run `pnpm dev:local` and perform the flows without console errors.  
-- Automated: minimal Playwright that posts entries and checks JSON responses.
+**Acceptance Criteria**
+- `src/tests/http.test.ts` (Supertest):
+  - Balanced entry → 201 + entry payload.
+  - Unbalanced entry → 400 with error code.
+  - Re-imported CSV yields duplicates summary.
+  - Auto-reconcile returns counts > 0 for eligible matches.
 
 ---
 
-## 12) Definition of Done (Local v0)
+### 12) Frontend Smoke Harness (Optional)
 
-You are done when **all** are true:
+**Goal:** Build a minimal React page (outside production app) exercising the HTTP surface for manual verification.
 
-1. Balance validator rejects bad entries; accepts cross-currency with snapshots.  
-2. FX rates loaded from fixture and used deterministically.  
-3. Idempotent `externalId` enforced on `entries` and `statement_line`.  
-4. Import pipeline reports `{inserted, duplicates, failed}` correctly.  
-5. Auto-reconcile links exact matches; manual link works for edge cases.  
-6. Rules apply before agent; agent gated by confidence.  
-7. Settings modal updates default/visible currencies and board badges reflect choices.  
-8. Cashflow and net worth match fixtures.  
-9. Optional HTTP layer passes supertest suite.  
-10. All tests pass locally (`pnpm test`).  
+**Implementation Notes**
+- Components: Add Expense, Add Transfer, Run Import (CSV upload), Auto-Reconcile, View Cashflow.
+- Use deterministic fixtures seeded from the in-memory store.
+- Optionally gate behind `npm run dev:local`.
+
+**Acceptance Criteria**
+- Manual: Run harness, complete flows without console errors.
+- Optional Playwright smoke asserting success toasts/responses.
 
 ---
 
-## 13) Commands & Tooling
+## 13) Definition of Done (Local v0)
 
-### Suggested scripts (package.json)
+All items below must be true to sign off Local v0:
+
+1. Balance validator gate-keeps incorrect entries; cross-currency entries remain deterministic.  
+2. FX rates are fixture-driven with graceful fallbacks.  
+3. Entry creation, imports, rules, and reconciliation services pass their Vitest suites.  
+4. Cashflow selector powers dashboard KPIs with tested fixtures.  
+5. Settings modal persists currency visibility and preferences across reloads.  
+6. Reporting services expose cashflow/net worth with regression tests.  
+7. Optional HTTP layer passes Supertest coverage when enabled.  
+8. `npm run test` succeeds (Vitest).  
+9. Manual smoke confirms dashboard cashflow aligns with ledger fixtures.
+
+---
+
+## 14) Commands & Tooling
+
+Suggested `package.json` scripts:
 ```json
 {
   "scripts": {
-    "dev": "tsx watch src/dev.ts",
-    "test": "vitest run --reporter=verbose",
+    "dev": "vite",
+    "dev:server": "nodemon --exec tsx server/index.ts",
+    "dev:all": "npm run dev:server & npm run dev",
+    "test": "vitest run --reporter=tap",
     "test:watch": "vitest",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit"
@@ -257,12 +189,11 @@ You are done when **all** are true:
 }
 ```
 
-### Recommended libs
-- `zod`, `vitest`, `tsx` (or `ts-node`), `papaparse` (or `csv-parse`), `fastify`/`express` + `supertest`
+Recommended libraries: `zod`, `vitest`, `tsx`, `papaparse` (or `csv-parse`), `supertest`, `@testing-library/react`, `playwright` (optional).
 
 ---
 
-## 14) Gherkin Acceptance (Local Parity)
+## 15) Gherkin Acceptance Reference
 
 **Create expense**
 ```
@@ -298,45 +229,12 @@ When auto-reconcile with window=3
 Then linked_count=1 and entry status='reconciled'
 ```
 
-**Rules before agent**
-```
-Given rule: description contains "UBER EATS" -> Food (confidence=1.0)
-When create entry "UBER EATS 1234"
-Then category=Food and agent not applied
-```
-
-**Agent threshold**
-```
-Given no matching rules
-And agent suggests Groceries @0.72
-When create entry
-Then no category is applied and it is flagged for review
-```
-
 ---
 
-## 15) Next Phase Hooks (when DB arrives)
+## 16) Next Phase Hooks (When Database Arrives)
 
-- Replace `/src/store/memory.ts` with repository interfaces backed by Postgres.  
-- Transform `validateBalanced` into a DB trigger **plus** service-side check.  
-- Replace FX fixture with real backfill endpoint and persistent `fx_rate` table.  
-- Keep all tests; add integration tests hitting a test database.
+- Replace in-memory repositories with interfaces backed by Postgres/Supabase.  
+- Enforce balance checks via DB constraints/triggers in addition to service validation.  
+- Persist FX tables with historical backfill endpoints.  
+- Retain all Vitest suites; add integration tests targeting the database.
 
----
-
-### Appendix — Minimal Data Fixtures (YAML)
-
-```yaml
-baseCurrency: MXN
-fx:
-  - { base: MXN, quote: USD, asOf: 2025-10-18, rate: 18.50 }
-accounts:
-  - { id: A1, userId: U1, name: "Checking", type: checking, currency: MXN, isActive: true }
-  - { id: A2, userId: U1, name: "Savings USD", type: savings, currency: USD, isActive: true }
-categories:
-  - { id: C1, userId: U1, name: "Food" }
-rules:
-  - { id: R1, userId: U1, active: true, priority: 10,
-      matcher: { all: [ { field: "description", op: "contains", value: "UBER EATS" } ] },
-      action: { set_category_id: "C1", set_confidence: 1.0 } }
-```
