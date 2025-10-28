@@ -1,7 +1,7 @@
 import React from 'react';
-import { 
-  Home, 
-  TrendingUp, 
+import {
+  Home,
+  TrendingUp,
   TrendingDown,
   Wallet,
   Menu,
@@ -11,7 +11,8 @@ import {
   Moon,
   Sun,
   DollarSign,
-  Landmark
+  Landmark,
+  Settings
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { CurrencySelector } from '../Currency/CurrencySelector';
@@ -25,6 +26,7 @@ interface NavigationProps {
   onThemeToggle?: () => void;
   onLogoClick?: () => void;
   onDateClick?: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -35,7 +37,8 @@ export const Navigation: React.FC<NavigationProps> = ({
   isDark = false,
   onThemeToggle,
   onLogoClick,
-  onDateClick
+  onDateClick,
+  onOpenSettings
 }) => {
   const { user, signOut } = useAuthStore();
 
@@ -117,6 +120,15 @@ export const Navigation: React.FC<NavigationProps> = ({
               {isDark ? 'Light Mode' : 'Dark Mode'}
             </span>
           </button>
+          <button
+            onClick={onOpenSettings}
+            className="mt-2 w-full flex items-center justify-center lg:group-hover:justify-start gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300"
+          >
+            <Settings className="w-5 h-5 flex-shrink-0" />
+            <span className="font-medium hidden lg:group-hover:block transition-all duration-300 whitespace-nowrap">
+              Settings
+            </span>
+          </button>
         </div>
 
         {/* User Section */}
@@ -170,6 +182,13 @@ export const Navigation: React.FC<NavigationProps> = ({
               </span>
             </button>
             <CurrencySelector />
+            <button
+              onClick={onOpenSettings}
+              className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Open settings"
+            >
+              <Settings className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+            </button>
           </div>
           <button
             onClick={onMobileMenuToggle}
@@ -232,6 +251,16 @@ export const Navigation: React.FC<NavigationProps> = ({
                       <span className="font-medium text-sm">Dark Mode</span>
                     </>
                   )}
+                </button>
+                <button
+                  onClick={() => {
+                    onOpenSettings?.();
+                    onMobileMenuToggle?.();
+                  }}
+                  className="mt-3 w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors min-h-[48px]"
+                >
+                  <Settings className="w-5 h-5" />
+                  <span className="font-medium text-sm">Settings</span>
                 </button>
               </div>
 

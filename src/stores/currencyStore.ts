@@ -16,6 +16,7 @@ export interface ExchangeRate {
 interface CurrencyState {
   baseCurrency: string;
   currencies: Currency[];
+  enabledCurrencies: string[];
   exchangeRates: ExchangeRate;
   lastUpdated: number | null;
   loading: boolean;
@@ -24,6 +25,9 @@ interface CurrencyState {
 
 interface CurrencyActions {
   setBaseCurrency: (currency: string) => Promise<void>;
+  setEnabledCurrencies: (currencies: string[]) => void;
+  toggleCurrency: (currency: string) => void;
+  resetEnabledCurrencies: () => void;
   fetchExchangeRates: () => Promise<void>;
   forceRefreshRates: () => Promise<void>;
   convertAmount: (amount: number, fromCurrency: string, toCurrency: string) => number;
@@ -32,14 +36,25 @@ interface CurrencyActions {
   createMoney: (amount: number, currency: string) => Money;
   convertMoney: (money: Money, toCurrency: string) => Money;
   getCurrencySymbol: (currency: string) => string;
+  getVisibleCurrencies: () => string[];
 }
 
 // Get supported currencies from registry
-const SUPPORTED_CURRENCIES: Currency[] = Object.values(CURRENCY_REGISTRY).map(config => ({
+export const SUPPORTED_CURRENCIES: Currency[] = Object.values(CURRENCY_REGISTRY).map(config => ({
   code: config.code,
   name: config.name,
   symbol: config.symbol
 }));
+
+const DEFAULT_ENABLED = SUPPORTED_CURRENCIES.map(currency => currency.code);
+
+const ensureEnabledSet = (codes: string[], baseCurrency: string) => {
+  const unique = Array.from(new Set(codes.length ? codes : DEFAULT_ENABLED));
+  if (!unique.includes(baseCurrency)) {
+    unique.unshift(baseCurrency);
+  }
+  return unique;
+};
 
 // Free exchange rate API - using Fawazahmed0 Exchange API which is completely free and reliable
 // Documentation: https://github.com/fawazahmed0/exchange-api
@@ -50,15 +65,50 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
     (set, get) => ({
       baseCurrency: 'MXN',
       currencies: SUPPORTED_CURRENCIES,
+      enabledCurrencies: ensureEnabledSet(DEFAULT_ENABLED, 'MXN'),
       exchangeRates: { MXN: 1 },
       lastUpdated: null,
       loading: false,
       error: null,
 
       setBaseCurrency: async (currency: string) => {
-        set({ baseCurrency: currency });
+        set(state => ({
+          baseCurrency: currency,
+          enabledCurrencies: ensureEnabledSet(state.enabledCurrencies, currency)
+        }));
         // Force refresh rates when base currency changes
         await get().forceRefreshRates();
+      },
+
+      setEnabledCurrencies: (currencies: string[]) => {
+        const { baseCurrency } = get();
+        set({
+          enabledCurrencies: ensureEnabledSet(currencies, baseCurrency)
+        });
+      },
+
+      toggleCurrency: (currency: string) => {
+        const { baseCurrency, enabledCurrencies } = get();
+        if (currency === baseCurrency) {
+          console.warn('Base currency cannot be disabled.');
+          return;
+        }
+        const isEnabled = enabledCurrencies.includes(currency);
+        const next = isEnabled
+          ? enabledCurrencies.filter(code => code !== currency)
+          : [...enabledCurrencies, currency];
+        const ensured = ensureEnabledSet(next, baseCurrency);
+        if (ensured.length === 1 && ensured[0] === baseCurrency && isEnabled) {
+          console.warn('At least one additional currency should remain visible.');
+        }
+        set({ enabledCurrencies: ensured });
+      },
+
+      resetEnabledCurrencies: () => {
+        const { baseCurrency } = get();
+        set({
+          enabledCurrencies: ensureEnabledSet(DEFAULT_ENABLED, baseCurrency)
+        });
       },
 
       forceRefreshRates: async () => {
@@ -240,6 +290,12 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
           return currencyObj?.symbol || '$';
         }
       },
+
+      getVisibleCurrencies: () => {
+        const { baseCurrency, enabledCurrencies } = get();
+        const list = ensureEnabledSet(enabledCurrencies, baseCurrency);
+        return Array.from(new Set([baseCurrency, ...list]));
+      }
     }),
     {
       name: 'fintonico-currency',
@@ -247,6 +303,7 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
         baseCurrency: state.baseCurrency,
         exchangeRates: state.exchangeRates,
         lastUpdated: state.lastUpdated,
+        enabledCurrencies: state.enabledCurrencies,
       }),
     }
   )

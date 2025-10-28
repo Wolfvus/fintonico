@@ -30,6 +30,8 @@
   "devDependencies": {
     "@eslint/js": "^9.33.0",
     "@netlify/functions": "^4.2.1",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/node": "^24.3.0",

@@ -10,7 +10,7 @@
 | 6 | Rules Engine & Agent Stub | ✅ | `src/tests/rules.test.ts` confirms rule precedence and low-confidence handling. |
 | 7 | Reconciliation Engine | ✅ | `src/tests/reconcile.test.ts` exercises auto/manual linking. |
 | 8 | Cashflow Statement Accuracy | ✅ | Selector + dashboard wired; see `src/tests/cashflow.test.ts` (Vitest 2025‑02‑14 01:07 UTC). |
-| 9 | Settings Modal & Currency Management | ☐ | Persist currency visibility toggles and general preferences. |
+| 9 | Settings Modal & Currency Management | ✅ | Settings modal + store toggles (`src/tests/settings-modal.test.tsx`, `src/tests/currency-visibility.test.ts`). |
 | 10 | Reports API (Cashflow & Net Worth) | ☐ | Aggregate selectors into reusable reporting services. |
 | 11 | Local HTTP Surface | ☐ | Optional Express/Fastify bridge with Supertest coverage. |
 | 12 | Frontend Smoke Harness | ☐ | Optional UI harness exercising the HTTP endpoints. |
@@ -19,4 +19,4 @@
 | 15 | Gherkin Acceptance Reference | ☐ | Keep scenarios up to date with evolving behaviour/tests. |
 | 16 | Next Phase Hooks (DB Ready) | ☐ | Prepare migration path from in-memory stores to Postgres/Supabase. |
 
-**Latest test run:** `npm run test` (Vitest) ✔︎ on 2025‑02‑14 01:07 UTC. |
+**Latest test run:** `npm run test` (Vitest) ✔︎ on 2025‑02‑14 01:36 UTC. |

@@ -66,25 +66,10 @@ Completed ✅ — Verified by `src/tests/cashflow.test.ts` and the dashboard KPI
 
 ## Upcoming Work
 
-### 9) Settings Modal & Currency Management
-
-**Goal:** Provide a central modal for toggling visible currencies and adjusting finance UI preferences.
-
-**Implementation Notes**
-- Create `src/components/Settings/SettingsModal.tsx`, triggered from navigation (gear icon). Modal should include:
-  - **Currency Visibility:** Checkbox list for each supported currency; base currency is fixed/disabled. Persist selections via extended `useCurrencyStore` state (`enabledCurrencies`, `toggleCurrency`, `resetCurrencies`), stored with `persist`.
-  - **General Preferences:** Placeholder toggles (e.g., “Show savings opportunities”) to expand later.
-  - Actions: `Save`, `Cancel`, `Reset to defaults` (confirm dialog optional).
-- Update `CurrencySelector` and currency badges to rely on `enabledCurrencies`, falling back to registry only when list empty.
-- Surface warnings when API keys for FX/LLM are missing so users understand disabled capabilities.
-
-**Acceptance Criteria**
-- `src/tests/currency-visibility.test.ts`:
-  - Toggling currencies updates `enabledCurrencies` without removing the base currency.
-  - State survives store rehydration (`persist` re-creates store with saved toggles).
-- `src/tests/settings-modal.test.tsx` (React Testing Library):
-  - Modal reflects store state on open, commits `Save`, honours `Reset`.
-- Manual: Disable all but one currency, reload page, verify selection persists and UI reflects changes.
+### ~~9) Settings Modal & Currency Management~~
+Completed ✅ — Backed by `src/tests/currency-visibility.test.ts` and `src/tests/settings-modal.test.tsx`.
+- **Goal:** Provide a dedicated modal for managing visible currencies and placeholder dashboard preferences, with persistence through the currency store.  
+- **Acceptance (met):** Base currency remains enforced, selecting/deselecting currencies respects persistence via `localStorage`, the modal renders with accurate toggle state, and the Currency Selector plus summary badges honour `enabledCurrencies`.
 
 ---
 

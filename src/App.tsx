@@ -16,6 +16,8 @@ import { useExpenseStore } from './stores/expenseStore';
 import { Navigation } from './components/Navigation/Navigation';
 import { useIncomeStore } from './stores/incomeStore';
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
+import { SettingsModal } from './components/Settings/SettingsModal';
+import { Settings as SettingsIcon } from 'lucide-react';
 
 // Expenses Tab Component
 function ExpensesTab() {
@@ -115,6 +117,7 @@ function App() {
   const { initializeDefaultAccounts } = useLedgerStore();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'expenses' | 'income' | 'assets' | 'liabilities' | 'networth'>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('fintonico-theme');
     return saved !== 'light'; // Default to dark theme unless explicitly set to light
@@ -164,11 +167,12 @@ function App() {
         onThemeToggle={() => setIsDark(!isDark)}
         onLogoClick={() => setActiveTab('dashboard')}
         onDateClick={() => setActiveTab('dashboard')}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
       
       {/* Desktop Top Bar */}
       <div className="hidden lg:block fixed top-0 left-16 right-0 z-30 bg-blue-100 dark:bg-gray-800 border-b border-blue-200 dark:border-gray-700">
-        <div className="flex items-center justify-between px-6 py-3">
+        <div className="flex items-center justify-between px-6 py-3 gap-4">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-900 dark:text-white">FINTONICO</span>
             <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">• The Ultimate Personal Finance Dashboard</span>
@@ -188,6 +192,13 @@ function App() {
             </button>
             <div className="h-6 w-px bg-blue-300 dark:bg-gray-600"></div>
             <CurrencySelector />
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Open settings"
+            >
+              <SettingsIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+            </button>
           </div>
         </div>
       </div>
@@ -228,6 +239,8 @@ function App() {
           )}
         </div>
       </main>
+
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 }

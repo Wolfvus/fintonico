@@ -7,6 +7,7 @@ export const CurrencySelector: React.FC = () => {
   const { 
     baseCurrency, 
     currencies, 
+    enabledCurrencies,
     setBaseCurrency, 
     fetchExchangeRates,
     forceRefreshRates, 
@@ -46,6 +47,16 @@ export const CurrencySelector: React.FC = () => {
     return 'Just now';
   };
 
+  const visibleCurrencyCodes = React.useMemo(() => {
+    if (!enabledCurrencies.length) {
+      return currencies.map(currency => currency.code);
+    }
+    const uniq = Array.from(new Set([baseCurrency, ...enabledCurrencies]));
+    return uniq;
+  }, [enabledCurrencies, baseCurrency, currencies]);
+
+  const orderedCurrencies = currencies.filter(currency => visibleCurrencyCodes.includes(currency.code));
+
   return (
     <div className="h-7 lg:h-8 flex items-center gap-1.5 px-2 lg:px-3 bg-blue-200 dark:bg-gray-700 rounded-lg hover:bg-blue-300 dark:hover:bg-gray-600 transition-colors">
       <select
@@ -56,7 +67,7 @@ export const CurrencySelector: React.FC = () => {
                  focus:outline-none focus:ring-0 cursor-pointer appearance-none disabled:opacity-50"
         title={error || `Last updated: ${formatLastUpdated()}`}
       >
-        {currencies.map((currency) => (
+        {orderedCurrencies.map((currency) => (
           <option key={currency.code} value={currency.code} className="bg-white dark:bg-gray-800">
             {currency.code}
           </option>
