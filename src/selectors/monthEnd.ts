@@ -4,7 +4,11 @@ import { useAccountStore } from '../stores/accountStore';
 import { Money } from '../domain/money';
 import type { Account as LedgerAccount } from '../domain/ledger';
 import { getAccountMetadata } from '../config/accountRegistry';
-import { isAssetAccountType, isLiabilityAccountType } from '../utils/accountClassifications';
+import {
+  isLiquidAssetType,
+  isLiabilityAccountType,
+  isLiquidLedgerSubtype,
+} from '../utils/accountClassifications';
 import type { Account as UserAccount } from '../types';
 
 export interface MonthEndAccountSummary {
@@ -59,7 +63,7 @@ export const getMonthEndSummary = (asOf: Date = new Date()): MonthEndSummary => 
   };
 
   const userCashContexts = userAccounts
-    .filter((account) => isAssetAccountType(account.type))
+    .filter((account) => isLiquidAssetType(account.type))
     .map(contextFromUser)
     .filter((context): context is LedgerAccountContext => context !== null);
 
@@ -74,7 +78,7 @@ export const getMonthEndSummary = (asOf: Date = new Date()): MonthEndSummary => 
         return false;
       }
       const subtype = getAccountMetadata(account.id).subtype;
-      return subtype === 'operating-cash' || subtype === 'savings';
+      return isLiquidLedgerSubtype(subtype);
     })
     .map((account) => ({ ledgerAccount: account }));
 

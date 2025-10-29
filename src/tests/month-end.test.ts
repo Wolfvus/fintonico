@@ -51,6 +51,12 @@ describe('month-end summary', () => {
       balances: [{ currency: 'MXN', amount: -200 }],
     });
 
+    accountStore.addAccount({
+      name: 'Beach House',
+      type: 'property',
+      balances: [{ currency: 'MXN', amount: 500000 }],
+    });
+
     await incomeStore.addIncome({
       source: 'Consulting',
       amount: 1000,
@@ -82,5 +88,8 @@ describe('month-end summary', () => {
     const checking = summary.cashAccounts.find((item) => item.accountId === checkingAccount.id);
     expect(checking).toBeDefined();
     expect(checking?.balance.toMajorUnits()).toBeCloseTo(1000, 2);
+
+    const longTermAsset = summary.cashAccounts.find((item) => item.accountName === 'Beach House');
+    expect(longTermAsset).toBeUndefined();
   });
 });

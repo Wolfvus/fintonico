@@ -19,7 +19,20 @@ export const AmountCurrencyInput: React.FC<AmountCurrencyInputProps> = ({
   amountError,
   className = "grid grid-cols-2 gap-3"
 }) => {
-  const { currencies, getCurrencySymbol } = useCurrencyStore();
+  const { currencies, getCurrencySymbol, getVisibleCurrencies } = useCurrencyStore();
+  const visibleCurrencyCodes = getVisibleCurrencies();
+
+  const currencyLookup = new Map(currencies.map((curr) => [curr.code, curr]));
+  const currencyOptions = visibleCurrencyCodes
+    .map((code) => currencyLookup.get(code))
+    .filter((option): option is typeof currencies[number] => Boolean(option));
+
+  if (!visibleCurrencyCodes.includes(currency)) {
+    const currentCurrency = currencyLookup.get(currency);
+    if (currentCurrency) {
+      currencyOptions.push(currentCurrency);
+    }
+  }
 
   return (
     <div className={className}>
@@ -54,7 +67,7 @@ export const AmountCurrencyInput: React.FC<AmountCurrencyInputProps> = ({
                    transition-colors text-gray-900 dark:text-white
                    border-blue-300 dark:border-gray-600 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600"
         >
-          {currencies.map((curr) => (
+          {currencyOptions.map((curr) => (
             <option key={curr.code} value={curr.code}>
               {curr.symbol}{curr.code}
             </option>

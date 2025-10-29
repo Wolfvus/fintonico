@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import React from 'react';
 import './setupLocalStorage';
 
 import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
@@ -12,6 +13,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { clearMockData, seedMockData } from '../utils/resetData';
 import { SettingsModal } from '../components/Settings/SettingsModal';
+import { useCurrencyInput } from '../hooks/useCurrencyInput';
 
 const ensureLocalStorage = () => {
   if (typeof globalThis.localStorage !== 'undefined') return;
@@ -62,6 +64,11 @@ describe('SettingsModal', () => {
     vi.clearAllMocks();
     await resetStore();
   });
+
+  const CurrencyProbe: React.FC = () => {
+    const { currency } = useCurrencyInput();
+    return <span data-testid="currency-probe">{currency}</span>;
+  };
 
   it('reflects current visibility choices and saves updates', async () => {
     const user = userEvent.setup();
@@ -147,6 +154,29 @@ describe('SettingsModal', () => {
 
     await waitFor(() => {
       expect(vi.mocked(seedMockData)).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('updates currency inputs when the base currency changes', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <>
+        <SettingsModal isOpen onClose={() => {}} />
+        <CurrencyProbe />
+      </>
+    );
+
+    expect(screen.getByTestId('currency-probe')).toHaveTextContent('MXN');
+
+    const baseSelect = screen.getByLabelText(/base currency/i) as HTMLSelectElement;
+    await user.selectOptions(baseSelect, 'USD');
+
+    const saveButton = screen.getByRole('button', { name: /save changes/i });
+    await user.click(saveButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('currency-probe')).toHaveTextContent('USD');
     });
   });
 });
