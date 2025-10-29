@@ -1,3 +1,4 @@
+import './setupLocalStorage';
 import { describe, it, expect } from 'vitest';
 import { validateBalanced } from '../lib/balance';
 import { DirectionError, UnbalancedEntryError, BaseCurrencyError } from '../domain/errors';

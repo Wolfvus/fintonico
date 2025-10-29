@@ -1,3 +1,4 @@
+import './setupLocalStorage';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createMemoryStore, MemoryStore } from '../store/memory';
 import { createFxTable, FxTable } from '../lib/fx';

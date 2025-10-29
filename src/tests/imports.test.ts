@@ -1,3 +1,4 @@
+import './setupLocalStorage';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createMemoryStore, MemoryStore } from '../store/memory';
 import { ImportsService } from '../services/imports';

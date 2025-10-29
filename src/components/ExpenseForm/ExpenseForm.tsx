@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { Calendar, PenTool, Plus, Home, Clapperboard, Sparkles } from 'lucide-react';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
@@ -7,9 +7,11 @@ import { sanitizeDescription } from '../../utils/sanitization';
 import type { ValidationError } from '../../utils/validation';
 import { formStyles } from '../../styles/formStyles';
 import { getTodayLocalString } from '../../utils/dateFormat';
-import { ToggleSwitch } from '../Shared/ToggleSwitch';
 import { AmountCurrencyInput } from '../Shared/AmountCurrencyInput';
 import { FormField } from '../Shared/FormField';
+import { ToggleSwitch } from '../Shared/ToggleSwitch';
+import { useLedgerStore } from '../../stores/ledgerStore';
+import { shallow } from 'zustand/shallow';
 
 const RATING_CONFIG = {
   essential: { 
@@ -42,11 +44,26 @@ const RATING_CONFIG = {
 };
 
 export const ExpenseForm: React.FC = () => {
+  const allAccounts = useLedgerStore(state => state.accounts, shallow);
+  const fundingAccounts = useMemo(() => (
+    allAccounts.filter(acc => acc.nature === 'asset' || acc.nature === 'liability')
+  ), [allAccounts]);
+
+  const defaultFundingAccountId = useMemo(() => {
+    if (!fundingAccounts.length) return '';
+    return (
+      fundingAccounts.find(account => account.id === 'cash') ||
+      fundingAccounts.find(account => account.id === 'checking') ||
+      fundingAccounts[0]
+    )?.id ?? '';
+  }, [fundingAccounts]);
+
   const [form, setForm] = useState({
     what: '',
     rating: 'non_essential' as keyof typeof RATING_CONFIG,
     date: getTodayLocalString(),
-    recurring: false
+    recurring: false,
+    fundingAccountId: defaultFundingAccountId
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<ValidationError>({});
@@ -60,6 +77,15 @@ export const ExpenseForm: React.FC = () => {
     handleCurrencyChange,
     reset: resetCurrency
   } = useCurrencyInput();
+
+  useEffect(() => {
+    if (!form.fundingAccountId && defaultFundingAccountId) {
+      setForm(prev => ({
+        ...prev,
+        fundingAccountId: defaultFundingAccountId
+      }));
+    }
+  }, [defaultFundingAccountId]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -91,13 +117,15 @@ export const ExpenseForm: React.FC = () => {
         rating: form.rating,
         date: form.date,
         recurring: form.recurring,
+        fundingAccountId: form.fundingAccountId || defaultFundingAccountId
       });
       
       setForm({
         what: '',
         rating: 'non_essential',
         date: getTodayLocalString(),
-        recurring: false
+        recurring: false,
+        fundingAccountId: defaultFundingAccountId
       });
       resetCurrency();
     } catch {
@@ -134,6 +162,26 @@ export const ExpenseForm: React.FC = () => {
           onCurrencyChange={handleCurrencyChange}
           amountError={errors.amount}
         />
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">
+            Paid from account
+          </label>
+          <select
+            value={form.fundingAccountId || ''}
+            onChange={(event) => setForm(prev => ({ ...prev, fundingAccountId: event.target.value }))}
+            className="w-full px-3.5 py-2.5 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-blue-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-gray-500 focus:ring-blue-200 dark:focus:ring-gray-600"
+            disabled={!fundingAccounts.length}
+            required
+          >
+            {fundingAccounts.length === 0 && <option value="">No funding accounts available</option>}
+            {fundingAccounts.map(account => (
+              <option key={account.id} value={account.id}>
+                {account.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <FormField
           label="Date"

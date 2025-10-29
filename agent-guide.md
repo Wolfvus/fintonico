@@ -64,16 +64,36 @@ Completed ✅ — Verified by `src/tests/cashflow.test.ts` and the dashboard KPI
 
 ---
 
-## Upcoming Work
-
 ### ~~9) Settings Modal & Currency Management~~
 Completed ✅ — Backed by `src/tests/currency-visibility.test.ts` and `src/tests/settings-modal.test.tsx`.
 - **Goal:** Provide a dedicated modal for managing visible currencies and placeholder dashboard preferences, with persistence through the currency store.  
 - **Acceptance (met):** Base currency remains enforced, selecting/deselecting currencies respects persistence via `localStorage`, the modal renders with accurate toggle state, and the Currency Selector plus summary badges honour `enabledCurrencies`.
 
+### ~~10) Income/Expense Funding Mapping~~
+Completed ✅ — Validated by `src/tests/funding-mapping.test.ts` and the enriched dashboard transaction display.
+- **Goal:** Capture which asset or liability account funds each income/expense entry so balance-sheet movements reconcile with P&L and net-worth views.  
+- **Acceptance (met):** Income and expense forms enforce a funding/destination account, selectors expose the linked account metadata, and ledger postings credit/debit the chosen asset or liability so UI cards show “Paid from / Deposited to …”.
+
 ---
 
-### 10) Reports API (Cashflow & Net Worth)
+## Upcoming Work
+
+### 11) Account Taxonomy & Month-End Close
+
+**Goal:** Stabilise asset/liability categories and provide a lightweight month-end reconciliation flow so net worth stays accurate without manual juggling.
+
+**Implementation Notes**
+- Introduce an account registry with explicit `nature`/`subtype` tags and expose selectors that return “operating cash”, “credit cards”, and other logical groups for reports.
+- Add settings to map default funding accounts per income/expense category and surface a simple month-end checklist (snapshot, credit-card payout, cash sweep).
+- Extend selectors to produce a month-end summary highlighting liability balances that should be cleared or rolled forward.
+
+**Acceptance Criteria**
+- `src/tests/month-close.test.ts`: fixtures confirm the month-end helper produces per-account balances and flags liabilities that require settlement.
+- Manual: run the checklist, confirm it creates a net-worth snapshot and optional balancing entries without mutating historical data.
+
+---
+
+### 12) Reports API (Cashflow & Net Worth)
 
 **Goal:** Expose repeatable reporting services for cashflow timelines and point-in-time net worth, using the improved selectors.
 
@@ -90,7 +110,7 @@ Completed ✅ — Backed by `src/tests/currency-visibility.test.ts` and `src/tes
 
 ---
 
-### 11) Minimal Local HTTP Surface (Optional but Recommended)
+### 13) Minimal Local HTTP Surface (Optional but Recommended)
 
 **Goal:** Offer a thin Express/Fastify layer for manual and automated regression checks.
 
@@ -108,7 +128,7 @@ Completed ✅ — Backed by `src/tests/currency-visibility.test.ts` and `src/tes
 
 ---
 
-### 12) Frontend Smoke Harness (Optional)
+### 14) Frontend Smoke Harness (Optional)
 
 **Goal:** Build a minimal React page (outside production app) exercising the HTTP surface for manual verification.
 
@@ -123,7 +143,7 @@ Completed ✅ — Backed by `src/tests/currency-visibility.test.ts` and `src/tes
 
 ---
 
-## 13) Definition of Done (Local v0)
+## 15) Definition of Done (Local v0)
 
 All items below must be true to sign off Local v0:
 
@@ -139,7 +159,7 @@ All items below must be true to sign off Local v0:
 
 ---
 
-## 14) Commands & Tooling
+## 16) Commands & Tooling
 
 Suggested `package.json` scripts:
 ```json
@@ -160,7 +180,7 @@ Recommended libraries: `zod`, `vitest`, `tsx`, `papaparse` (or `csv-parse`), `su
 
 ---
 
-## 15) Gherkin Acceptance Reference
+## 17) Gherkin Acceptance Reference
 
 **Create expense**
 ```
@@ -198,7 +218,7 @@ Then linked_count=1 and entry status='reconciled'
 
 ---
 
-## 16) Next Phase Hooks (When Database Arrives)
+## 18) Next Phase Hooks (When Database Arrives)
 
 - Replace in-memory repositories with interfaces backed by Postgres/Supabase.  
 - Enforce balance checks via DB constraints/triggers in addition to service validation.  

@@ -1,3 +1,4 @@
+import './setupLocalStorage';
 import { describe, it, expect } from 'vitest';
 import { AccountsRepository, EntryLinesRepository } from '../store/memory';
 import { CurrencyMismatchError, ValidationError } from '../domain/errors';

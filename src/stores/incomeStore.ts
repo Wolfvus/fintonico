@@ -14,6 +14,7 @@ export interface NewIncome {
   currency: string;
   frequency: IncomeFrequency;
   date?: string;
+  depositAccountId?: string;
 }
 
 interface IncomeState {
@@ -52,7 +53,10 @@ const storage = {
         currency: String(income.currency || 'MXN'),
         frequency: String(income.frequency || 'monthly') as IncomeFrequency,
         date: income.date,
-        created_at: String(income.created_at || new Date().toISOString())
+        created_at: String(income.created_at || new Date().toISOString()),
+        depositAccountId: income.depositAccountId,
+        depositAccountName: income.depositAccountName,
+        depositAccountNature: income.depositAccountNature
       }));
     } catch (error) {
       console.error('Error loading incomes from localStorage:', error);
@@ -105,6 +109,27 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
             const createdAtDate = transaction.createdAt instanceof Date 
               ? transaction.createdAt 
               : new Date(transaction.createdAt || Date.now());
+            const counterpartPosting = transaction.postings
+              .filter(p => p.id !== posting.id)
+              .find(p => {
+                const cpAccount = ledgerStore.getAccount(p.accountId);
+                return cpAccount && (cpAccount.nature === 'asset' || cpAccount.nature === 'liability');
+              }) || transaction.postings.find(p => p.id !== posting.id);
+
+            let depositAccountId: string | undefined;
+            let depositAccountName: string | undefined;
+            let depositAccountNature: 'asset' | 'liability' | undefined;
+
+            if (counterpartPosting) {
+              const depositAccount = ledgerStore.getAccount(counterpartPosting.accountId);
+              if (depositAccount) {
+                depositAccountId = depositAccount.id;
+                if (depositAccount.nature === 'asset' || depositAccount.nature === 'liability') {
+                  depositAccountNature = depositAccount.nature;
+                }
+                depositAccountName = depositAccount.name;
+              }
+            }
               
             derivedIncomes.push({
               id: `${transaction.id}-${posting.id}`,
@@ -113,7 +138,10 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
               currency,
               frequency: 'one-time',
               date: transactionDate.toISOString().split('T')[0],
-              created_at: createdAtDate.toISOString()
+              created_at: createdAtDate.toISOString(),
+              depositAccountId,
+              depositAccountName,
+              depositAccountNature
             });
           }
         }
@@ -130,10 +158,12 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
     ledgerStore.initializeDefaultAccounts();
     
     // Find or use default accounts
-    const cashAccount = ledgerStore.getAccount('cash') || ledgerStore.getAccountsByNature('asset')[0];
+    const depositAccount = data.depositAccountId
+      ? ledgerStore.getAccount(data.depositAccountId)
+      : ledgerStore.getAccount('cash') || ledgerStore.getAccountsByNature('asset')[0];
     const incomeAccount = ledgerStore.getAccount('salary') || ledgerStore.getAccountsByNature('income')[0];
     
-    if (!cashAccount || !incomeAccount) {
+    if (!depositAccount || !incomeAccount) {
       throw new Error('Required accounts not found');
     }
     
@@ -144,7 +174,7 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
     ledgerStore.addIncomeTransaction(
       data.source,
       amount,
-      cashAccount.id,
+      depositAccount.id,
       incomeAccount.id,
       date
     );
@@ -232,6 +262,9 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
         frequency: 'monthly' as IncomeFrequency,
         date: firstDayOfMonth,
         created_at: new Date().toISOString(),
+        depositAccountId: account.id,
+        depositAccountName: account.name,
+        depositAccountNature: 'asset' as const,
       };
     });
     

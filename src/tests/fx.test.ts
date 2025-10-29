@@ -1,3 +1,4 @@
+import './setupLocalStorage';
 import { describe, it, expect } from 'vitest';
 import { createFxTable } from '../lib/fx';
 import { FxMissingError } from '../domain/errors';

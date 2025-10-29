@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
+import './setupLocalStorage';
 
 import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsModal } from '../components/Settings/SettingsModal';
 
@@ -74,7 +75,7 @@ describe('SettingsModal', () => {
     const saveButton = screen.getByRole('button', { name: /save changes/i });
     await user.click(saveButton);
 
-    expect(onClose).toHaveBeenCalled();
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
     const { enabledCurrencies } = useCurrencyStoreRef.getState();
     expect(enabledCurrencies).not.toContain('USD');
   });
@@ -110,7 +111,7 @@ describe('SettingsModal', () => {
     const saveButton = screen.getByRole('button', { name: /save changes/i });
     await user.click(saveButton);
 
-    expect(onClose).toHaveBeenCalled();
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
     const { baseCurrency } = useCurrencyStoreRef.getState();
     expect(baseCurrency).toBe('USD');
   });

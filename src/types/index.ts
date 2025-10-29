@@ -27,11 +27,17 @@ export interface Expense extends BaseFinancialRecord {
   what: string;
   rating: ExpenseRating;
   recurring?: boolean;
+  fundingAccountId?: string;
+  fundingAccountName?: string;
+  fundingAccountNature?: 'asset' | 'liability';
 }
 
 export interface Income extends BaseFinancialRecord {
   source: string;
   frequency: 'one-time' | 'weekly' | 'monthly' | 'yearly';
+  depositAccountId?: string;
+  depositAccountName?: string;
+  depositAccountNature?: 'asset' | 'liability';
 }
 
 // Define the Main Account Interface

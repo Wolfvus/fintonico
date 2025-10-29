@@ -36,7 +36,10 @@ function ExpensesTab() {
     type: 'expense' as const,
     category: expense.rating,
     rating: expense.rating,
-    recurring: expense.recurring
+    recurring: expense.recurring,
+    fundingAccountId: expense.fundingAccountId,
+    fundingAccountName: expense.fundingAccountName,
+    fundingAccountNature: expense.fundingAccountNature
   }));
   
   return (
@@ -82,7 +85,10 @@ function IncomeTab() {
     date: income.date,
     type: 'income' as const,
     category: income.frequency,
-    frequency: income.frequency
+    frequency: income.frequency,
+    fundingAccountId: income.depositAccountId,
+    fundingAccountName: income.depositAccountName,
+    fundingAccountNature: income.depositAccountNature
   }));
   
   return (

@@ -269,9 +269,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             </button>
             <button
               onClick={handleSave}
-              className="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+              disabled={isSaving}
+              className={`px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors ${
+                isSaving ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+              }`}
             >
-              Save changes
+              {isSaving ? 'Saving…' : 'Save changes'}
             </button>
           </div>
         </footer>

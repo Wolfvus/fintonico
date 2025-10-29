@@ -12,6 +12,7 @@ export interface NewExpense {
   rating: ExpenseRating;
   date?: string;
   recurring?: boolean;
+  fundingAccountId?: string;
 }
 
 interface ExpenseState {
@@ -51,7 +52,10 @@ const storage = {
         rating: String(expense.rating || 'non_essential') as ExpenseRating,
         date: expense.date,
         created_at: String(expense.created_at || new Date().toISOString()),
-        recurring: Boolean(expense.recurring)
+        recurring: Boolean(expense.recurring),
+        fundingAccountId: expense.fundingAccountId,
+        fundingAccountName: expense.fundingAccountName,
+        fundingAccountNature: expense.fundingAccountNature
       }));
     } catch (error) {
       console.error('Error loading expenses from localStorage:', error);
@@ -114,6 +118,27 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
             const createdAtDate = transaction.createdAt instanceof Date 
               ? transaction.createdAt 
               : new Date(transaction.createdAt || Date.now());
+            const counterpartPosting = transaction.postings
+              .filter(p => p.id !== posting.id)
+              .find(p => {
+                const cpAccount = ledgerStore.getAccount(p.accountId);
+                return cpAccount && (cpAccount.nature === 'asset' || cpAccount.nature === 'liability');
+              }) || transaction.postings.find(p => p.id !== posting.id);
+
+            let fundingAccountId: string | undefined;
+            let fundingAccountName: string | undefined;
+            let fundingAccountNature: 'asset' | 'liability' | undefined;
+
+            if (counterpartPosting) {
+              const fundingAccount = ledgerStore.getAccount(counterpartPosting.accountId);
+              if (fundingAccount) {
+                fundingAccountId = fundingAccount.id;
+                if (fundingAccount.nature === 'asset' || fundingAccount.nature === 'liability') {
+                  fundingAccountNature = fundingAccount.nature;
+                }
+                fundingAccountName = fundingAccount.name;
+              }
+            }
               
             derivedExpenses.push({
               id: `${transaction.id}-${posting.id}`,
@@ -123,7 +148,10 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
               rating: getExpenseRating(account.name),
               date: transactionDate.toISOString().split('T')[0],
               created_at: createdAtDate.toISOString(),
-              recurring: false
+              recurring: false,
+              fundingAccountId,
+              fundingAccountName,
+              fundingAccountNature
             });
           }
         }
@@ -154,11 +182,13 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     };
     
     // Find or use default accounts
-    const cashAccount = ledgerStore.getAccount('cash') || ledgerStore.getAccountsByNature('asset')[0];
+    const fundingAccount = data.fundingAccountId
+      ? ledgerStore.getAccount(data.fundingAccountId)
+      : ledgerStore.getAccount('cash') || ledgerStore.getAccountsByNature('asset')[0];
     const expenseAccountId = getExpenseAccountId(data.rating);
     const expenseAccount = ledgerStore.getAccount(expenseAccountId) || ledgerStore.getAccountsByNature('expense')[0];
     
-    if (!cashAccount || !expenseAccount) {
+    if (!fundingAccount || !expenseAccount) {
       throw new Error('Required accounts not found');
     }
     
@@ -170,7 +200,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       data.what,
       amount,
       expenseAccount.id,
-      cashAccount.id,
+      fundingAccount.id,
       date
     );
     

@@ -579,6 +579,20 @@ export const getCombinedTransactions = (
         ? originalAmount.getCurrency()
         : baseCurrency;
       const convertedAmount = convertAmount(amount, currency, baseCurrency);
+
+      const counterpartyPosting = transaction.postings
+        .filter(p => p.id !== posting.id)
+        .find(p => {
+          const cpAccount = ledgerStore.getAccount(p.accountId);
+          return cpAccount && (cpAccount.nature === 'asset' || cpAccount.nature === 'liability');
+        }) || transaction.postings.find(p => p.id !== posting.id);
+
+      const counterpartAccount = counterpartyPosting ? ledgerStore.getAccount(counterpartyPosting.accountId) : undefined;
+      const fundingAccountNature = counterpartAccount && (counterpartAccount.nature === 'asset' || counterpartAccount.nature === 'liability')
+        ? counterpartAccount.nature
+        : undefined;
+      const fundingAccountName = counterpartAccount?.name;
+      const fundingAccountId = counterpartAccount?.id;
       
       if (account.nature === 'income' && posting.originalCreditAmount) {
         type = 'income';
@@ -606,7 +620,10 @@ export const getCombinedTransactions = (
         date: transactionDate.toISOString().split('T')[0],
         category,
         recurring: false,
-        formattedAmount
+        formattedAmount,
+        fundingAccountId,
+        fundingAccountName,
+        fundingAccountNature: fundingAccountNature as 'asset' | 'liability' | undefined
       });
     }
   }

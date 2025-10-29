@@ -1,3 +1,4 @@
+import './setupLocalStorage';
 import { describe, it, expect, beforeEach, beforeAll } from 'vitest';
 import { Money } from '../domain/money';
 

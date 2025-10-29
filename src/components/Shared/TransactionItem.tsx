@@ -19,6 +19,9 @@ export interface Transaction {
   balances?: Array<{ currency: string; amount: number }>;
   dueDate?: string;
   recurringDueDate?: number;
+  fundingAccountId?: string;
+  fundingAccountName?: string;
+  fundingAccountNature?: 'asset' | 'liability';
 }
 
 interface TransactionItemProps {
@@ -66,6 +69,11 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
               </span>
             )}
           </div>
+          {transaction.fundingAccountName && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+              {transaction.type === 'income' ? 'Deposited to' : 'Paid from'} {transaction.fundingAccountName}
+            </p>
+          )}
         </div>
       </div>
       
@@ -105,6 +113,11 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
             {transaction.recurring && (
               <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                 recurring
+              </span>
+            )}
+            {transaction.fundingAccountName && (
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {transaction.type === 'income' ? 'Deposited to' : 'Paid from'} {transaction.fundingAccountName}
               </span>
             )}
           </div>
