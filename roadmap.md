@@ -11,8 +11,8 @@
 | 7 | Reconciliation Engine | ✅ | `src/tests/reconcile.test.ts` exercises auto/manual linking. |
 | 8 | Cashflow Statement Accuracy | ✅ | Selector + dashboard wired; see `src/tests/cashflow.test.ts` (Vitest 2025‑02‑14 01:07 UTC). |
 | 9 | Settings Modal & Currency Management | ✅ | Settings modal + store toggles (`src/tests/settings-modal.test.tsx`, `src/tests/currency-visibility.test.ts`). |
-| 10 | Funding Mapping for Income/Expense | ✅ | Implemented via form updates + `src/tests/funding-mapping.test.ts`. |
-| 11 | Account Taxonomy & Month-End Close | ☐ | Stabilise asset/liability metadata and month-end checklist before deeper reports. |
+| 10 | Funding Mapping for Income/Expense | ✅ | Forms now source funding targets from `useAccountStore`; see `src/tests/funding-mapping.test.ts`. |
+| 11 | Account Taxonomy & Month-End Close | ✅ | Month-end summary + metadata (`src/selectors/monthEnd.ts`, `src/tests/month-end.test.ts`, `src/tests/networth.test.ts`). |
 | 12 | Reports API (Cashflow & Net Worth) | ☐ | Aggregate selectors into reusable reporting services. |
 | 13 | Local HTTP Surface | ☐ | Optional Express/Fastify bridge with Supertest coverage. |
 | 14 | Frontend Smoke Harness | ☐ | Optional UI harness exercising the HTTP endpoints. |
@@ -21,4 +21,4 @@
 | 17 | Gherkin Acceptance Reference | ☐ | Keep scenarios up to date with evolving behaviour/tests. |
 | 18 | Next Phase Hooks (DB Ready) | ☐ | Prepare migration path from in-memory stores to Postgres/Supabase. |
 
-**Latest test run:** `npm run test` (Vitest) ✔︎ on 2025‑02‑14 10:12 UTC. |
+**Latest test run:** `npm run test` (Vitest) ✔︎ on 2025‑10‑29 00:40 UTC. |

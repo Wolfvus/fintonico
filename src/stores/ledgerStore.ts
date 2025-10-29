@@ -3,8 +3,18 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { CommonTransactions } from '../domain/ledger';
 import { useCurrencyStore } from './currencyStore';
-import type { Account, Transaction, AccountBalance, TrialBalance, BalanceSheet, IncomeStatement, AccountNature } from '../domain/ledger';
+import type {
+  Account,
+  Transaction,
+  AccountBalance,
+  TrialBalance,
+  BalanceSheet,
+  IncomeStatement,
+  AccountNature,
+} from '../domain/ledger';
 import { Money } from '../domain/money';
+import type { Account as UserAccount } from '../types';
+import { accountTypeToNature } from '../utils/accountClassifications';
 
 interface LedgerState {
   // Core data
@@ -41,6 +51,7 @@ interface LedgerState {
   
   // Default accounts setup
   initializeDefaultAccounts: () => void;
+  syncExternalAccount: (account: UserAccount) => Account;
   
   // Utility
   reset: () => void;
@@ -459,6 +470,50 @@ export const useLedgerStore = create<LedgerState>()(
         const baseCurrency = amount.getCurrency();
         const transaction = CommonTransactions.transfer(fromAccountId, toAccountId, amount, baseCurrency, description, date);
         get().addTransaction(transaction);
+      },
+
+      syncExternalAccount: (externalAccount) => {
+        const existing = get().getAccount(externalAccount.id);
+        const now = new Date();
+        const nature = accountTypeToNature(externalAccount.type);
+
+        if (existing) {
+          if (existing.name !== externalAccount.name || existing.nature !== nature) {
+            set((state) => ({
+              accounts: state.accounts.map((account) =>
+                account.id === existing.id
+                  ? {
+                      ...account,
+                      name: externalAccount.name,
+                      nature,
+                      updatedAt: now,
+                    }
+                  : account,
+              ),
+            }));
+          }
+          return get().getAccount(externalAccount.id)!;
+        }
+
+        const codePrefix = nature === 'asset' ? '1' : '2';
+        const rawSuffix = externalAccount.id.replace(/-/g, '').slice(0, 4).toUpperCase();
+        const code = `EXT-${codePrefix}${rawSuffix.padEnd(4, '0')}`;
+
+        const ledgerAccount: Account = {
+          id: externalAccount.id,
+          code,
+          name: externalAccount.name,
+          nature,
+          isActive: true,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        set((state) => ({
+          accounts: [...state.accounts, ledgerAccount],
+        }));
+
+        return ledgerAccount;
       },
 
       // Default accounts setup

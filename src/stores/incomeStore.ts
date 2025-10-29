@@ -5,6 +5,7 @@ import { useLedgerStore } from './ledgerStore';
 import { Money } from '../domain/money';
 import type { Income } from '../types';
 import { sanitizeDescription, validateAmount, validateDate } from '../utils/sanitization';
+import { isBalanceSheetAccountType } from '../utils/accountClassifications';
 
 export type IncomeFrequency = 'one-time' | 'weekly' | 'yearly' | 'monthly';
 
@@ -153,14 +154,28 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
 
   addIncome: async (data: NewIncome) => {
     const ledgerStore = useLedgerStore.getState();
+    const accountStore = useAccountStore.getState();
     
     // Ensure default accounts exist
     ledgerStore.initializeDefaultAccounts();
-    
-    // Find or use default accounts
-    const depositAccount = data.depositAccountId
-      ? ledgerStore.getAccount(data.depositAccountId)
-      : ledgerStore.getAccount('cash') || ledgerStore.getAccountsByNature('asset')[0];
+
+    const candidateDepositAccountId =
+      data.depositAccountId ??
+      accountStore.accounts.find((account) => isBalanceSheetAccountType(account.type))?.id;
+
+    if (!candidateDepositAccountId) {
+      throw new Error('Select or create a deposit account before adding income');
+    }
+
+    const userDepositAccount = accountStore.accounts.find(
+      (account) => account.id === candidateDepositAccountId
+    );
+
+    if (!userDepositAccount || !isBalanceSheetAccountType(userDepositAccount.type)) {
+      throw new Error('Deposit account must be an asset or liability account');
+    }
+
+    const depositAccount = ledgerStore.syncExternalAccount(userDepositAccount);
     const incomeAccount = ledgerStore.getAccount('salary') || ledgerStore.getAccountsByNature('income')[0];
     
     if (!depositAccount || !incomeAccount) {

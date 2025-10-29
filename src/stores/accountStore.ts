@@ -5,7 +5,7 @@ import type { Account, AccountBalance } from '../types';
 // Define the Store's State and Actions
 interface AccountState {
   accounts: Account[];
-  addAccount: (account: Omit<Account, 'id'>) => void;
+  addAccount: (account: Omit<Account, 'id'>) => Account;
   deleteAccount: (accountId: string) => void;
   updateAccount: (accountId: string, updatedAccountData: Omit<Account, 'id'>) => void;
   updateAccountBalance: (accountId: string, currency: string, newAmount: number) => void;
@@ -24,10 +24,12 @@ export const useAccountStore = create<AccountState>()(
           ...newAccount,
           id: crypto.randomUUID(),
         };
-        
+
         set((state) => ({
-          accounts: [...state.accounts, completeAccount]
+          accounts: [...state.accounts, completeAccount],
         }));
+
+        return completeAccount;
       },
 
       // deleteAccount function

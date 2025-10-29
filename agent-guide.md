@@ -1,7 +1,7 @@
 # Fintonico — Agent Execution Guide (Local v0)
 
 > **Purpose:** This guide is the playbook for agents extending Fintonico toward a reliable, locally testable double-entry finance system.  
-> **Status:** Foundations through **Step 7** are complete and verified (`npm run test` on 2025‑02‑14 00:54 UTC). The next focus areas are cashflow accuracy and settings management.
+> **Status:** Foundations through **Step 11** are complete and verified (`npm run test` on 2025‑10‑29 00:40 UTC). The next focus areas are reporting services and interface hardening.
 
 ---
 
@@ -72,26 +72,16 @@ Completed ✅ — Backed by `src/tests/currency-visibility.test.ts` and `src/tes
 ### ~~10) Income/Expense Funding Mapping~~
 Completed ✅ — Validated by `src/tests/funding-mapping.test.ts` and the enriched dashboard transaction display.
 - **Goal:** Capture which asset or liability account funds each income/expense entry so balance-sheet movements reconcile with P&L and net-worth views.  
-- **Acceptance (met):** Income and expense forms enforce a funding/destination account, selectors expose the linked account metadata, and ledger postings credit/debit the chosen asset or liability so UI cards show “Paid from / Deposited to …”.
+- **Acceptance (met):** Income and expense forms require user-created asset/liability accounts (mirrored into the ledger on demand), selectors expose the linked account metadata, and ledger postings credit/debit the chosen asset or liability so UI cards show “Paid from / Deposited to …”.
+
+### ~~11) Account Taxonomy & Month-End Close~~
+Completed ✅ — Covered by `src/selectors/monthEnd.ts`, `src/tests/month-end.test.ts`, and `src/tests/networth.test.ts`.
+- **Goal:** Stabilise asset/liability metadata and provide a lightweight month-end summary so net-worth snapshots stay accurate without manual juggling.  
+- **Acceptance (met):** Account metadata supplies subtypes/defaults, balance-sheet accounts sync from `useAccountStore`, and the month-end summary surfaces cash vs. liabilities with recommended paydown actions plus liability normalisation for net-worth calculations.
 
 ---
 
 ## Upcoming Work
-
-### 11) Account Taxonomy & Month-End Close
-
-**Goal:** Stabilise asset/liability categories and provide a lightweight month-end reconciliation flow so net worth stays accurate without manual juggling.
-
-**Implementation Notes**
-- Introduce an account registry with explicit `nature`/`subtype` tags and expose selectors that return “operating cash”, “credit cards”, and other logical groups for reports.
-- Add settings to map default funding accounts per income/expense category and surface a simple month-end checklist (snapshot, credit-card payout, cash sweep).
-- Extend selectors to produce a month-end summary highlighting liability balances that should be cleared or rolled forward.
-
-**Acceptance Criteria**
-- `src/tests/month-close.test.ts`: fixtures confirm the month-end helper produces per-account balances and flags liabilities that require settlement.
-- Manual: run the checklist, confirm it creates a net-worth snapshot and optional balancing entries without mutating historical data.
-
----
 
 ### 12) Reports API (Cashflow & Net Worth)
 

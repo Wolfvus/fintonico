@@ -96,9 +96,11 @@ export const getNetWorthAt = (date: Date = new Date()) => {
     .filter(b => ['asset'].includes(b.accountType as AccountNature))
     .reduce((sum, b) => sum.add(b.balance), Money.fromMinorUnits(0, baseCurrency));
     
+  const normaliseLiability = (balance: Money) => (balance.isNegative() ? balance.abs() : balance);
+
   const ledgerLiabilities = balances.ledgerBalances
     .filter(b => ['liability'].includes(b.accountType as AccountNature))
-    .reduce((sum, b) => sum.add(b.balance), Money.fromMinorUnits(0, baseCurrency));
+    .reduce((sum, b) => sum.add(normaliseLiability(b.balance)), Money.fromMinorUnits(0, baseCurrency));
   
   // Calculate from external accounts
   const assetTypes: AccountType[] = ['cash', 'bank', 'exchange', 'investment', 'property', 'other'];
@@ -110,7 +112,7 @@ export const getNetWorthAt = (date: Date = new Date()) => {
     
   const externalLiabilities = balances.externalBalances
     .filter(b => liabilityTypes.includes(b.accountType))
-    .reduce((sum, b) => sum.add(b.balance), Money.fromMinorUnits(0, baseCurrency));
+    .reduce((sum, b) => sum.add(normaliseLiability(b.balance)), Money.fromMinorUnits(0, baseCurrency));
   
   const totalAssets = ledgerAssets.add(externalAssets);
   const totalLiabilities = ledgerLiabilities.add(externalLiabilities);

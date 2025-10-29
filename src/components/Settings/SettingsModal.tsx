@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X, Settings, RefreshCcw, AlertCircle } from 'lucide-react';
 import { useCurrencyStore, SUPPORTED_CURRENCIES } from '../../stores/currencyStore';
+import { clearMockData, seedMockData } from '../../utils/resetData';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -37,6 +38,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const [autoFetchFx, setAutoFetchFx] = useState(true);
   const [showSavingsInsights, setShowSavingsInsights] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isClearingData, setIsClearingData] = useState(false);
+  const [isSeedingData, setIsSeedingData] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -86,6 +89,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       onClose();
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleClearData = async () => {
+    try {
+      setIsClearingData(true);
+      await clearMockData();
+      setDraftEnabled(SUPPORTED_CURRENCIES.map((currency) => currency.code));
+      setDraftBaseCurrency('MXN');
+    } finally {
+      setIsClearingData(false);
+    }
+  };
+
+  const handleSeedData = async () => {
+    try {
+      setIsSeedingData(true);
+      await seedMockData();
+      setDraftEnabled(SUPPORTED_CURRENCIES.map((currency) => currency.code));
+      setDraftBaseCurrency('MXN');
+    } finally {
+      setIsSeedingData(false);
     }
   };
 
@@ -260,6 +285,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               className="px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
               Reset defaults
+            </button>
+            <button
+              onClick={handleSeedData}
+              disabled={isSeedingData}
+              className={`px-3 py-2 text-sm font-medium border rounded-lg transition-colors ${
+                isSeedingData
+                  ? 'border-blue-200 dark:border-blue-800 text-blue-400 opacity-60 cursor-not-allowed'
+                  : 'border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+              }`}
+            >
+              {isSeedingData ? 'Seeding…' : 'Seed mock data'}
+            </button>
+            <button
+              onClick={handleClearData}
+              disabled={isClearingData}
+              className={`px-3 py-2 text-sm font-medium border rounded-lg transition-colors ${
+                isClearingData
+                  ? 'border-red-200 dark:border-red-800 text-red-400 opacity-60 cursor-not-allowed'
+                  : 'border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+              }`}
+            >
+              {isClearingData ? 'Clearing…' : 'Clear local data'}
             </button>
             <button
               onClick={onClose}

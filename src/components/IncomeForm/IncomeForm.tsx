@@ -7,8 +7,9 @@ import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { AmountCurrencyInput } from '../Shared/AmountCurrencyInput';
 import { FormField } from '../Shared/FormField';
 import { formStyles } from '../../styles/formStyles';
-import { useLedgerStore } from '../../stores/ledgerStore';
+import { useAccountStore } from '../../stores/accountStore';
 import { shallow } from 'zustand/shallow';
+import { isBalanceSheetAccountType } from '../../utils/accountClassifications';
 
 export const IncomeForm: React.FC = () => {
   const [source, setSource] = useState('');
@@ -29,21 +30,13 @@ export const IncomeForm: React.FC = () => {
     reset: resetCurrency
   } = useCurrencyInput();
 
-  const allAccounts = useLedgerStore(state => state.accounts, shallow);
-  const depositAccounts = useMemo(() => (
-    allAccounts.filter(acc => acc.nature === 'asset' || acc.nature === 'liability')
-  ), [allAccounts]);
+  const allAccounts = useAccountStore((state) => state.accounts, shallow);
+  const depositAccounts = useMemo(
+    () => allAccounts.filter((account) => isBalanceSheetAccountType(account.type)),
+    [allAccounts],
+  );
 
-  const defaultDepositAccountId = useMemo(() => {
-    if (!depositAccounts.length) return '';
-    return (
-      depositAccounts.find(account => account.id === 'cash') ||
-      depositAccounts.find(account => account.id === 'checking') ||
-      depositAccounts[0]
-    )?.id ?? '';
-  }, [depositAccounts]);
-
-  const [depositAccountId, setDepositAccountId] = useState(defaultDepositAccountId);
+  const [depositAccountId, setDepositAccountId] = useState(depositAccounts[0]?.id ?? '');
 
   // Handle outside click to close dropdown
   useEffect(() => {
@@ -63,10 +56,15 @@ export const IncomeForm: React.FC = () => {
   }, [showFrequencyDropdown]);
 
   useEffect(() => {
-    if (!depositAccountId && defaultDepositAccountId) {
-      setDepositAccountId(defaultDepositAccountId);
+    if (!depositAccounts.length) {
+      setDepositAccountId('');
+      return;
     }
-  }, [defaultDepositAccountId, depositAccountId]);
+
+    if (!depositAccountId || !depositAccounts.some((account) => account.id === depositAccountId)) {
+      setDepositAccountId(depositAccounts[0]?.id ?? '');
+    }
+  }, [depositAccountId, depositAccounts]);
 
   const FREQUENCY_CONFIG = {
     'one-time': {
@@ -127,7 +125,7 @@ export const IncomeForm: React.FC = () => {
       newErrors.date = 'Date required';
     }
 
-    if (!depositAccountId && !defaultDepositAccountId) {
+    if (!depositAccountId) {
       newErrors.depositAccountId = 'Select a destination account';
     }
     
@@ -145,7 +143,7 @@ export const IncomeForm: React.FC = () => {
         currency,
         frequency,
         date,
-        depositAccountId: depositAccountId || defaultDepositAccountId
+        depositAccountId
       });
       
       // Reset form
@@ -153,7 +151,7 @@ export const IncomeForm: React.FC = () => {
       resetCurrency();
       setFrequency('one-time');
       setDate(getTodayLocalString());
-      setDepositAccountId(defaultDepositAccountId);
+      setDepositAccountId(depositAccounts[0]?.id ?? '');
       
     } catch (error) {
       console.error('Failed to add income:', error);
@@ -211,6 +209,11 @@ export const IncomeForm: React.FC = () => {
           </select>
           {errors.depositAccountId && (
             <p className={formStyles.error}>{errors.depositAccountId}</p>
+          )}
+          {!depositAccounts.length && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Add an asset or liability account before recording income.
+            </p>
           )}
         </div>
 
@@ -357,7 +360,7 @@ export const IncomeForm: React.FC = () => {
 
         <button
           type="submit"
-          disabled={isSubmitting || !source.trim() || !amount}
+          disabled={isSubmitting || !source.trim() || !amount || !depositAccountId}
           className="w-full text-white font-medium py-3 px-4 rounded-lg transition-all 
                    disabled:opacity-50 disabled:cursor-not-allowed
                    bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600"

@@ -2,8 +2,15 @@
 import './setupLocalStorage';
 
 import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
+
+vi.mock('../utils/resetData', () => ({
+  clearMockData: vi.fn(() => Promise.resolve()),
+  seedMockData: vi.fn(() => Promise.resolve()),
+}));
+
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { clearMockData, seedMockData } from '../utils/resetData';
 import { SettingsModal } from '../components/Settings/SettingsModal';
 
 const ensureLocalStorage = () => {
@@ -52,6 +59,7 @@ const resetStore = async () => {
 
 describe('SettingsModal', () => {
   beforeEach(async () => {
+    vi.clearAllMocks();
     await resetStore();
   });
 
@@ -114,5 +122,31 @@ describe('SettingsModal', () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     const { baseCurrency } = useCurrencyStoreRef.getState();
     expect(baseCurrency).toBe('USD');
+  });
+
+  it('clears local data when the clear button is pressed', async () => {
+    const user = userEvent.setup();
+
+    render(<SettingsModal isOpen onClose={() => {}} />);
+
+    const clearButton = screen.getByRole('button', { name: /clear local data/i });
+    await user.click(clearButton);
+
+    await waitFor(() => {
+      expect(vi.mocked(clearMockData)).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('seeds mock data when the seed button is pressed', async () => {
+    const user = userEvent.setup();
+
+    render(<SettingsModal isOpen onClose={() => {}} />);
+
+    const seedButton = screen.getByRole('button', { name: /seed mock data/i });
+    await user.click(seedButton);
+
+    await waitFor(() => {
+      expect(vi.mocked(seedMockData)).toHaveBeenCalledTimes(1);
+    });
   });
 });

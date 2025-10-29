@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 import { useCurrencyStore } from './currencyStore';
 import { useLedgerStore } from './ledgerStore';
+import { useAccountStore } from './accountStore';
 import { Money } from '../domain/money';
 import type { Expense, ExpenseRating } from '../types';
 import { sanitizeDescription, validateAmount, validateDate } from '../utils/sanitization';
+import { isBalanceSheetAccountType } from '../utils/accountClassifications';
 
 export interface NewExpense {
   what: string;
@@ -163,6 +165,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
 
   addExpense: async (data: NewExpense) => {
     const ledgerStore = useLedgerStore.getState();
+    const accountStore = useAccountStore.getState();
     
     // Ensure default accounts exist
     ledgerStore.initializeDefaultAccounts();
@@ -181,10 +184,23 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       }
     };
     
-    // Find or use default accounts
-    const fundingAccount = data.fundingAccountId
-      ? ledgerStore.getAccount(data.fundingAccountId)
-      : ledgerStore.getAccount('cash') || ledgerStore.getAccountsByNature('asset')[0];
+    const candidateFundingAccountId =
+      data.fundingAccountId ??
+      accountStore.accounts.find((account) => isBalanceSheetAccountType(account.type))?.id;
+
+    if (!candidateFundingAccountId) {
+      throw new Error('Select or create a funding account before adding expenses');
+    }
+
+    const userFundingAccount = accountStore.accounts.find(
+      (account) => account.id === candidateFundingAccountId
+    );
+
+    if (!userFundingAccount || !isBalanceSheetAccountType(userFundingAccount.type)) {
+      throw new Error('Funding account must be an asset or liability account');
+    }
+
+    const fundingAccount = ledgerStore.syncExternalAccount(userFundingAccount);
     const expenseAccountId = getExpenseAccountId(data.rating);
     const expenseAccount = ledgerStore.getAccount(expenseAccountId) || ledgerStore.getAccountsByNature('expense')[0];
     

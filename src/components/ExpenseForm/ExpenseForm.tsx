@@ -10,8 +10,9 @@ import { getTodayLocalString } from '../../utils/dateFormat';
 import { AmountCurrencyInput } from '../Shared/AmountCurrencyInput';
 import { FormField } from '../Shared/FormField';
 import { ToggleSwitch } from '../Shared/ToggleSwitch';
-import { useLedgerStore } from '../../stores/ledgerStore';
+import { useAccountStore } from '../../stores/accountStore';
 import { shallow } from 'zustand/shallow';
+import { isBalanceSheetAccountType } from '../../utils/accountClassifications';
 
 const RATING_CONFIG = {
   essential: { 
@@ -44,26 +45,18 @@ const RATING_CONFIG = {
 };
 
 export const ExpenseForm: React.FC = () => {
-  const allAccounts = useLedgerStore(state => state.accounts, shallow);
-  const fundingAccounts = useMemo(() => (
-    allAccounts.filter(acc => acc.nature === 'asset' || acc.nature === 'liability')
-  ), [allAccounts]);
-
-  const defaultFundingAccountId = useMemo(() => {
-    if (!fundingAccounts.length) return '';
-    return (
-      fundingAccounts.find(account => account.id === 'cash') ||
-      fundingAccounts.find(account => account.id === 'checking') ||
-      fundingAccounts[0]
-    )?.id ?? '';
-  }, [fundingAccounts]);
+  const allAccounts = useAccountStore((state) => state.accounts, shallow);
+  const fundingAccounts = useMemo(
+    () => allAccounts.filter((account) => isBalanceSheetAccountType(account.type)),
+    [allAccounts],
+  );
 
   const [form, setForm] = useState({
     what: '',
     rating: 'non_essential' as keyof typeof RATING_CONFIG,
     date: getTodayLocalString(),
     recurring: false,
-    fundingAccountId: defaultFundingAccountId
+    fundingAccountId: fundingAccounts[0]?.id ?? '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<ValidationError>({});
@@ -79,13 +72,18 @@ export const ExpenseForm: React.FC = () => {
   } = useCurrencyInput();
 
   useEffect(() => {
-    if (!form.fundingAccountId && defaultFundingAccountId) {
-      setForm(prev => ({
+    if (!fundingAccounts.length) {
+      setForm((prev) => ({ ...prev, fundingAccountId: '' }));
+      return;
+    }
+
+    if (!form.fundingAccountId || !fundingAccounts.some((account) => account.id === form.fundingAccountId)) {
+      setForm((prev) => ({
         ...prev,
-        fundingAccountId: defaultFundingAccountId
+        fundingAccountId: fundingAccounts[0]?.id ?? '',
       }));
     }
-  }, [defaultFundingAccountId]);
+  }, [fundingAccounts, form.fundingAccountId]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -102,6 +100,10 @@ export const ExpenseForm: React.FC = () => {
     const dateError = validateDate(form.date);
     if (dateError) newErrors.date = dateError;
     
+    if (!form.fundingAccountId) {
+      newErrors.fundingAccountId = 'Select a funding account';
+    }
+    
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -117,7 +119,7 @@ export const ExpenseForm: React.FC = () => {
         rating: form.rating,
         date: form.date,
         recurring: form.recurring,
-        fundingAccountId: form.fundingAccountId || defaultFundingAccountId
+        fundingAccountId: form.fundingAccountId
       });
       
       setForm({
@@ -125,7 +127,7 @@ export const ExpenseForm: React.FC = () => {
         rating: 'non_essential',
         date: getTodayLocalString(),
         recurring: false,
-        fundingAccountId: defaultFundingAccountId
+        fundingAccountId: fundingAccounts[0]?.id ?? ''
       });
       resetCurrency();
     } catch {
@@ -181,6 +183,14 @@ export const ExpenseForm: React.FC = () => {
               </option>
             ))}
           </select>
+          {errors.fundingAccountId && (
+            <p className={formStyles.error}>{errors.fundingAccountId}</p>
+          )}
+          {!fundingAccounts.length && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Add an asset or liability account before recording an expense.
+            </p>
+          )}
         </div>
 
         <FormField
@@ -244,7 +254,7 @@ export const ExpenseForm: React.FC = () => {
 
         <button
           type="submit"
-          disabled={isSubmitting || !form.what.trim() || !amount}
+          disabled={isSubmitting || !form.what.trim() || !amount || !form.fundingAccountId}
           className="w-full text-white font-medium py-3 px-4 rounded-lg transition-all 
                    disabled:opacity-50 disabled:cursor-not-allowed
                    bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600"
