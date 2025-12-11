@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calendar, RefreshCw, Home, ShoppingBag, Sparkles } from 'lucide-react';
@@ -387,6 +388,197 @@ const RecurringToggle: React.FC<RecurringToggleProps> = ({ value, onChange }) =>
   );
 };
 
+// Date Picker Cell with Mini Calendar
+interface DatePickerCellProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [viewDate, setViewDate] = useState(() => value ? parseLocalDate(value) : new Date());
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        buttonRef.current && !buttonRef.current.contains(event.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const dropdownWidth = 240;
+      const dropdownHeight = 280;
+
+      let top = rect.bottom + 4;
+      let left = rect.right - dropdownWidth;
+
+      if (left + dropdownWidth > window.innerWidth) {
+        left = window.innerWidth - dropdownWidth - 8;
+      }
+      if (left < 8) {
+        left = 8;
+      }
+      if (top + dropdownHeight > window.innerHeight) {
+        top = rect.top - dropdownHeight - 4;
+      }
+      if (top < 8) {
+        top = 8;
+      }
+
+      setDropdownPosition({
+        top: top + window.scrollY,
+        left: left + window.scrollX,
+      });
+    }
+  }, [isOpen]);
+
+  const selectedDate = value ? parseLocalDate(value) : null;
+
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDay = firstDay.getDay();
+    return { daysInMonth, startingDay };
+  };
+
+  const { daysInMonth, startingDay } = getDaysInMonth(viewDate);
+
+  const handlePrevMonth = () => {
+    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
+  };
+
+  const handleSelectDay = (day: number) => {
+    const newDate = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    onChange(newDate);
+    setIsOpen(false);
+  };
+
+  const isSelectedDay = (day: number) => {
+    if (!selectedDate) return false;
+    return selectedDate.getFullYear() === viewDate.getFullYear() &&
+           selectedDate.getMonth() === viewDate.getMonth() &&
+           selectedDate.getDate() === day;
+  };
+
+  const isToday = (day: number) => {
+    const today = new Date();
+    return today.getFullYear() === viewDate.getFullYear() &&
+           today.getMonth() === viewDate.getMonth() &&
+           today.getDate() === day;
+  };
+
+  return (
+    <div className="relative">
+      <button
+        ref={buttonRef}
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1 px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md transition-colors w-full"
+      >
+        <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
+          {value ? formatDateCompact(value) : '-'}
+        </span>
+        <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && createPortal(
+        <div
+          ref={dropdownRef}
+          className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 w-60"
+          style={{
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            zIndex: 9999,
+          }}
+        >
+          {/* Month Navigation */}
+          <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={handlePrevMonth}
+              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            </button>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {viewDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+            </span>
+            <button
+              onClick={handleNextMonth}
+              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+            >
+              <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            </button>
+          </div>
+
+          {/* Weekday Headers */}
+          <div className="grid grid-cols-7 gap-1 mb-1">
+            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+              <div key={day} className="w-7 h-6 text-xs text-gray-400 dark:text-gray-500 flex items-center justify-center">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Days Grid */}
+          <div className="grid grid-cols-7 gap-1">
+            {/* Empty cells for days before the first of the month */}
+            {Array.from({ length: startingDay }, (_, i) => (
+              <div key={`empty-${i}`} className="w-7 h-7" />
+            ))}
+            {/* Days of the month */}
+            {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => (
+              <button
+                key={day}
+                onClick={() => handleSelectDay(day)}
+                className={`w-7 h-7 text-xs rounded flex items-center justify-center transition-colors ${
+                  isSelectedDay(day)
+                    ? 'bg-red-500 text-white'
+                    : isToday(day)
+                    ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                {day}
+              </button>
+            ))}
+          </div>
+
+          {/* Today button */}
+          <button
+            onClick={() => {
+              const today = new Date();
+              const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+              onChange(todayStr);
+              setIsOpen(false);
+            }}
+            className="w-full mt-2 px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+          >
+            Today
+          </button>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
+
 // Expense Row Component
 interface ExpenseRowProps {
   expense: Expense;
@@ -417,7 +609,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       </td>
 
       {/* Amount */}
-      <td className="py-1 px-1 border-l border-gray-300 dark:border-gray-600">
+      <td className="py-1 px-1 border-l border-gray-300 dark:border-gray-600 w-28">
         <EditableCell
           value={String(expense.amount)}
           onChange={(val) => onUpdate(expense.id, { amount: parseFloat(val) || 0 })}
@@ -429,7 +621,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       </td>
 
       {/* Currency */}
-      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700">
+      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700 w-20">
         <CurrencyDropdown
           value={expense.currency}
           onChange={(currency) => onUpdate(expense.id, { currency })}
@@ -438,7 +630,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       </td>
 
       {/* Rating */}
-      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700">
+      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700 w-32">
         <RatingDropdown
           value={expense.rating}
           onChange={(rating) => onUpdate(expense.id, { rating })}
@@ -446,17 +638,15 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       </td>
 
       {/* Date */}
-      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700">
-        <EditableCell
+      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700 w-20">
+        <DatePickerCell
           value={expense.date}
           onChange={(date) => onUpdate(expense.id, { date })}
-          type="date"
-          placeholder="-"
         />
       </td>
 
       {/* Recurring */}
-      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700">
+      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700 w-10">
         <div className="flex items-center justify-center">
           <RecurringToggle
             value={expense.recurring || false}
@@ -466,7 +656,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       </td>
 
       {/* Delete */}
-      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700">
+      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700 w-10">
         <button
           onClick={() => onDelete(expense.id)}
           className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-all"
@@ -608,37 +798,28 @@ export const ExpensePage: React.FC = () => {
       {/* Expense Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto overflow-y-visible">
-          <table className="w-full table-fixed">
-            <colgroup>
-              <col className="w-auto" /> {/* Description - flexible */}
-              <col className="w-28" /> {/* Amount */}
-              <col className="w-20" /> {/* Currency */}
-              <col className="w-28" /> {/* Category */}
-              <col className="w-20" /> {/* Date */}
-              <col className="w-10" /> {/* Recurring */}
-              <col className="w-10" /> {/* Delete */}
-            </colgroup>
+          <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
                 <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                   Description
                 </th>
-                <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600">
+                <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-28">
                   Amount
                 </th>
-                <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700">
-                  Curr
+                <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
+                  Currency
                 </th>
-                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700">
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
                   Category
                 </th>
-                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700">
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
                   Date
                 </th>
-                <th className="px-1 py-2 text-center border-l border-gray-200 dark:border-gray-700" title="Recurring">
+                <th className="px-1 py-2 text-center border-l border-gray-200 dark:border-gray-700 w-10" title="Recurring">
                   <RefreshCw className="w-3 h-3 mx-auto text-gray-400" />
                 </th>
-                <th className="w-8 border-l border-gray-200 dark:border-gray-700"></th>
+                <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
               </tr>
             </thead>
             <tbody>
