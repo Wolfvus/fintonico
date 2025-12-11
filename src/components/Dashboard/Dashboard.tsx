@@ -1,15 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { useLedgerStore } from '../../stores/ledgerStore';
-import { TrendingUp, TrendingDown, Wallet, DollarSign, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Landmark, PiggyBank, ArrowUpDown, Scissors, LayoutGrid } from 'lucide-react';
+import { useExpenseStore } from '../../stores/expenseStore';
+import { useIncomeStore } from '../../stores/incomeStore';
+import { TrendingUp, TrendingDown, Wallet, DollarSign, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Landmark, PiggyBank, ArrowUpDown, Scissors, LayoutGrid, Plus, Clock } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormat';
 import { useDateRange } from '../../hooks/finance/useDateRange';
-import { useFilteredTransactions } from '../../hooks/finance/useFilteredTransactions';
-import { useCombinedTransactions } from '../../hooks/finance/useCombinedTransactions';
 import { Card, SectionHeader, Tabs, Pagination } from '../ui';
 import { CurrencyBadge } from '../Shared/CurrencyBadge';
-import { getNetWorthAt, getMoMChange, getPL, getExpenseBreakdown, getSavingsPotential, getCashflowStatement } from '../../selectors/finance';
-import type { CashflowStatement } from '../../selectors/finance';
+import { getNetWorthAt, getMoMChange } from '../../selectors/finance';
 import { useSnapshotStore } from '../../stores/snapshotStore';
 import { Money } from '../../domain/money';
 
@@ -18,9 +17,11 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
-  const { formatAmount, baseCurrency } = useCurrencyStore();
+  const { formatAmount, baseCurrency, convertAmount } = useCurrencyStore();
   const ledgerStore = useLedgerStore();
   const snapshotStore = useSnapshotStore();
+  const expenseStore = useExpenseStore();
+  const incomeStore = useIncomeStore();
   
   
   const [entryFilter, setEntryFilter] = useState<'all' | 'income' | 'expense'>('all');
@@ -30,6 +31,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const [customEndDate, setCustomEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isTransactionsCollapsed, setIsTransactionsCollapsed] = useState(false);
+  const [isPendingCollapsed, setIsPendingCollapsed] = useState(false);
   const itemsPerPage = 10;
   
   // Generate investment yields on dashboard load
@@ -63,8 +65,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       return getNetWorthAt(new Date());
     } catch (error) {
       console.error('Dashboard: Error in getNetWorthAt:', error);
-      // Fallback to zero values if selector fails
-      const { baseCurrency } = useCurrencyStore.getState();
       return {
         totalAssets: Money.fromMajorUnits(0, baseCurrency),
         totalLiabilities: Money.fromMajorUnits(0, baseCurrency),
@@ -82,98 +82,153 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         }
       };
     }
-  }, [transactions.length]);
-  
-  const periodData = useMemo(() => {
-    try {
-      return getPL(startDate, endDate);
-    } catch (error) {
-      console.error('Error in getPL:', error);
-      // Fallback data
-      const { baseCurrency } = useCurrencyStore.getState();
-      return { 
-        totalIncome: Money.fromMajorUnits(0, baseCurrency), 
-        totalExpenses: Money.fromMajorUnits(0, baseCurrency),
-        netIncome: Money.fromMajorUnits(0, baseCurrency),
-        incomeBreakdown: [],
-        expenseBreakdown: [],
-        fromDate: startDate,
-        toDate: endDate,
-        currency: baseCurrency
-      };
-    }
-  }, [startDate, endDate, transactions.length]);
-  
-  const expenseData = useMemo(() => {
-    try {
-      return getExpenseBreakdown(startDate, endDate);
-    } catch (error) {
-      console.error('Error in getExpenseBreakdown:', error);
-      // Fallback data
-      const { baseCurrency } = useCurrencyStore.getState();
-      return { 
-        byCategory: {} as Record<string, Money>,
-        byAccount: [],
-        totalExpenses: Money.fromMajorUnits(0, baseCurrency),
-        averageDaily: Money.fromMajorUnits(0, baseCurrency),
-        fromDate: startDate,
-        toDate: endDate,
-        currency: baseCurrency
-      };
-    }
-  }, [startDate, endDate, transactions.length]);
-  
-  const savingsData = useMemo(() => {
-    try {
-      return getSavingsPotential(startDate, endDate);
-    } catch (error) {
-      console.error('Error in getSavingsPotential:', error);
-      // Fallback data
-      const { baseCurrency } = useCurrencyStore.getState();
-      return { 
-        nonEssentialExpenses: Money.fromMajorUnits(0, baseCurrency),
-        currentSavings: Money.fromMajorUnits(0, baseCurrency),
-        savingsRate: 0,
-        potentialSavings: Money.fromMajorUnits(0, baseCurrency),
-        projectedMonthlySavings: Money.fromMajorUnits(0, baseCurrency),
-        projectedYearlySavings: Money.fromMajorUnits(0, baseCurrency),
-        recommendations: {
-          reduceNonEssential: Money.fromMajorUnits(0, baseCurrency),
-          targetSavingsRate: 0.2,
-          gapToTarget: Money.fromMajorUnits(0, baseCurrency)
-        },
-        fromDate: startDate,
-        toDate: endDate,
-        currency: baseCurrency
-      };
-    }
-  }, [startDate, endDate, transactions.length]);
+  }, [transactions.length, baseCurrency]);
 
-  const cashflowData = useMemo(() => {
-    try {
-      return getCashflowStatement(startDate, endDate);
-    } catch (error) {
-      console.error('Error in getCashflowStatement:', error);
-      const { baseCurrency } = useCurrencyStore.getState();
-      const zero = Money.fromMajorUnits(0, baseCurrency);
-      return {
-        inflows: zero,
-        outflows: zero,
-        net: zero,
-        breakdown: [],
-        details: [],
-        fromDate: startDate,
-        toDate: endDate,
-        currency: baseCurrency
-      } as CashflowStatement;
+  // Helper to parse YYYY-MM-DD date string as local date (not UTC)
+  const parseLocalDate = (dateStr: string): Date => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  // Filter incomes by selected date range
+  const filteredIncomes = useMemo(() => {
+    return incomeStore.incomes.filter((income) => {
+      const incomeDate = parseLocalDate(income.date);
+      return incomeDate >= startDate && incomeDate <= endDate;
+    });
+  }, [incomeStore.incomes, startDate, endDate]);
+
+  // Filter expenses by selected date range
+  const filteredExpenses = useMemo(() => {
+    return expenseStore.expenses.filter((expense) => {
+      const expenseDate = parseLocalDate(expense.date);
+      return expenseDate >= startDate && expenseDate <= endDate;
+    });
+  }, [expenseStore.expenses, startDate, endDate]);
+
+  // Get pending recurring entries (recurring items that exist but haven't been added to current period)
+  const pendingRecurringEntries = useMemo(() => {
+    const pending: Array<{
+      id: string;
+      type: 'income' | 'expense';
+      description: string;
+      amount: number;
+      currency: string;
+      sourceId: string;
+      rating?: string;
+      frequency?: string;
+    }> = [];
+
+    // Get the month/year of the selected period
+    const selectedMonth = startDate.getMonth();
+    const selectedYear = startDate.getFullYear();
+    const monthPrefix = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
+
+    // Find recurring expenses that don't have an entry in the selected month
+    const recurringExpenses = expenseStore.expenses.filter(e => e.recurring);
+    recurringExpenses.forEach((expense) => {
+      // Check if there's already an expense with same description in the selected month
+      const hasEntryThisMonth = expenseStore.expenses.some(e =>
+        !e.recurring &&
+        e.date.startsWith(monthPrefix) &&
+        e.what === expense.what
+      );
+
+      if (!hasEntryThisMonth) {
+        pending.push({
+          id: `pending-expense-${expense.id}`,
+          type: 'expense',
+          description: expense.what,
+          amount: expense.amount,
+          currency: expense.currency,
+          sourceId: expense.id,
+          rating: expense.rating,
+        });
+      }
+    });
+
+    // Find recurring incomes (monthly frequency) that don't have an entry in the selected month
+    const recurringIncomes = incomeStore.incomes.filter(i => i.frequency === 'monthly');
+    recurringIncomes.forEach((income) => {
+      // Check if there's already an income with same source in the selected month
+      const hasEntryThisMonth = incomeStore.incomes.some(i =>
+        i.frequency !== 'monthly' &&
+        i.date.startsWith(monthPrefix) &&
+        i.source === income.source
+      ) || incomeStore.incomes.some(i =>
+        i.date.startsWith(monthPrefix) &&
+        i.source === income.source &&
+        i.id !== income.id
+      );
+
+      if (!hasEntryThisMonth) {
+        pending.push({
+          id: `pending-income-${income.id}`,
+          type: 'income',
+          description: income.source,
+          amount: income.amount,
+          currency: income.currency,
+          sourceId: income.id,
+          frequency: income.frequency,
+        });
+      }
+    });
+
+    return pending;
+  }, [expenseStore.expenses, incomeStore.incomes, startDate]);
+
+  // Handler to confirm a pending recurring entry
+  const handleConfirmRecurring = async (entry: typeof pendingRecurringEntries[0]) => {
+    const selectedMonth = startDate.getMonth();
+    const selectedYear = startDate.getFullYear();
+    const firstDayOfMonth = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
+
+    if (entry.type === 'expense') {
+      await expenseStore.addExpense({
+        what: entry.description,
+        amount: entry.amount,
+        currency: entry.currency,
+        rating: (entry.rating as 'essential' | 'discretionary' | 'luxury') || 'discretionary',
+        date: firstDayOfMonth,
+        recurring: false,
+      });
+    } else {
+      await incomeStore.addIncome({
+        source: entry.description,
+        amount: entry.amount,
+        currency: entry.currency,
+        frequency: 'one-time',
+        date: firstDayOfMonth,
+      });
     }
-  }, [startDate, endDate, transactions.length]);
-  
-  // Legacy compatibility - maintain filtered transactions for existing UI
-  const { filteredExpenses, filteredIncomes } = useFilteredTransactions({
-    startDate,
-    endDate
-  });
+  };
+
+  // Calculate period income total (converted to base currency)
+  const periodIncome = useMemo(() => {
+    return filteredIncomes.reduce((total, income) => {
+      return total + convertAmount(income.amount, income.currency, baseCurrency);
+    }, 0);
+  }, [filteredIncomes, convertAmount, baseCurrency]);
+
+  // Calculate period expenses total (converted to base currency)
+  const periodExpenses = useMemo(() => {
+    return filteredExpenses.reduce((total, expense) => {
+      return total + convertAmount(expense.amount, expense.currency, baseCurrency);
+    }, 0);
+  }, [filteredExpenses, convertAmount, baseCurrency]);
+
+  // Calculate cashflow (income - expenses)
+  const cashflowNet = periodIncome - periodExpenses;
+
+  // Calculate expense breakdown by rating
+  const expensesByRating = useMemo(() => {
+    const breakdown: Record<string, number> = {};
+    filteredExpenses.forEach((expense) => {
+      const converted = convertAmount(expense.amount, expense.currency, baseCurrency);
+      breakdown[expense.rating] = (breakdown[expense.rating] || 0) + converted;
+    });
+    return breakdown;
+  }, [filteredExpenses, convertAmount, baseCurrency]);
 
 
   // Ensure current month snapshot exists and get MoM change
@@ -201,13 +256,53 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     };
   }, [transactions.length]);
 
-  // Combine and sort transactions for display using hook - creates unified transaction view models
-  const allTransactions = useCombinedTransactions({
-    startDate,
-    endDate,
-    entryFilter
-  });
-  
+  // Combine and sort transactions for display - using filtered income/expenses directly
+  const allTransactions = useMemo(() => {
+    const combined: Array<{
+      id: string;
+      type: 'income' | 'expense';
+      description: string;
+      amount: number;
+      currency: string;
+      date: string;
+      formattedAmount: string;
+    }> = [];
+
+    // Add filtered incomes
+    if (entryFilter === 'all' || entryFilter === 'income') {
+      filteredIncomes.forEach((income) => {
+        const converted = convertAmount(income.amount, income.currency, baseCurrency);
+        combined.push({
+          id: income.id,
+          type: 'income',
+          description: income.source,
+          amount: converted,
+          currency: income.currency,
+          date: income.date,
+          formattedAmount: `+${formatAmount(converted)}`,
+        });
+      });
+    }
+
+    // Add filtered expenses
+    if (entryFilter === 'all' || entryFilter === 'expense') {
+      filteredExpenses.forEach((expense) => {
+        const converted = convertAmount(expense.amount, expense.currency, baseCurrency);
+        combined.push({
+          id: expense.id,
+          type: 'expense',
+          description: expense.what,
+          amount: converted,
+          currency: expense.currency,
+          date: expense.date,
+          formattedAmount: `-${formatAmount(converted)}`,
+        });
+      });
+    }
+
+    // Sort by date descending
+    return combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [filteredIncomes, filteredExpenses, entryFilter, convertAmount, baseCurrency, formatAmount]);
 
   // Navigation helpers
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -236,18 +331,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const endIndex = startIndex + itemsPerPage;
   const paginatedTransactions = allTransactions.slice(startIndex, endIndex);
 
-  // Extract values from selector data
-  const periodIncome = periodData.totalIncome.toMajorUnits();
-  const periodExpenses = periodData.totalExpenses.toMajorUnits();
+  // Extract net worth values
   const netWorth = netWorthData.netWorth.toMajorUnits();
   const totalAssets = netWorthData.totalAssets.toMajorUnits();
   const totalLiabilities = netWorthData.totalLiabilities.toMajorUnits();
-  const cashflowNet = cashflowData.net.toMajorUnits();
-  
-  
-  // Calculate KPIs
+
+  // Calculate KPIs - cashflow is income minus expenses for selected period
   const monthlyCashFlow = cashflowNet;
   const savingsRate = periodIncome > 0 ? ((periodIncome - periodExpenses) / periodIncome) * 100 : 0;
+
+  // Calculate non-essential expenses for optimization tips
+  const nonEssentialTotal = (expensesByRating['non_essential'] || 0) + (expensesByRating['luxury'] || 0);
   
   // State for insights tabs
   const [activeInsightTab, setActiveInsightTab] = useState<'overview' | 'optimize'>('overview');
@@ -492,11 +586,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <p className={styles.kpiLabel}>Cash Flow</p>
           </div>
           <p className={`text-lg font-bold ${
-            monthlyCashFlow >= 0 
-              ? 'text-green-600 dark:text-green-400' 
+            monthlyCashFlow >= 0
+              ? 'text-green-600 dark:text-green-400'
               : 'text-red-600 dark:text-red-400'
           }`}>
-            {formatAmount(monthlyCashFlow, cashflowData.currency)}
+            {formatAmount(monthlyCashFlow)}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {monthlyCashFlow >= 0 ? 'Surplus' : 'Deficit'}
@@ -601,65 +695,190 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     </select>
                   </div>
                 </div>
-                <div className="p-4">
+                <div className="overflow-x-auto">
                   {paginatedTransactions.length === 0 ? (
                     <div className={styles.emptyState}>
                       No transactions found for the selected period
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      {paginatedTransactions.map((transaction) => (
-                        <div
-                          key={transaction.id}
-                          className={styles.transactionItem}
-                        >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                              transaction.type === 'income' ? 'bg-green-500' : 'bg-red-500'
-                            }`} />
-                            <div className="flex-1 min-w-0">
-                              <p className={styles.transactionDesc}>
-                                {transaction.description}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {formatDate(transaction.date)}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <p className={`text-sm font-medium ${
-                              transaction.type === 'income' 
-                                ? 'text-green-600 dark:text-green-400' 
-                                : 'text-red-600 dark:text-red-400'
-                            }`}>
-                              {transaction.formattedAmount}
-                            </p>
-                            <CurrencyBadge 
-                              currency={transaction.currency} 
-                              baseCurrency={baseCurrency}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                    <>
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-gray-200 dark:border-gray-700">
+                            <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Type</th>
+                            <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Description</th>
+                            <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Amount</th>
+                            <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Currency</th>
+                            <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Date</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paginatedTransactions.map((transaction) => (
+                            <tr
+                              key={transaction.id}
+                              className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                            >
+                              <td className="py-2 px-4">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                  transaction.type === 'income'
+                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                    : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                                }`}>
+                                  {transaction.type === 'income' ? 'Income' : 'Expense'}
+                                </span>
+                              </td>
+                              <td className="py-2 px-4">
+                                <span className="text-sm text-gray-900 dark:text-white">
+                                  {transaction.description}
+                                </span>
+                              </td>
+                              <td className="py-2 px-4 text-right">
+                                <span className={`text-sm font-medium ${
+                                  transaction.type === 'income'
+                                    ? 'text-green-600 dark:text-green-400'
+                                    : 'text-red-600 dark:text-red-400'
+                                }`}>
+                                  {transaction.formattedAmount}
+                                </span>
+                              </td>
+                              <td className="py-2 px-4">
+                                <CurrencyBadge
+                                  currency={transaction.currency}
+                                  baseCurrency={baseCurrency}
+                                />
+                              </td>
+                              <td className="py-2 px-4">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">
+                                  {formatDate(transaction.date)}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
 
                       {/* Pagination primitive - handles navigation with status label */}
                       {totalPages > 1 && (
-                        <Pagination 
+                        <Pagination
                           page={currentPage}
                           totalPages={totalPages}
                           onPrev={() => setCurrentPage(Math.max(1, currentPage - 1))}
                           onNext={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                           label={`Page ${currentPage} of ${totalPages} (${allTransactions.length} total)`}
-                          className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"
+                          className="mt-4 pt-4 mx-4 border-t border-gray-200 dark:border-gray-700"
                         />
                       )}
-                    </div>
+                    </>
                   )}
                 </div>
               </div>
             )}
           </Card>
+
+          {/* Pending Recurring Section - Independent collapsible */}
+          {pendingRecurringEntries.length > 0 && (entryFilter === 'all' || pendingRecurringEntries.some(e =>
+            (entryFilter === 'income' && e.type === 'income') ||
+            (entryFilter === 'expense' && e.type === 'expense')
+          )) && (
+            <Card className="mt-4">
+              <div
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                onClick={() => setIsPendingCollapsed(!isPendingCollapsed)}
+              >
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Pending Recurring</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+                    {pendingRecurringEntries.filter(entry => entryFilter === 'all' || entry.type === entryFilter).length}
+                  </span>
+                </div>
+                <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors">
+                  {isPendingCollapsed ? (
+                    <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  ) : (
+                    <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  )}
+                </button>
+              </div>
+
+              {!isPendingCollapsed && (
+                <div className="overflow-x-auto border-t border-gray-200 dark:border-gray-700">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30">
+                        <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Type</th>
+                        <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Description</th>
+                        <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Amount</th>
+                        <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Currency</th>
+                        <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Status</th>
+                        <th className="w-20"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendingRecurringEntries
+                        .filter(entry => entryFilter === 'all' || entry.type === entryFilter)
+                        .map((entry) => (
+                        <tr
+                          key={entry.id}
+                          className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-800/20 hover:bg-gray-100/50 dark:hover:bg-gray-700/30 transition-colors"
+                        >
+                          <td className="py-2 px-4">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium opacity-60 ${
+                              entry.type === 'income'
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                            }`}>
+                              {entry.type === 'income' ? 'Income' : 'Expense'}
+                            </span>
+                          </td>
+                          <td className="py-2 px-4">
+                            <span className="text-sm text-gray-500 dark:text-gray-400 italic">
+                              {entry.description}
+                            </span>
+                          </td>
+                          <td className="py-2 px-4 text-right">
+                            <span className={`text-sm font-medium opacity-60 ${
+                              entry.type === 'income'
+                                ? 'text-green-600 dark:text-green-400'
+                                : 'text-red-600 dark:text-red-400'
+                            }`}>
+                              {entry.type === 'income' ? '+' : '-'}{formatAmount(convertAmount(entry.amount, entry.currency, baseCurrency))}
+                            </span>
+                          </td>
+                          <td className="py-2 px-4">
+                            <span className="opacity-60">
+                              <CurrencyBadge
+                                currency={entry.currency}
+                                baseCurrency={baseCurrency}
+                              />
+                            </span>
+                          </td>
+                          <td className="py-2 px-4">
+                            <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+                              Pending
+                            </span>
+                          </td>
+                          <td className="py-2 px-4">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleConfirmRecurring(entry);
+                              }}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
+                              title="Add to this month"
+                            >
+                              <Plus className="w-3 h-3" />
+                              Add
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+          )}
         </div>
 
         {/* Right Column: Insights Panel (1/3 width) */}
@@ -680,38 +899,43 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               {activeInsightTab === 'overview' && (
                 <div className="space-y-4">
                   <h4 className={styles.sectionHeader}>Quick Stats</h4>
-                  
-                  {/* Top Categories */}
+
+                  {/* Expense Breakdown by Rating */}
                   <div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Top Expense Categories</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Expense Breakdown</p>
                     <div className="space-y-2">
-                      {Object.entries(expenseData.byCategory).map(([category, amount]) => {
-                        const categoryTotal = amount.toMajorUnits();
+                      {(['essential', 'discretionary', 'luxury'] as const).map((rating) => {
+                        const categoryTotal = expensesByRating[rating] || 0;
                         const percentage = periodExpenses > 0 ? (categoryTotal / periodExpenses) * 100 : 0;
-                        
+
                         return categoryTotal > 0 ? (
-                          <div key={category} className="flex items-center justify-between">
+                          <div key={rating} className="flex items-center justify-between">
                             <span className="text-xs capitalize text-gray-700 dark:text-gray-300">
-                              {category.replace('_', ' ')}
+                              {rating}
                             </span>
                             <div className="flex items-center gap-2">
                               <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                <div 
+                                <div
                                   className={`h-2 rounded-full ${
-                                    category === 'essential' ? 'bg-green-500' :
-                                    category === 'non_essential' ? 'bg-yellow-500' :
+                                    rating === 'essential' ? 'bg-green-500' :
+                                    rating === 'discretionary' ? 'bg-yellow-500' :
                                     'bg-red-500'
                                   }`}
-                                  style={{ width: `${percentage}%` }}
+                                  style={{ width: `${Math.min(percentage, 100)}%` }}
                                 />
                               </div>
-                              <span className="text-xs font-medium text-gray-900 dark:text-white">
+                              <span className="text-xs font-medium text-gray-900 dark:text-white w-10 text-right">
                                 {percentage.toFixed(0)}%
                               </span>
                             </div>
                           </div>
                         ) : null;
                       })}
+                      {Object.keys(expensesByRating).length === 0 && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                          No expenses this period
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -720,31 +944,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               {activeInsightTab === 'optimize' && (
                 <div className="space-y-4">
                   <h4 className={styles.sectionHeader}>Optimization Tips</h4>
-                  
+
                   {/* Savings Potential */}
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-2">
                       <Scissors className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
                       <p className="text-xs font-medium text-gray-900 dark:text-white">Savings Potential</p>
                     </div>
-                    {(() => {
-                      const nonEssentialTotal = savingsData.nonEssentialExpenses.toMajorUnits();
-                      
-                      return nonEssentialTotal > 0 ? (
-                        <>
-                          <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
-                            {formatAmount(nonEssentialTotal)}
-                          </p>
-                          <p className={styles.sectionLabel}>
-                            in non-essential spending
-                          </p>
-                        </>
-                      ) : (
-                        <p className={styles.sectionLabel}>
-                          Great job! All spending is essential.
+                    {nonEssentialTotal > 0 ? (
+                      <>
+                        <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
+                          {formatAmount(nonEssentialTotal)}
                         </p>
-                      );
-                    })()}
+                        <p className={styles.sectionLabel}>
+                          in non-essential + luxury spending
+                        </p>
+                      </>
+                    ) : (
+                      <p className={styles.sectionLabel}>
+                        Great job! All spending is essential.
+                      </p>
+                    )}
                   </div>
 
                   {/* Tips */}

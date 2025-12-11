@@ -1,0 +1,617 @@
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useIncomeStore } from '../../stores/incomeStore';
+import { useCurrencyStore } from '../../stores/currencyStore';
+import { DollarSign, Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import type { Income } from '../../types';
+import type { IncomeFrequency } from '../../stores/incomeStore';
+
+// Format date for display (compact format: Dec 11)
+const formatDateCompact = (dateStr: string): string => {
+  const date = new Date(dateStr + 'T00:00:00');
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+// Parse YYYY-MM-DD as local date
+const parseLocalDate = (dateStr: string): Date => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+// Get today as YYYY-MM-DD
+const getTodayString = (): string => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+};
+
+// Frequency options
+const FREQUENCY_OPTIONS: { value: IncomeFrequency; label: string }[] = [
+  { value: 'one-time', label: 'One-time' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'yearly', label: 'Yearly' },
+];
+
+// Quick Add Form Component
+interface QuickAddFormProps {
+  onAdd: (income: { source: string; amount: number; currency: string; frequency: IncomeFrequency; date: string }) => void;
+  baseCurrency: string;
+  enabledCurrencies: string[];
+}
+
+const QuickAddForm: React.FC<QuickAddFormProps> = ({ onAdd, baseCurrency, enabledCurrencies }) => {
+  const [source, setSource] = useState('');
+  const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState(baseCurrency);
+  const [frequency, setFrequency] = useState<IncomeFrequency>('one-time');
+  const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
+  const [showFrequencyDropdown, setShowFrequencyDropdown] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const currencyRef = useRef<HTMLDivElement>(null);
+  const frequencyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (currencyRef.current && !currencyRef.current.contains(event.target as Node)) {
+        setShowCurrencyDropdown(false);
+      }
+      if (frequencyRef.current && !frequencyRef.current.contains(event.target as Node)) {
+        setShowFrequencyDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (source.trim() && amount) {
+      onAdd({
+        source: source.trim(),
+        amount: parseFloat(amount) || 0,
+        currency,
+        frequency,
+        date: getTodayString(),
+      });
+      setSource('');
+      setAmount('');
+      inputRef.current?.focus();
+    }
+  };
+
+  const selectedFrequency = FREQUENCY_OPTIONS.find((f) => f.value === frequency);
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <Plus className="w-5 h-5 text-green-600 dark:text-green-400" />
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Quick Add</h2>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {/* Source */}
+        <input
+          ref={inputRef}
+          type="text"
+          value={source}
+          onChange={(e) => setSource(e.target.value)}
+          placeholder="Income source (Salary, Freelance...)"
+          className="w-full px-3 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-gray-900 dark:text-white placeholder-gray-400"
+        />
+
+        {/* Amount + Currency */}
+        <div className="flex gap-2">
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0.00"
+            step="0.01"
+            className="flex-1 px-3 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-gray-900 dark:text-white placeholder-gray-400"
+          />
+          <div className="relative" ref={currencyRef}>
+            <button
+              type="button"
+              onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
+              className="px-3 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
+            >
+              {currency}
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            {showCurrencyDropdown && (
+              <div className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 py-1 min-w-[80px]">
+                {enabledCurrencies.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => {
+                      setCurrency(c);
+                      setShowCurrencyDropdown(false);
+                    }}
+                    className={`w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                      c === currency ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' : 'text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Frequency Dropdown */}
+        <div className="relative" ref={frequencyRef}>
+          <button
+            type="button"
+            onClick={() => setShowFrequencyDropdown(!showFrequencyDropdown)}
+            className="w-full px-3 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center justify-between text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
+          >
+            <span>{selectedFrequency?.label || 'Select frequency'}</span>
+            <ChevronDown className={`w-4 h-4 transition-transform ${showFrequencyDropdown ? 'rotate-180' : ''}`} />
+          </button>
+          {showFrequencyDropdown && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 py-1">
+              {FREQUENCY_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    setFrequency(opt.value);
+                    setShowFrequencyDropdown(false);
+                  }}
+                  className={`w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                    opt.value === frequency ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' : 'text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={!source.trim() || !amount}
+          className="w-full py-2.5 px-4 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Add Income
+        </button>
+      </form>
+    </div>
+  );
+};
+
+// Editable Cell Component
+interface EditableCellProps {
+  value: string;
+  onChange: (value: string) => void;
+  type?: 'text' | 'number' | 'date';
+  placeholder?: string;
+  align?: 'left' | 'right';
+  className?: string;
+}
+
+const EditableCell: React.FC<EditableCellProps> = ({
+  value,
+  onChange,
+  type = 'text',
+  placeholder = 'Click to edit',
+  align = 'left',
+  className = '',
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [localValue, setLocalValue] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      onChange(localValue);
+      setIsEditing(false);
+    } else if (e.key === 'Escape') {
+      setLocalValue(value);
+      setIsEditing(false);
+    }
+  };
+
+  const handleBlur = () => {
+    if (localValue !== value) {
+      onChange(localValue);
+    }
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <input
+        ref={inputRef}
+        type={type}
+        value={localValue}
+        onChange={(e) => setLocalValue(e.target.value)}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        className={`w-full px-2 py-1.5 text-sm bg-white dark:bg-gray-800 border-2 border-green-500 rounded-md outline-none ${
+          align === 'right' ? 'text-right' : 'text-left'
+        } ${className}`}
+      />
+    );
+  }
+
+  let displayValue = value;
+  if (type === 'date' && value) {
+    displayValue = formatDateCompact(value);
+  }
+
+  return (
+    <div
+      onClick={() => setIsEditing(true)}
+      className={`px-2 py-1.5 text-sm cursor-text hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md transition-colors min-h-[32px] flex items-center ${
+        align === 'right' ? 'justify-end' : 'justify-start'
+      } ${className}`}
+    >
+      {displayValue || <span className="text-gray-400 dark:text-gray-500 italic">{placeholder}</span>}
+    </div>
+  );
+};
+
+// Frequency Dropdown
+interface FrequencyDropdownProps {
+  value: IncomeFrequency;
+  onChange: (value: IncomeFrequency) => void;
+}
+
+const FrequencyDropdown: React.FC<FrequencyDropdownProps> = ({ value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const selectedOption = FREQUENCY_OPTIONS.find((opt) => opt.value === value);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md transition-colors w-full"
+      >
+        <span className="flex-1 text-left text-gray-700 dark:text-gray-300">
+          {selectedOption?.label || 'Select...'}
+        </span>
+        <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1 w-full min-w-[100px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 py-1">
+          {FREQUENCY_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+              className={`flex items-center px-3 py-2 text-sm w-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                option.value === value ? 'bg-green-50 dark:bg-green-900/20' : ''
+              }`}
+            >
+              <span className="text-gray-700 dark:text-gray-300">{option.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Currency Dropdown
+interface CurrencyDropdownProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+}
+
+const CurrencyDropdown: React.FC<CurrencyDropdownProps> = ({ value, onChange, options }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1 px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md transition-colors w-full"
+      >
+        <span className="flex-1 text-left text-gray-700 dark:text-gray-300">{value}</span>
+        <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1 w-full min-w-[70px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 py-1">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              onClick={() => {
+                onChange(opt);
+                setIsOpen(false);
+              }}
+              className={`flex items-center px-3 py-2 text-sm w-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                opt === value ? 'bg-green-50 dark:bg-green-900/20' : ''
+              }`}
+            >
+              <span className="text-gray-700 dark:text-gray-300">{opt}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Income Row Component
+interface IncomeRowProps {
+  income: Income;
+  onUpdate: (id: string, updates: Partial<Income>) => void;
+  onDelete: (id: string) => void;
+  enabledCurrencies: string[];
+  index: number;
+}
+
+const IncomeRow: React.FC<IncomeRowProps> = ({
+  income,
+  onUpdate,
+  onDelete,
+  enabledCurrencies,
+  index,
+}) => {
+  const isEven = index % 2 === 0;
+
+  return (
+    <tr className={`group border-b border-gray-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors ${isEven ? 'bg-gray-50/50 dark:bg-gray-800/30' : ''}`}>
+      {/* Source */}
+      <td className="py-1 px-1">
+        <EditableCell
+          value={income.source}
+          onChange={(source) => onUpdate(income.id, { source })}
+          placeholder="Income source"
+        />
+      </td>
+
+      {/* Amount */}
+      <td className="py-1 px-1 w-28 border-l border-gray-300 dark:border-gray-600">
+        <EditableCell
+          value={String(income.amount)}
+          onChange={(val) => onUpdate(income.id, { amount: parseFloat(val) || 0 })}
+          type="number"
+          placeholder="0.00"
+          align="right"
+          className="text-green-600 dark:text-green-400 font-medium"
+        />
+      </td>
+
+      {/* Currency */}
+      <td className="py-1 px-1 w-20 border-l border-gray-200 dark:border-gray-700">
+        <CurrencyDropdown
+          value={income.currency}
+          onChange={(currency) => onUpdate(income.id, { currency })}
+          options={enabledCurrencies}
+        />
+      </td>
+
+      {/* Frequency */}
+      <td className="py-1 px-1 w-24 border-l border-gray-200 dark:border-gray-700">
+        <FrequencyDropdown
+          value={income.frequency}
+          onChange={(frequency) => onUpdate(income.id, { frequency })}
+        />
+      </td>
+
+      {/* Date */}
+      <td className="py-1 px-1 w-24 border-l border-gray-200 dark:border-gray-700">
+        <EditableCell
+          value={income.date}
+          onChange={(date) => onUpdate(income.id, { date })}
+          type="date"
+          placeholder="-"
+        />
+      </td>
+
+      {/* Delete */}
+      <td className="py-1 px-1 w-10 border-l border-gray-200 dark:border-gray-700">
+        <button
+          onClick={() => onDelete(income.id)}
+          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-all"
+          title="Delete income"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </td>
+    </tr>
+  );
+};
+
+// Main Component
+export const IncomePage: React.FC = () => {
+  const { incomes, addIncome, deleteIncome } = useIncomeStore();
+  const { baseCurrency, enabledCurrencies, formatAmount, convertAmount } = useCurrencyStore();
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  // Filter incomes by selected month
+  const filteredIncomes = useMemo(() => {
+    const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+    const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59);
+
+    return incomes.filter((income) => {
+      const incomeDate = parseLocalDate(income.date);
+      return incomeDate >= startOfMonth && incomeDate <= endOfMonth;
+    }).sort((a, b) => parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime());
+  }, [incomes, selectedDate]);
+
+  // Calculate monthly total
+  const monthlyTotal = useMemo(() => {
+    return filteredIncomes.reduce((total, income) => {
+      return total + convertAmount(income.amount, income.currency, baseCurrency);
+    }, 0);
+  }, [filteredIncomes, convertAmount, baseCurrency]);
+
+  // Navigation
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newDate = new Date(selectedDate);
+    newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
+    setSelectedDate(newDate);
+  };
+
+  const getMonthLabel = () => {
+    return selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  // Update income handler
+  const handleUpdateIncome = async (id: string, updates: Partial<Income>) => {
+    const income = incomes.find((i) => i.id === id);
+    if (!income) return;
+
+    await deleteIncome(id);
+    await addIncome({
+      source: updates.source ?? income.source,
+      amount: updates.amount ?? income.amount,
+      currency: updates.currency ?? income.currency,
+      frequency: updates.frequency ?? income.frequency,
+      date: updates.date ?? income.date,
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Top Section: Quick Add + Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Quick Add Form */}
+        <div className="lg:col-span-1">
+          <QuickAddForm
+            onAdd={addIncome}
+            baseCurrency={baseCurrency}
+            enabledCurrencies={enabledCurrencies}
+          />
+        </div>
+
+        {/* Summary Card */}
+        <div className="lg:col-span-2 flex items-stretch">
+          <div className="flex-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 flex items-center">
+            <div className="flex items-center gap-4 w-full">
+              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
+                <DollarSign className="w-8 h-8 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Monthly Income</p>
+                <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                  {formatAmount(monthlyTotal)}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-500 dark:text-gray-400">{filteredIncomes.length} entries</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{getMonthLabel()}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Month Navigation */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3">
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={() => navigateMonth('prev')}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          </button>
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            <span className="text-lg font-semibold text-gray-900 dark:text-white min-w-[180px] text-center">
+              {getMonthLabel()}
+            </span>
+          </div>
+          <button
+            onClick={() => navigateMonth('next')}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          </button>
+        </div>
+      </div>
+
+      {/* Income Table */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="overflow-x-auto overflow-y-visible">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Source
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28 border-l border-gray-300 dark:border-gray-600">
+                  Amount
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20 border-l border-gray-200 dark:border-gray-700">
+                  Curr
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
+                  Frequency
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
+                  Date
+                </th>
+                <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredIncomes.map((income, index) => (
+                <IncomeRow
+                  key={income.id}
+                  income={income}
+                  onUpdate={handleUpdateIncome}
+                  onDelete={deleteIncome}
+                  enabledCurrencies={enabledCurrencies}
+                  index={index}
+                />
+              ))}
+              {filteredIncomes.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-gray-500 dark:text-gray-400">
+                    No income this month. Use the Quick Add form above to get started.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -4,119 +4,16 @@ import { useLedgerStore } from './stores/ledgerStore';
 import { useThemeStore } from './stores/themeStore';
 import { checkAndGenerateRecurring } from './utils/recurringUtils';
 import { AuthForm } from './components/Auth/AuthForm';
-import { ExpenseForm } from './components/ExpenseForm/ExpenseForm';
-import { IncomeForm } from './components/IncomeForm/IncomeForm';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { NetWorthPage } from './components/NetWorth/NetWorthPage';
 import { ChartOfAccountsPage } from './components/ChartOfAccounts/ChartOfAccountsPage';
-import { DataList } from './components/Shared/DataList';
-import { TransactionItem, type Transaction } from './components/Shared/TransactionItem';
+import { IncomePage } from './components/Income/IncomePage';
+import { ExpensePage } from './components/Expense/ExpensePage';
 import { CurrencySelector } from './components/Currency/CurrencySelector';
-import { useExpenseStore } from './stores/expenseStore';
 import { Navigation } from './components/Navigation/Navigation';
-import { useIncomeStore } from './stores/incomeStore';
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 import { SettingsModal } from './components/Settings/SettingsModal';
 import { Settings as SettingsIcon } from 'lucide-react';
-
-// Expenses Tab Component
-function ExpensesTab() {
-  const expenseStore = useExpenseStore();
-  const { deleteExpense } = expenseStore;
-  
-  // Get derived expenses from ledger
-  const expenses = expenseStore._deriveExpensesFromLedger();
-  
-  const expenseTransactions: Transaction[] = expenses.map(expense => ({
-    id: expense.id,
-    description: expense.what,
-    amount: expense.amount,
-    currency: expense.currency,
-    date: expense.date,
-    type: 'expense' as const,
-    category: expense.rating,
-    rating: expense.rating,
-    recurring: expense.recurring,
-    fundingAccountId: expense.fundingAccountId,
-    fundingAccountName: expense.fundingAccountName,
-    fundingAccountNature: expense.fundingAccountNature
-  }));
-  
-  return (
-    <ErrorBoundary>
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          <div className="lg:col-span-1">
-            <ExpenseForm />
-          </div>
-          <div className="lg:col-span-2">
-            <DataList
-              title="Recent Expenses"
-              items={expenseTransactions}
-              renderItem={(transaction, onDelete) => (
-                <TransactionItem 
-                  transaction={transaction} 
-                  onDelete={onDelete}
-                />
-              )}
-              onDelete={deleteExpense}
-              emptyMessage="No expenses yet. Add your first expense to get started."
-            />
-          </div>
-        </div>
-      </div>
-    </ErrorBoundary>
-  );
-}
-
-// Income Tab Component
-function IncomeTab() {
-  const incomeStore = useIncomeStore();
-  const { deleteIncome } = incomeStore;
-  
-  // Get derived incomes from ledger
-  const incomes = incomeStore._deriveIncomesFromLedger();
-  
-  const incomeTransactions: Transaction[] = incomes.map(income => ({
-    id: income.id,
-    description: income.source,
-    amount: income.amount,
-    currency: income.currency,
-    date: income.date,
-    type: 'income' as const,
-    category: income.frequency,
-    frequency: income.frequency,
-    fundingAccountId: income.depositAccountId,
-    fundingAccountName: income.depositAccountName,
-    fundingAccountNature: income.depositAccountNature
-  }));
-  
-  return (
-    <ErrorBoundary>
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          <div className="lg:col-span-1">
-            <IncomeForm />
-          </div>
-          <div className="lg:col-span-2">
-            <DataList
-              title="Recent Income"
-              items={incomeTransactions}
-              renderItem={(transaction, onDelete) => (
-                <TransactionItem 
-                  transaction={transaction} 
-                  onDelete={onDelete}
-                />
-              )}
-              onDelete={deleteIncome}
-              emptyMessage="No income yet. Add your first income source to get started."
-            />
-          </div>
-        </div>
-      </div>
-    </ErrorBoundary>
-  );
-}
 
 function App() {
   const { user, loading, checkUser } = useAuthStore();
@@ -208,11 +105,15 @@ function App() {
           )}
 
           {activeTab === 'expenses' && (
-            <ExpensesTab />
+            <ErrorBoundary>
+              <ExpensePage />
+            </ErrorBoundary>
           )}
 
           {activeTab === 'income' && (
-            <IncomeTab />
+            <ErrorBoundary>
+              <IncomePage />
+            </ErrorBoundary>
           )}
 
           {activeTab === 'networth' && (

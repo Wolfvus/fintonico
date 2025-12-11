@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useExpenseStore } from '../../stores/expenseStore';
-import { Calendar, PenTool, Plus, Home, Clapperboard, Sparkles } from 'lucide-react';
+import { Calendar, PenTool, Plus, Home, ShoppingBag, Sparkles } from 'lucide-react';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
 import { validateRequired, validateAmount, validateDate } from '../../utils/validation';
 import { sanitizeDescription } from '../../utils/sanitization';
@@ -19,12 +19,12 @@ const RATING_CONFIG = {
     borderClass: 'border-green-500',
     icon: Home
   },
-  non_essential: {
-    label: 'Non-Essential',
+  discretionary: {
+    label: 'Discretionary',
     bgClass: 'bg-yellow-50 dark:bg-yellow-900/20',
     textClass: 'text-yellow-700 dark:text-yellow-400',
     borderClass: 'border-yellow-500',
-    icon: Clapperboard
+    icon: ShoppingBag
   },
   luxury: {
     label: 'Luxury',
@@ -38,7 +38,7 @@ const RATING_CONFIG = {
 export const ExpenseForm: React.FC = () => {
   const [form, setForm] = useState({
     what: '',
-    rating: 'non_essential' as keyof typeof RATING_CONFIG,
+    rating: 'discretionary' as keyof typeof RATING_CONFIG,
     date: getTodayLocalString(),
     recurring: false,
   });
@@ -88,7 +88,7 @@ export const ExpenseForm: React.FC = () => {
 
       setForm({
         what: '',
-        rating: 'non_essential',
+        rating: 'discretionary',
         date: getTodayLocalString(),
         recurring: false,
       });

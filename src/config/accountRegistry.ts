@@ -22,13 +22,13 @@ const ACCOUNT_METADATA: Record<string, AccountMetadata> = {
   cash: {
     id: 'cash',
     subtype: 'operating-cash',
-    defaultExpenseRatings: ['essential', 'important'],
+    defaultExpenseRatings: ['essential', 'discretionary'],
     defaultIncome: true,
   },
   checking: {
     id: 'checking',
     subtype: 'operating-cash',
-    defaultExpenseRatings: ['essential', 'important'],
+    defaultExpenseRatings: ['essential', 'discretionary'],
     defaultIncome: true,
   },
   savings: {
@@ -45,7 +45,7 @@ const ACCOUNT_METADATA: Record<string, AccountMetadata> = {
   'credit-card': {
     id: 'credit-card',
     subtype: 'credit-card',
-    defaultExpenseRatings: ['non_essential', 'luxury'],
+    defaultExpenseRatings: ['discretionary', 'luxury'],
     monthEndAction: 'paydown',
   },
   loan: {
