@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { Calendar, PenTool, Plus, Home, Clapperboard, Sparkles } from 'lucide-react';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
@@ -10,53 +10,37 @@ import { getTodayLocalString } from '../../utils/dateFormat';
 import { AmountCurrencyInput } from '../Shared/AmountCurrencyInput';
 import { FormField } from '../Shared/FormField';
 import { ToggleSwitch } from '../Shared/ToggleSwitch';
-import { useAccountStore } from '../../stores/accountStore';
-import { shallow } from 'zustand/shallow';
-import { isBalanceSheetAccountType } from '../../utils/accountClassifications';
 
 const RATING_CONFIG = {
-  essential: { 
-    label: 'Essential', 
-    color: '#10B981',
+  essential: {
+    label: 'Essential',
     bgClass: 'bg-green-50 dark:bg-green-900/20',
     textClass: 'text-green-700 dark:text-green-400',
     borderClass: 'border-green-500',
-    description: 'Necessary expenses',
     icon: Home
   },
-  non_essential: { 
-    label: 'Non-Essential', 
-    color: '#EAB308',
+  non_essential: {
+    label: 'Non-Essential',
     bgClass: 'bg-yellow-50 dark:bg-yellow-900/20',
     textClass: 'text-yellow-700 dark:text-yellow-400',
     borderClass: 'border-yellow-500',
-    description: 'Can be reduced',
     icon: Clapperboard
   },
-  luxury: { 
-    label: 'Luxury', 
-    color: '#DC2626',
+  luxury: {
+    label: 'Luxury',
     bgClass: 'bg-red-50 dark:bg-red-900/20',
     textClass: 'text-red-700 dark:text-red-400',
     borderClass: 'border-red-500',
-    description: 'Optional purchases',
     icon: Sparkles
   }
 };
 
 export const ExpenseForm: React.FC = () => {
-  const allAccounts = useAccountStore((state) => state.accounts, shallow);
-  const fundingAccounts = useMemo(
-    () => allAccounts.filter((account) => isBalanceSheetAccountType(account.type)),
-    [allAccounts],
-  );
-
   const [form, setForm] = useState({
     what: '',
     rating: 'non_essential' as keyof typeof RATING_CONFIG,
     date: getTodayLocalString(),
     recurring: false,
-    fundingAccountId: fundingAccounts[0]?.id ?? '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<ValidationError>({});
@@ -71,46 +55,27 @@ export const ExpenseForm: React.FC = () => {
     reset: resetCurrency
   } = useCurrencyInput();
 
-  useEffect(() => {
-    if (!fundingAccounts.length) {
-      setForm((prev) => ({ ...prev, fundingAccountId: '' }));
-      return;
-    }
-
-    if (!form.fundingAccountId || !fundingAccounts.some((account) => account.id === form.fundingAccountId)) {
-      setForm((prev) => ({
-        ...prev,
-        fundingAccountId: fundingAccounts[0]?.id ?? '',
-      }));
-    }
-  }, [fundingAccounts, form.fundingAccountId]);
-
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
-    
+
     const newErrors: ValidationError = {};
     const whatError = validateRequired(form.what, 'Description');
     if (whatError) newErrors.what = whatError;
-    
+
     const amountError = validateAmount(amount);
     if (amountError) newErrors.amount = amountError;
-    
+
     const dateError = validateDate(form.date);
     if (dateError) newErrors.date = dateError;
-    
-    if (!form.fundingAccountId) {
-      newErrors.fundingAccountId = 'Select a funding account';
-    }
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       await addExpense({
         what: sanitizeDescription(form.what),
@@ -119,15 +84,13 @@ export const ExpenseForm: React.FC = () => {
         rating: form.rating,
         date: form.date,
         recurring: form.recurring,
-        fundingAccountId: form.fundingAccountId
       });
-      
+
       setForm({
         what: '',
         rating: 'non_essential',
         date: getTodayLocalString(),
         recurring: false,
-        fundingAccountId: fundingAccounts[0]?.id ?? ''
       });
       resetCurrency();
     } catch {
@@ -140,21 +103,20 @@ export const ExpenseForm: React.FC = () => {
   return (
     <div className={formStyles.card}>
       <div className="flex items-center gap-2 mb-6">
-        <Plus className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+        <Plus className="w-5 h-5 text-red-600 dark:text-red-400" />
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add Expense</h2>
       </div>
-      
-      <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-4">
+
+      <form onSubmit={handleSubmit} className="space-y-4">
         <FormField
           label="Description"
           icon={PenTool}
           value={form.what}
           onChange={(value) => setForm(prev => ({ ...prev, what: value }))}
-          placeholder="Coffee at Starbucks, Dinner..."
+          placeholder="Coffee, Dinner, Groceries..."
           maxLength={30}
           autoFocus
           error={errors.what}
-          className="space-y-2.5 sm:space-y-2"
         />
 
         <AmountCurrencyInput
@@ -165,34 +127,6 @@ export const ExpenseForm: React.FC = () => {
           amountError={errors.amount}
         />
 
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">
-            Paid from account
-          </label>
-          <select
-            value={form.fundingAccountId || ''}
-            onChange={(event) => setForm(prev => ({ ...prev, fundingAccountId: event.target.value }))}
-            className="w-full px-3.5 py-2.5 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-blue-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-gray-500 focus:ring-blue-200 dark:focus:ring-gray-600"
-            disabled={!fundingAccounts.length}
-            required
-          >
-            {fundingAccounts.length === 0 && <option value="">No funding accounts available</option>}
-            {fundingAccounts.map(account => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
-          {errors.fundingAccountId && (
-            <p className={formStyles.error}>{errors.fundingAccountId}</p>
-          )}
-          {!fundingAccounts.length && (
-            <p className="text-xs text-amber-600 dark:text-amber-400">
-              Add an asset or liability account before recording an expense.
-            </p>
-          )}
-        </div>
-
         <FormField
           label="Date"
           icon={Calendar}
@@ -202,76 +136,48 @@ export const ExpenseForm: React.FC = () => {
           error={errors.date}
         />
 
-
+        {/* Priority Selection - Compact */}
         <div>
           <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
             Priority
           </label>
-          <div className="space-y-1.5">
+          <div className="flex gap-2">
             {Object.entries(RATING_CONFIG).map(([key, config]) => (
-              <div
+              <button
                 key={key}
+                type="button"
                 onClick={() => setForm(prev => ({ ...prev, rating: key as keyof typeof RATING_CONFIG }))}
-                className={`flex items-center p-2 rounded-md border cursor-pointer transition-all
-                  ${form.rating === key 
-                    ? `${config.bgClass} ${config.borderClass}` 
-                    : 'border-gray-200 dark:border-gray-600 bg-blue-50 dark:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500'
-                  }`}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border transition-all text-sm ${
+                  form.rating === key
+                    ? `${config.bgClass} ${config.borderClass} ${config.textClass}`
+                    : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300'
+                }`}
               >
-                
-                {/* Priority Icon */}
-                <div className="mr-2 flex-shrink-0">
-                  <config.icon 
-                    className={`w-4 h-4 ${
-                      form.rating === key 
-                        ? config.textClass 
-                        : 'text-gray-400 dark:text-gray-500'
-                    }`} 
-                  />
-                </div>
-
-                {/* Content - single line */}
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-medium ${
-                    form.rating === key 
-                      ? config.textClass 
-                      : 'text-gray-900 dark:text-gray-100'
-                  }`}>
-                    {config.label}
-                  </span>
-                  <span className={`text-xs ${
-                    form.rating === key 
-                      ? 'text-gray-600 dark:text-gray-300' 
-                      : 'text-gray-500 dark:text-gray-400'
-                  }`}>
-                    · {config.description}
-                  </span>
-                </div>
-              </div>
+                <config.icon className="w-4 h-4" />
+                <span className="font-medium">{config.label}</span>
+              </button>
             ))}
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting || !form.what.trim() || !amount || !form.fundingAccountId}
-          className="w-full text-white font-medium py-3 px-4 rounded-lg transition-all 
-                   disabled:opacity-50 disabled:cursor-not-allowed
-                   bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600"
-        >
-          {isSubmitting ? 'Adding...' : 'Add Expense'}
-        </button>
-
-        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+        {/* Recurring Toggle */}
+        <div className="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <span className="text-sm text-gray-700 dark:text-gray-300">Monthly recurring</span>
           <ToggleSwitch
             checked={form.recurring}
             onChange={(checked) => setForm(prev => ({ ...prev, recurring: checked }))}
-            label="Recurring monthly expense"
           />
-          <p className="text-xs mt-1 text-gray-600 dark:text-gray-400 ml-2">
-            Enable for fixed monthly costs like rent, utilities, subscriptions
-          </p>
         </div>
+
+        <button
+          type="submit"
+          disabled={isSubmitting || !form.what.trim() || !amount}
+          className="w-full text-white font-medium py-3 px-4 rounded-lg transition-all
+                   disabled:opacity-50 disabled:cursor-not-allowed
+                   bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+        >
+          {isSubmitting ? 'Adding...' : 'Add Expense'}
+        </button>
 
         {errors.submit && (
           <p className="text-sm text-center text-red-500">{errors.submit}</p>

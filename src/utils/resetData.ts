@@ -3,7 +3,7 @@ import { useExpenseStore } from '../stores/expenseStore';
 import { useIncomeStore } from '../stores/incomeStore';
 import { useAccountStore } from '../stores/accountStore';
 import { useCurrencyStore } from '../stores/currencyStore';
-import { isAssetAccountType, isLiabilityAccountType } from './accountClassifications';
+import { useLedgerAccountStore } from '../stores/ledgerAccountStore';
 
 const PERSIST_KEYS = [
   'fintonico-currency',
@@ -13,6 +13,7 @@ const PERSIST_KEYS = [
   'fintonico-snapshots',
   'ledger-store',
   'fintonico-ledger',
+  'fintonico-ledger-accounts',
 ];
 
 export const clearMockData = async (): Promise<void> => {
@@ -22,6 +23,7 @@ export const clearMockData = async (): Promise<void> => {
   useExpenseStore.setState({ expenses: [], loading: false });
   useIncomeStore.setState({ incomes: [], loading: false });
   useAccountStore.setState({ accounts: [] });
+  useLedgerAccountStore.setState({ accounts: [] });
 
   useCurrencyStore.setState((state) => ({
     ...state,
@@ -48,74 +50,124 @@ export const seedMockData = async (): Promise<void> => {
   const accountStore = useAccountStore.getState();
   const expenseStore = useExpenseStore.getState();
   const incomeStore = useIncomeStore.getState();
+  const ledgerAccountStore = useLedgerAccountStore.getState();
 
-  const supplementalAccounts = [
+  // Seed Net Worth accounts (assets and liabilities)
+  const netWorthAccounts = [
+    {
+      name: 'BBVA Checking',
+      type: 'bank' as const,
+      currency: 'MXN',
+      balance: 45000,
+    },
+    {
+      name: 'Banorte Savings',
+      type: 'bank' as const,
+      currency: 'MXN',
+      balance: 120000,
+    },
     {
       name: 'Brokerage Account',
       type: 'investment' as const,
       currency: 'USD',
       balance: 12000,
+      estimatedYield: 7.5,
     },
     {
-      name: 'Travel Fund',
+      name: 'GBM+ CETES',
+      type: 'investment' as const,
+      currency: 'MXN',
+      balance: 50000,
+      estimatedYield: 10.5,
+    },
+    {
+      name: 'Emergency Fund',
       type: 'cash' as const,
       currency: 'MXN',
-      balance: 5000,
+      balance: 25000,
     },
     {
-      name: 'Visa Credit Card',
+      name: 'AMEX Gold',
       type: 'credit-card' as const,
       currency: 'MXN',
-      balance: -1800,
-      dueDate: '2025-10-25',
+      balance: -8500,
+      recurringDueDate: 15,
+    },
+    {
+      name: 'Visa Infinite',
+      type: 'credit-card' as const,
+      currency: 'MXN',
+      balance: -3200,
+      recurringDueDate: 20,
     },
   ];
 
-  supplementalAccounts.forEach((account) => {
+  netWorthAccounts.forEach((account) => {
     accountStore.addAccount(account);
   });
 
-  const currentAccounts = useAccountStore.getState().accounts;
-  const assetAccounts = currentAccounts.filter((account) => isAssetAccountType(account.type));
-  const liabilityAccounts = currentAccounts.filter((account) =>
-    isLiabilityAccountType(account.type),
-  );
-
-  const defaultDepositAccount = assetAccounts[0]?.id ?? liabilityAccounts[0]?.id;
-
-  const defaultFundingFor = (rating: 'essential' | 'important' | 'non_essential' | 'luxury'): string => {
-    if (rating === 'non_essential' || rating === 'luxury') {
-      return liabilityAccounts[0]?.id ?? assetAccounts[0]?.id ?? defaultDepositAccount;
-    }
-
-    if (rating === 'important') {
-      return assetAccounts[0]?.id ?? liabilityAccounts[0]?.id ?? defaultDepositAccount;
-    }
-
-    return assetAccounts[0]?.id ?? liabilityAccounts[0]?.id ?? defaultDepositAccount;
-  };
-
-  if (!defaultDepositAccount) {
-    console.warn('Skipping mock data seeding; no eligible deposit accounts configured.');
-    return;
-  }
-
-  const incomeFixtures = [
+  // Seed reference accounts (for CLABE/account number lookup)
+  const referenceAccounts = [
     {
-      source: 'Full-time Salary',
-      amount: 4200,
-      currency: 'MXN',
-      frequency: 'monthly' as const,
-      date: '2025-10-01',
-      depositAccountId: defaultDepositAccount,
+      name: 'BBVA Checking',
+      accountNumber: '0123456789',
+      clabe: '012180001234567891',
+      normalBalance: 'debit' as const,
+      isActive: true,
     },
     {
-      source: 'Freelance UX Audit',
-      amount: 950,
+      name: 'Banorte Savings',
+      accountNumber: '9876543210',
+      clabe: '072180009876543212',
+      normalBalance: 'debit' as const,
+      isActive: true,
+    },
+    {
+      name: 'AMEX Gold',
+      accountNumber: '3742-XXXXXX-12345',
+      normalBalance: 'credit' as const,
+      isActive: true,
+    },
+    {
+      name: 'Visa Infinite',
+      accountNumber: '4815-XXXX-XXXX-1234',
+      normalBalance: 'credit' as const,
+      isActive: true,
+    },
+    {
+      name: 'PayPal',
+      accountNumber: 'user@email.com',
+      normalBalance: 'debit' as const,
+      isActive: true,
+    },
+  ];
+
+  referenceAccounts.forEach((account) => {
+    ledgerAccountStore.addAccount(account);
+  });
+
+  // Seed income (simplified - no account linking)
+  const incomeFixtures = [
+    {
+      source: 'Monthly Salary',
+      amount: 65000,
+      currency: 'MXN',
+      frequency: 'monthly' as const,
+      date: '2025-12-01',
+    },
+    {
+      source: 'Freelance Project',
+      amount: 1500,
       currency: 'USD',
       frequency: 'one-time' as const,
-      date: '2025-10-12',
-      depositAccountId: defaultDepositAccount,
+      date: '2025-12-10',
+    },
+    {
+      source: 'Investment Dividends',
+      amount: 2500,
+      currency: 'MXN',
+      frequency: 'monthly' as const,
+      date: '2025-12-05',
     },
   ];
 
@@ -123,38 +175,51 @@ export const seedMockData = async (): Promise<void> => {
     await incomeStore.addIncome(income);
   }
 
+  // Seed expenses (simplified - no account linking)
   const expenseFixtures = [
     {
       what: 'Rent',
-      amount: 1200,
+      amount: 18000,
       currency: 'MXN',
       rating: 'essential' as const,
-      date: '2025-10-02',
-      fundingAccountId: defaultFundingFor('essential'),
+      date: '2025-12-01',
+      recurring: true,
     },
     {
       what: 'Groceries',
-      amount: 320,
+      amount: 3500,
       currency: 'MXN',
       rating: 'essential' as const,
-      date: '2025-10-05',
-      fundingAccountId: defaultFundingFor('essential'),
+      date: '2025-12-05',
     },
     {
-      what: 'Flight to NYC',
-      amount: 450,
-      currency: 'USD',
-      rating: 'non_essential' as const,
-      date: '2025-10-10',
-      fundingAccountId: defaultFundingFor('non_essential'),
-    },
-    {
-      what: 'Team Dinner',
-      amount: 180,
+      what: 'Electricity Bill',
+      amount: 850,
       currency: 'MXN',
-      rating: 'important' as const,
-      date: '2025-10-15',
-      fundingAccountId: defaultFundingFor('important'),
+      rating: 'essential' as const,
+      date: '2025-12-08',
+      recurring: true,
+    },
+    {
+      what: 'Restaurant Dinner',
+      amount: 1200,
+      currency: 'MXN',
+      rating: 'non_essential' as const,
+      date: '2025-12-07',
+    },
+    {
+      what: 'New Headphones',
+      amount: 4500,
+      currency: 'MXN',
+      rating: 'luxury' as const,
+      date: '2025-12-09',
+    },
+    {
+      what: 'Uber Rides',
+      amount: 650,
+      currency: 'MXN',
+      rating: 'non_essential' as const,
+      date: '2025-12-06',
     },
   ];
 

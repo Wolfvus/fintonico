@@ -58,16 +58,14 @@ export interface Account {
   balances?: AccountBalance[];
 }
 
-// Ledger Account - for double-entry accounting chart of accounts
-export type LedgerAccountCategory = 'asset' | 'liability' | 'equity' | 'income' | 'expense';
+// Ledger Account - for reference/lookup of bank accounts
 export type LedgerAccountNormalBalance = 'debit' | 'credit';
 
 export interface LedgerAccount {
   id: string;
   name: string;
-  accountNumber?: string;                    // Optional account code (e.g., "1000", "2100")
-  normalBalance: LedgerAccountNormalBalance; // Debit or Credit normal balance
-  category: LedgerAccountCategory;           // Account category
+  accountNumber?: string;                    // Bank account number
+  clabe?: string;                            // CLABE (Mexican interbank code, 18 digits)
+  normalBalance: LedgerAccountNormalBalance; // Debit or Credit card
   isActive: boolean;                         // Whether account is active
-  description?: string;                      // Optional description
 }

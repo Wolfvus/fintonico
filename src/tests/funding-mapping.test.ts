@@ -1,6 +1,5 @@
 import './setupLocalStorage';
 import { describe, it, expect, beforeEach, beforeAll } from 'vitest';
-import { getCombinedTransactions } from '../selectors/finance';
 
 const ensureLocalStorage = () => {
   if (typeof globalThis.localStorage !== 'undefined') return;
@@ -29,36 +28,25 @@ const ensureLocalStorage = () => {
 
 ensureLocalStorage();
 
-let useLedgerStoreRef!: typeof import('../stores/ledgerStore').useLedgerStore;
 let useExpenseStoreRef!: typeof import('../stores/expenseStore').useExpenseStore;
 let useIncomeStoreRef!: typeof import('../stores/incomeStore').useIncomeStore;
 let useCurrencyStoreRef!: typeof import('../stores/currencyStore').useCurrencyStore;
-let useAccountStoreRef!: typeof import('../stores/accountStore').useAccountStore;
 
 beforeAll(async () => {
-  const ledgerModule = await import('../stores/ledgerStore');
   const expenseModule = await import('../stores/expenseStore');
   const incomeModule = await import('../stores/incomeStore');
   const currencyModule = await import('../stores/currencyStore');
-  const accountModule = await import('../stores/accountStore');
 
-  useLedgerStoreRef = ledgerModule.useLedgerStore;
   useExpenseStoreRef = expenseModule.useExpenseStore;
   useIncomeStoreRef = incomeModule.useIncomeStore;
   useCurrencyStoreRef = currencyModule.useCurrencyStore;
-  useAccountStoreRef = accountModule.useAccountStore;
 });
 
 const resetStores = () => {
   localStorage.clear();
 
-  const ledger = useLedgerStoreRef.getState();
-  ledger.clearAllData();
-  ledger.initializeDefaultAccounts();
-
   useExpenseStoreRef.setState({ expenses: [], loading: false });
   useIncomeStoreRef.setState({ incomes: [], loading: false });
-  useAccountStoreRef.setState({ accounts: [] });
 
   useCurrencyStoreRef.setState(state => ({
     ...state,
@@ -71,56 +59,32 @@ const resetStores = () => {
   }));
 };
 
-describe('funding mapping for income and expenses', () => {
+describe('income and expense tracking', () => {
   beforeEach(() => {
     resetStores();
   });
 
-  it('records the funding account for expense transactions', async () => {
+  it('records expenses without requiring a funding account', async () => {
     const expenseStore = useExpenseStoreRef.getState();
-    const accountStore = useAccountStoreRef.getState();
-
-    const cardAccount = accountStore.addAccount({
-      name: 'Visa Credit Card',
-      type: 'credit-card',
-      currency: 'MXN',
-      balance: -250,
-    });
 
     await expenseStore.addExpense({
       what: 'Conference travel',
       amount: 250,
       currency: 'MXN',
-      rating: 'important',
+      rating: 'non_essential',
       date: '2025-10-05',
-      fundingAccountId: cardAccount.id,
     });
 
-    const ledger = useLedgerStoreRef.getState();
-    const transaction = ledger.getTransactions().find(tx => tx.description === 'Conference travel');
-    expect(transaction).toBeDefined();
-
-    const creditPosting = transaction?.postings.find(posting => posting.accountId === cardAccount.id);
-    expect(creditPosting?.bookedCreditAmount?.toMajorUnits()).toBeCloseTo(250, 2);
-
-    const derivedExpense = expenseStore._deriveExpensesFromLedger()[0];
-    expect(derivedExpense.fundingAccountId).toBe(cardAccount.id);
-
-    const combinedExpenses = getCombinedTransactions(new Date('2025-10-01'), new Date('2025-10-31'), 'expense');
-    expect(combinedExpenses[0].fundingAccountId).toBe(cardAccount.id);
-    expect(combinedExpenses[0].fundingAccountName?.toLowerCase()).toContain('credit');
+    const expenses = expenseStore._deriveExpensesFromLedger();
+    expect(expenses).toHaveLength(1);
+    expect(expenses[0].what).toBe('Conference travel');
+    expect(expenses[0].amount).toBe(250);
+    expect(expenses[0].currency).toBe('MXN');
+    expect(expenses[0].rating).toBe('non_essential');
   });
 
-  it('records the deposit account for income transactions', async () => {
+  it('records income without requiring a deposit account', async () => {
     const incomeStore = useIncomeStoreRef.getState();
-    const accountStore = useAccountStoreRef.getState();
-
-    const checkingAccount = accountStore.addAccount({
-      name: 'Checking Account',
-      type: 'bank',
-      currency: 'MXN',
-      balance: 0,
-    });
 
     await incomeStore.addIncome({
       source: 'Consulting invoice',
@@ -128,20 +92,41 @@ describe('funding mapping for income and expenses', () => {
       currency: 'MXN',
       frequency: 'one-time',
       date: '2025-10-10',
-      depositAccountId: checkingAccount.id,
     });
 
-    const ledger = useLedgerStoreRef.getState();
-    const transaction = ledger.getTransactions().find(tx => tx.description === 'Consulting invoice');
-    expect(transaction).toBeDefined();
-    const depositPosting = transaction?.postings.find(posting => posting.accountId === checkingAccount.id);
-    expect(depositPosting?.bookedDebitAmount?.toMajorUnits()).toBeCloseTo(500, 2);
+    const incomes = incomeStore._deriveIncomesFromLedger();
+    expect(incomes).toHaveLength(1);
+    expect(incomes[0].source).toBe('Consulting invoice');
+    expect(incomes[0].amount).toBe(500);
+    expect(incomes[0].currency).toBe('MXN');
+    expect(incomes[0].frequency).toBe('one-time');
+  });
 
-    const derivedIncome = incomeStore._deriveIncomesFromLedger()[0];
-    expect(derivedIncome.depositAccountId).toBe(checkingAccount.id);
+  it('calculates monthly totals correctly', async () => {
+    const incomeStore = useIncomeStoreRef.getState();
+    const expenseStore = useExpenseStoreRef.getState();
 
-    const combinedIncome = getCombinedTransactions(new Date('2025-10-01'), new Date('2025-10-31'), 'income');
-    expect(combinedIncome[0].fundingAccountId).toBe(checkingAccount.id);
-    expect(combinedIncome[0].fundingAccountName?.toLowerCase()).toContain('checking');
+    // Add income for current month
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+
+    await incomeStore.addIncome({
+      source: 'Salary',
+      amount: 1000,
+      currency: 'MXN',
+      frequency: 'monthly',
+      date: dateStr,
+    });
+
+    await expenseStore.addExpense({
+      what: 'Groceries',
+      amount: 200,
+      currency: 'MXN',
+      rating: 'essential',
+      date: dateStr,
+    });
+
+    expect(incomeStore.getMonthlyTotal()).toBeCloseTo(1000, 2);
+    expect(expenseStore.getMonthlyTotal()).toBeCloseTo(200, 2);
   });
 });
