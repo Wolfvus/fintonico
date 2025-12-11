@@ -12,7 +12,8 @@ import {
   Sun,
   DollarSign,
   Landmark,
-  Settings
+  Settings,
+  BookOpen
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { CurrencySelector } from '../Currency/CurrencySelector';
@@ -47,6 +48,7 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: 'income', label: 'Income', icon: DollarSign },
     { id: 'expenses', label: 'Expenses', icon: Wallet },
     { id: 'networth', label: 'Net Worth', icon: Landmark },
+    { id: 'accounts', label: 'Accounts', icon: BookOpen },
     { id: 'assets', label: 'Assets', icon: TrendingUp },
     { id: 'liabilities', label: 'Liabilities', icon: TrendingDown },
   ];

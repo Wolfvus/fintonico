@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useAccountStore } from '../../stores/accountStore';
-import { useCurrencyStore, SUPPORTED_CURRENCIES } from '../../stores/currencyStore';
-import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, Check, Calendar } from 'lucide-react';
-import type { AccountType, Account, AccountBalance } from '../../types';
+import { useCurrencyStore } from '../../stores/currencyStore';
+import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, Check, Calendar, EyeOff } from 'lucide-react';
+import type { AccountType, Account } from '../../types';
 
 // Account type configurations
 const ASSET_TYPES: { value: AccountType; label: string; icon: string }[] = [
@@ -28,6 +28,7 @@ interface EditableCellProps {
   placeholder?: string;
   align?: 'left' | 'right';
   className?: string;
+  disabled?: boolean;
 }
 
 const EditableCell: React.FC<EditableCellProps> = ({
@@ -37,6 +38,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
   placeholder = 'Click to edit',
   align = 'left',
   className = '',
+  disabled = false,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localValue, setLocalValue] = useState(value);
@@ -70,7 +72,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
     setIsEditing(false);
   };
 
-  if (isEditing) {
+  if (isEditing && !disabled) {
     return (
       <input
         ref={inputRef}
@@ -89,8 +91,8 @@ const EditableCell: React.FC<EditableCellProps> = ({
 
   return (
     <div
-      onClick={() => setIsEditing(true)}
-      className={`px-2 py-1.5 text-sm cursor-text hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md transition-colors min-h-[32px] flex items-center ${
+      onClick={() => !disabled && setIsEditing(true)}
+      className={`px-2 py-1.5 text-sm ${disabled ? 'cursor-default' : 'cursor-text hover:bg-gray-100 dark:hover:bg-gray-700/50'} rounded-md transition-colors min-h-[32px] flex items-center ${
         align === 'right' ? 'justify-end' : 'justify-start'
       } ${className}`}
     >
@@ -106,6 +108,7 @@ interface DropdownSelectorProps<T extends string> {
   onChange: (value: T) => void;
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 function DropdownSelector<T extends string>({
@@ -114,6 +117,7 @@ function DropdownSelector<T extends string>({
   onChange,
   placeholder = 'Select...',
   className = '',
+  disabled = false,
 }: DropdownSelectorProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -133,17 +137,18 @@ function DropdownSelector<T extends string>({
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md transition-colors w-full"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={`flex items-center gap-2 px-2 py-1.5 text-sm ${disabled ? 'cursor-default opacity-60' : 'hover:bg-gray-100 dark:hover:bg-gray-700/50'} rounded-md transition-colors w-full`}
       >
         {selectedOption?.icon && <span>{selectedOption.icon}</span>}
         <span className="flex-1 text-left text-gray-700 dark:text-gray-300 truncate">
           {selectedOption?.label || placeholder}
         </span>
-        <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+        {!disabled && <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />}
       </button>
 
-      {isOpen && (
+      {isOpen && !disabled && (
         <div className="absolute top-full left-0 mt-1 w-full min-w-[120px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 py-1 max-h-48 overflow-y-auto">
           {options.map((option) => (
             <button
@@ -170,9 +175,10 @@ function DropdownSelector<T extends string>({
 interface DayOfMonthSelectorProps {
   value: number | undefined;
   onChange: (value: number | undefined) => void;
+  disabled?: boolean;
 }
 
-const DayOfMonthSelector: React.FC<DayOfMonthSelectorProps> = ({ value, onChange }) => {
+const DayOfMonthSelector: React.FC<DayOfMonthSelectorProps> = ({ value, onChange, disabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -189,18 +195,19 @@ const DayOfMonthSelector: React.FC<DayOfMonthSelectorProps> = ({ value, onChange
   return (
     <div className="relative" ref={dropdownRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md transition-colors"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={`flex items-center gap-1 px-2 py-1.5 text-sm ${disabled ? 'cursor-default opacity-60' : 'hover:bg-gray-100 dark:hover:bg-gray-700/50'} rounded-md transition-colors`}
       >
         <Calendar className="w-3.5 h-3.5 text-gray-400" />
         <span className="text-gray-600 dark:text-gray-400">
-          {value ? `Day ${value}` : 'No due'}
+          {value ? `Day ${value}` : '-'}
         </span>
-        <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        {!disabled && <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
       </button>
 
-      {isOpen && (
-        <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 p-2 w-48">
+      {isOpen && !disabled && (
+        <div className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 p-2 w-48">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 px-1">Payment due day</div>
           <div className="grid grid-cols-7 gap-1">
             {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
@@ -227,7 +234,7 @@ const DayOfMonthSelector: React.FC<DayOfMonthSelectorProps> = ({ value, onChange
             }}
             className="w-full mt-2 px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
           >
-            Clear due date
+            Clear
           </button>
         </div>
       )}
@@ -239,17 +246,21 @@ const DayOfMonthSelector: React.FC<DayOfMonthSelectorProps> = ({ value, onChange
 interface PaidCheckboxProps {
   isPaid: boolean;
   onChange: (isPaid: boolean) => void;
+  disabled?: boolean;
 }
 
-const PaidCheckbox: React.FC<PaidCheckboxProps> = ({ isPaid, onChange }) => {
+const PaidCheckbox: React.FC<PaidCheckboxProps> = ({ isPaid, onChange, disabled }) => {
   return (
     <button
-      onClick={() => onChange(!isPaid)}
+      onClick={() => !disabled && onChange(!isPaid)}
+      disabled={disabled}
       className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
         isPaid
           ? 'bg-green-500 border-green-500 text-white'
+          : disabled
+          ? 'border-gray-200 dark:border-gray-700'
           : 'border-gray-300 dark:border-gray-600 hover:border-green-400'
-      }`}
+      } ${disabled ? 'cursor-default opacity-60' : ''}`}
       title={isPaid ? 'Mark as unpaid' : 'Mark as paid'}
     >
       {isPaid && <Check className="w-3 h-3" />}
@@ -257,70 +268,25 @@ const PaidCheckbox: React.FC<PaidCheckboxProps> = ({ isPaid, onChange }) => {
   );
 };
 
-// Balance Row Component (for multi-currency)
-interface BalanceRowProps {
-  balance: AccountBalance;
-  isLiability: boolean;
-  onUpdateAmount: (amount: number) => void;
-  onUpdateCurrency: (currency: string) => void;
-  onDelete: () => void;
-  canDelete: boolean;
-  formatAmount: (amount: number) => string;
-  baseCurrency: string;
-  convertAmount: (amount: number, from: string, to: string) => number;
-  enabledCurrencies: string[];
+// Exclude Toggle Component
+interface ExcludeToggleProps {
+  isExcluded: boolean;
+  onChange: () => void;
 }
 
-const BalanceRow: React.FC<BalanceRowProps> = ({
-  balance,
-  isLiability,
-  onUpdateAmount,
-  onUpdateCurrency,
-  onDelete,
-  canDelete,
-  formatAmount,
-  baseCurrency,
-  convertAmount,
-  enabledCurrencies,
-}) => {
-  const currencyOptions = enabledCurrencies.map((code) => ({
-    value: code,
-    label: code,
-  }));
-
-  const convertedAmount = convertAmount(balance.amount, balance.currency, baseCurrency);
-
+const ExcludeToggle: React.FC<ExcludeToggleProps> = ({ isExcluded, onChange }) => {
   return (
-    <div className="flex items-center gap-2 py-1">
-      <DropdownSelector
-        value={balance.currency}
-        options={currencyOptions}
-        onChange={onUpdateCurrency}
-        className="w-20"
-      />
-      <EditableCell
-        value={String(Math.abs(balance.amount))}
-        onChange={(val) => {
-          const numVal = parseFloat(val) || 0;
-          onUpdateAmount(isLiability ? -Math.abs(numVal) : numVal);
-        }}
-        type="number"
-        placeholder="0.00"
-        align="right"
-        className={`flex-1 ${isLiability ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}
-      />
-      <div className={`w-24 text-right text-sm ${isLiability ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-        {formatAmount(Math.abs(convertedAmount))}
-      </div>
-      {canDelete && (
-        <button
-          onClick={onDelete}
-          className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-        >
-          <Trash2 className="w-3 h-3" />
-        </button>
-      )}
-    </div>
+    <button
+      onClick={onChange}
+      className={`p-1.5 rounded-md transition-colors ${
+        isExcluded
+          ? 'bg-gray-200 dark:bg-gray-700 text-gray-500'
+          : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
+      }`}
+      title={isExcluded ? 'Include in totals' : 'Exclude from totals'}
+    >
+      <EyeOff className="w-4 h-4" />
+    </button>
   );
 };
 
@@ -330,9 +296,7 @@ interface AccountRowProps {
   typeOptions: { value: AccountType; label: string; icon: string }[];
   isLiability?: boolean;
   onUpdate: (updates: Partial<Account>) => void;
-  onUpdateBalance: (currency: string, amount: number) => void;
-  onAddBalance: (currency: string) => void;
-  onRemoveBalance: (currency: string) => void;
+  onToggleExclude: () => void;
   onDelete: () => void;
   formatAmount: (amount: number) => string;
   baseCurrency: string;
@@ -345,154 +309,124 @@ const AccountRow: React.FC<AccountRowProps> = ({
   typeOptions,
   isLiability = false,
   onUpdate,
-  onUpdateBalance,
-  onAddBalance,
-  onRemoveBalance,
+  onToggleExclude,
   onDelete,
   formatAmount,
   baseCurrency,
   convertAmount,
   enabledCurrencies,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const isExcluded = account.excludeFromTotal || false;
+  const convertedAmount = convertAmount(account.balance, account.currency, baseCurrency);
 
-  // Calculate total in base currency
-  const total = account.balances.reduce((sum, balance) => {
-    return sum + convertAmount(balance.amount, balance.currency, baseCurrency);
-  }, 0);
-
-  // Get unused currencies for adding new balance
-  const usedCurrencies = account.balances.map((b) => b.currency);
-  const availableCurrencies = enabledCurrencies.filter((c) => !usedCurrencies.includes(c));
-
-  // Check if due date is approaching (within 5 days)
-  const today = new Date().getDate();
-  const isDueSoon = isLiability && account.recurringDueDate && !account.isPaidThisMonth &&
-    (account.recurringDueDate - today <= 5 && account.recurringDueDate - today >= 0);
+  const currencyOptions = enabledCurrencies.map((code) => ({
+    value: code,
+    label: code,
+  }));
 
   return (
-    <>
-      <tr className="group border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
-        {/* Name */}
-        <td className="py-1 px-1">
-          <EditableCell
-            value={account.name}
-            onChange={(name) => onUpdate({ name })}
-            placeholder="Account name"
+    <tr className={`group border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors ${isExcluded ? 'opacity-50' : ''}`}>
+      {/* Name */}
+      <td className="py-1 px-1">
+        <EditableCell
+          value={account.name}
+          onChange={(name) => onUpdate({ name })}
+          placeholder="Account name"
+          disabled={isExcluded}
+        />
+      </td>
+
+      {/* Type */}
+      <td className="py-1 px-1 w-32">
+        <DropdownSelector
+          value={account.type}
+          options={typeOptions}
+          onChange={(type) => onUpdate({ type })}
+          disabled={isExcluded}
+        />
+      </td>
+
+      {/* Currency */}
+      <td className="py-1 px-1 w-24">
+        <DropdownSelector
+          value={account.currency}
+          options={currencyOptions}
+          onChange={(currency) => onUpdate({ currency })}
+          disabled={isExcluded}
+        />
+      </td>
+
+      {/* Balance */}
+      <td className="py-1 px-1 w-32">
+        <EditableCell
+          value={String(Math.abs(account.balance))}
+          onChange={(val) => {
+            const numVal = parseFloat(val) || 0;
+            onUpdate({ balance: isLiability ? -Math.abs(numVal) : numVal });
+          }}
+          type="number"
+          placeholder="0.00"
+          align="right"
+          disabled={isExcluded}
+          className={isLiability ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}
+        />
+      </td>
+
+      {/* Converted (if different currency) */}
+      <td className="py-1 px-1 w-28">
+        <div className={`px-2 py-1.5 text-sm text-right ${
+          isLiability ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
+        }`}>
+          {account.currency !== baseCurrency ? formatAmount(Math.abs(convertedAmount)) : '-'}
+        </div>
+      </td>
+
+      {/* Due Date (liabilities only) */}
+      {isLiability && (
+        <td className="py-1 px-1 w-20">
+          <DayOfMonthSelector
+            value={account.recurringDueDate}
+            onChange={(recurringDueDate) => onUpdate({ recurringDueDate })}
+            disabled={isExcluded}
           />
         </td>
+      )}
 
-        {/* Type */}
-        <td className="py-1 px-1">
-          <DropdownSelector
-            value={account.type}
-            options={typeOptions}
-            onChange={(type) => onUpdate({ type })}
-            className="w-full"
-          />
-        </td>
-
-        {/* Currency & Balances */}
-        <td className="py-1 px-1">
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-1 px-2 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md transition-colors"
-          >
-            <span>{account.balances.length} {account.balances.length === 1 ? 'currency' : 'currencies'}</span>
-            <ChevronDown className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-          </button>
-        </td>
-
-        {/* Total */}
-        <td className="py-1 px-1">
-          <div className={`px-2 py-1.5 text-sm text-right font-medium ${
-            isLiability ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
-          }`}>
-            {formatAmount(Math.abs(total))}
+      {/* Paid Status (liabilities only) */}
+      {isLiability && (
+        <td className="py-1 px-1 w-12">
+          <div className="flex items-center justify-center">
+            <PaidCheckbox
+              isPaid={account.isPaidThisMonth || false}
+              onChange={(isPaidThisMonth) => onUpdate({
+                isPaidThisMonth,
+                lastPaidDate: isPaidThisMonth ? new Date().toISOString().split('T')[0] : account.lastPaidDate
+              })}
+              disabled={isExcluded}
+            />
           </div>
         </td>
-
-        {/* Due Date (liabilities only) */}
-        {isLiability && (
-          <td className="py-1 px-1">
-            <DayOfMonthSelector
-              value={account.recurringDueDate}
-              onChange={(recurringDueDate) => onUpdate({ recurringDueDate })}
-            />
-          </td>
-        )}
-
-        {/* Paid Status (liabilities only) */}
-        {isLiability && (
-          <td className="py-1 px-1">
-            <div className="flex items-center justify-center">
-              <PaidCheckbox
-                isPaid={account.isPaidThisMonth || false}
-                onChange={(isPaidThisMonth) => onUpdate({
-                  isPaidThisMonth,
-                  lastPaidDate: isPaidThisMonth ? new Date().toISOString().split('T')[0] : account.lastPaidDate
-                })}
-              />
-            </div>
-          </td>
-        )}
-
-        {/* Delete */}
-        <td className="py-1 px-1 w-10">
-          <button
-            onClick={onDelete}
-            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-all"
-            title="Delete account"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </td>
-      </tr>
-
-      {/* Expanded Balances Row */}
-      {isExpanded && (
-        <tr className="bg-gray-50/50 dark:bg-gray-900/30">
-          <td colSpan={isLiability ? 7 : 5} className="px-4 py-2">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-2">
-                <span className="w-20">Currency</span>
-                <span className="flex-1">Balance</span>
-                <span className="w-24 text-right">In {baseCurrency}</span>
-                <span className="w-6"></span>
-              </div>
-              {account.balances.map((balance, index) => (
-                <BalanceRow
-                  key={`${balance.currency}-${index}`}
-                  balance={balance}
-                  isLiability={isLiability}
-                  onUpdateAmount={(amount) => onUpdateBalance(balance.currency, amount)}
-                  onUpdateCurrency={(newCurrency) => {
-                    onRemoveBalance(balance.currency);
-                    onAddBalance(newCurrency);
-                    onUpdateBalance(newCurrency, balance.amount);
-                  }}
-                  onDelete={() => onRemoveBalance(balance.currency)}
-                  canDelete={account.balances.length > 1}
-                  formatAmount={formatAmount}
-                  baseCurrency={baseCurrency}
-                  convertAmount={convertAmount}
-                  enabledCurrencies={enabledCurrencies}
-                />
-              ))}
-              {availableCurrencies.length > 0 && (
-                <button
-                  onClick={() => onAddBalance(availableCurrencies[0])}
-                  className="flex items-center gap-1 px-2 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-                >
-                  <Plus className="w-3 h-3" />
-                  Add currency
-                </button>
-              )}
-            </div>
-          </td>
-        </tr>
       )}
-    </>
+
+      {/* Exclude Toggle */}
+      <td className="py-1 px-1 w-10">
+        <ExcludeToggle
+          isExcluded={isExcluded}
+          onChange={onToggleExclude}
+        />
+      </td>
+
+      {/* Delete */}
+      <td className="py-1 px-1 w-10">
+        <button
+          onClick={onDelete}
+          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-all"
+          title="Delete account"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </td>
+    </tr>
   );
 };
 
@@ -500,7 +434,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
 interface AddAccountRowProps {
   typeOptions: { value: AccountType; label: string; icon: string }[];
   isLiability?: boolean;
-  onAdd: (name: string, type: AccountType, amount: number, currency: string) => void;
+  onAdd: (account: Omit<Account, 'id'>) => void;
   baseCurrency: string;
   enabledCurrencies: string[];
   colSpan: number;
@@ -517,8 +451,8 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [name, setName] = useState('');
   const [type, setType] = useState<AccountType>(typeOptions[0].value);
-  const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState(baseCurrency);
+  const [amount, setAmount] = useState('');
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -530,11 +464,16 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({
   const handleAdd = () => {
     if (name.trim()) {
       const numAmount = parseFloat(amount) || 0;
-      onAdd(name.trim(), type, isLiability ? -Math.abs(numAmount) : numAmount, currency);
+      onAdd({
+        name: name.trim(),
+        type,
+        currency,
+        balance: isLiability ? -Math.abs(numAmount) : numAmount,
+      });
       setName('');
       setType(typeOptions[0].value);
-      setAmount('');
       setCurrency(baseCurrency);
+      setAmount('');
       setIsAdding(false);
     }
   };
@@ -583,36 +522,35 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({
           className="w-full px-2 py-1.5 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
         />
       </td>
-      <td className="py-1 px-1">
+      <td className="py-1 px-1 w-32">
         <DropdownSelector
           value={type}
           options={typeOptions}
           onChange={setType}
-          className="w-full"
         />
       </td>
-      <td className="py-1 px-1">
-        <div className="flex items-center gap-2">
-          <DropdownSelector
-            value={currency}
-            options={currencyOptions}
-            onChange={setCurrency}
-            className="w-20"
-          />
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="0.00"
-            step="0.01"
-            className="flex-1 px-2 py-1.5 text-sm text-right bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
-          />
-        </div>
+      <td className="py-1 px-1 w-24">
+        <DropdownSelector
+          value={currency}
+          options={currencyOptions}
+          onChange={setCurrency}
+        />
       </td>
-      <td className="py-1 px-1"></td>
-      {isLiability && <td className="py-1 px-1"></td>}
-      {isLiability && <td className="py-1 px-1"></td>}
+      <td className="py-1 px-1 w-32">
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="0.00"
+          step="0.01"
+          className="w-full px-2 py-1.5 text-sm text-right bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
+        />
+      </td>
+      <td className="py-1 px-1 w-28"></td>
+      {isLiability && <td className="py-1 px-1 w-20"></td>}
+      {isLiability && <td className="py-1 px-1 w-12"></td>}
+      <td className="py-1 px-1 w-10"></td>
       <td className="py-1 px-1 w-10">
         <button
           onClick={handleAdd}
@@ -628,8 +566,8 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({
 };
 
 // Main Component
-export const AccountsPage: React.FC = () => {
-  const { accounts, addAccount, deleteAccount, updateAccount, updateAccountBalance } = useAccountStore();
+export const NetWorthPage: React.FC = () => {
+  const { accounts, addAccount, deleteAccount, updateAccount, toggleExcludeFromTotal } = useAccountStore();
   const { baseCurrency, convertAmount, formatAmount, enabledCurrencies } = useCurrencyStore();
 
   // Define which account types are assets vs liabilities
@@ -646,20 +584,24 @@ export const AccountsPage: React.FC = () => {
     [accounts]
   );
 
-  // Calculate totals
-  const { totalAssets, totalLiabilities, netWorth } = useMemo(() => {
+  // Calculate totals (excluding excluded accounts)
+  const { totalAssets, totalLiabilities, netWorth, excludedCount } = useMemo(() => {
     let totalAssets = 0;
     let totalLiabilities = 0;
+    let excludedCount = 0;
 
     accounts.forEach((account) => {
-      const accountTotal = account.balances.reduce((sum, balance) => {
-        return sum + convertAmount(balance.amount, balance.currency, baseCurrency);
-      }, 0);
+      if (account.excludeFromTotal) {
+        excludedCount++;
+        return;
+      }
+
+      const convertedAmount = convertAmount(account.balance, account.currency, baseCurrency);
 
       if (assetTypes.includes(account.type)) {
-        totalAssets += accountTotal;
+        totalAssets += convertedAmount;
       } else if (liabilityTypes.includes(account.type)) {
-        totalLiabilities += Math.abs(accountTotal);
+        totalLiabilities += Math.abs(convertedAmount);
       }
     });
 
@@ -667,54 +609,14 @@ export const AccountsPage: React.FC = () => {
       totalAssets,
       totalLiabilities,
       netWorth: totalAssets - totalLiabilities,
+      excludedCount,
     };
   }, [accounts, baseCurrency, convertAmount]);
 
   // Count unpaid liabilities
   const unpaidCount = liabilityAccounts.filter(
-    (a) => a.recurringDueDate && !a.isPaidThisMonth
+    (a) => a.recurringDueDate && !a.isPaidThisMonth && !a.excludeFromTotal
   ).length;
-
-  // Handlers
-  const handleUpdateAccount = (accountId: string, updates: Partial<Account>) => {
-    const account = accounts.find((a) => a.id === accountId);
-    if (account) {
-      updateAccount(accountId, { ...account, ...updates });
-    }
-  };
-
-  const handleAddBalance = (accountId: string, currency: string) => {
-    const account = accounts.find((a) => a.id === accountId);
-    if (account && !account.balances.find((b) => b.currency === currency)) {
-      updateAccount(accountId, {
-        ...account,
-        balances: [...account.balances, { currency, amount: 0 }],
-      });
-    }
-  };
-
-  const handleRemoveBalance = (accountId: string, currency: string) => {
-    const account = accounts.find((a) => a.id === accountId);
-    if (account && account.balances.length > 1) {
-      updateAccount(accountId, {
-        ...account,
-        balances: account.balances.filter((b) => b.currency !== currency),
-      });
-    }
-  };
-
-  const handleAddAccount = (
-    name: string,
-    type: AccountType,
-    amount: number,
-    currency: string
-  ) => {
-    addAccount({
-      name,
-      type,
-      balances: [{ currency, amount }],
-    });
-  };
 
   return (
     <div className="space-y-6">
@@ -726,7 +628,7 @@ export const AccountsPage: React.FC = () => {
             {formatAmount(totalAssets)}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            {assetAccounts.length} {assetAccounts.length === 1 ? 'account' : 'accounts'}
+            {assetAccounts.filter(a => !a.excludeFromTotal).length} of {assetAccounts.length} accounts
           </p>
         </div>
 
@@ -736,7 +638,7 @@ export const AccountsPage: React.FC = () => {
             {formatAmount(totalLiabilities)}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            {liabilityAccounts.length} {liabilityAccounts.length === 1 ? 'account' : 'accounts'}
+            {liabilityAccounts.filter(a => !a.excludeFromTotal).length} of {liabilityAccounts.length} accounts
             {unpaidCount > 0 && (
               <span className="ml-2 text-amber-600 dark:text-amber-400">
                 ({unpaidCount} unpaid)
@@ -753,7 +655,7 @@ export const AccountsPage: React.FC = () => {
             {formatAmount(netWorth)}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            Assets - Liabilities
+            {excludedCount > 0 && `${excludedCount} excluded`}
           </p>
         </div>
       </div>
@@ -774,12 +676,16 @@ export const AccountsPage: React.FC = () => {
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
                   Type
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
-                  Balances
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                  Currency
                 </th>
                 <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
-                  Total ({baseCurrency})
+                  Balance
                 </th>
+                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
+                  In {baseCurrency}
+                </th>
+                <th className="w-10"></th>
                 <th className="w-10"></th>
               </tr>
             </thead>
@@ -789,10 +695,8 @@ export const AccountsPage: React.FC = () => {
                   key={account.id}
                   account={account}
                   typeOptions={ASSET_TYPES}
-                  onUpdate={(updates) => handleUpdateAccount(account.id, updates)}
-                  onUpdateBalance={(currency, amount) => updateAccountBalance(account.id, currency, amount)}
-                  onAddBalance={(currency) => handleAddBalance(account.id, currency)}
-                  onRemoveBalance={(currency) => handleRemoveBalance(account.id, currency)}
+                  onUpdate={(updates) => updateAccount(account.id, updates)}
+                  onToggleExclude={() => toggleExcludeFromTotal(account.id)}
                   onDelete={() => deleteAccount(account.id)}
                   formatAmount={formatAmount}
                   baseCurrency={baseCurrency}
@@ -802,10 +706,10 @@ export const AccountsPage: React.FC = () => {
               ))}
               <AddAccountRow
                 typeOptions={ASSET_TYPES}
-                onAdd={handleAddAccount}
+                onAdd={addAccount}
                 baseCurrency={baseCurrency}
                 enabledCurrencies={enabledCurrencies}
-                colSpan={5}
+                colSpan={7}
               />
             </tbody>
           </table>
@@ -828,18 +732,22 @@ export const AccountsPage: React.FC = () => {
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
                   Type
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
-                  Balances
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                  Currency
                 </th>
                 <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
-                  Total ({baseCurrency})
+                  Balance
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
+                  In {baseCurrency}
+                </th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20">
                   Due
                 </th>
-                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12">
                   Paid
                 </th>
+                <th className="w-10"></th>
                 <th className="w-10"></th>
               </tr>
             </thead>
@@ -850,10 +758,8 @@ export const AccountsPage: React.FC = () => {
                   account={account}
                   typeOptions={LIABILITY_TYPES}
                   isLiability
-                  onUpdate={(updates) => handleUpdateAccount(account.id, updates)}
-                  onUpdateBalance={(currency, amount) => updateAccountBalance(account.id, currency, amount)}
-                  onAddBalance={(currency) => handleAddBalance(account.id, currency)}
-                  onRemoveBalance={(currency) => handleRemoveBalance(account.id, currency)}
+                  onUpdate={(updates) => updateAccount(account.id, updates)}
+                  onToggleExclude={() => toggleExcludeFromTotal(account.id)}
                   onDelete={() => deleteAccount(account.id)}
                   formatAmount={formatAmount}
                   baseCurrency={baseCurrency}
@@ -864,10 +770,10 @@ export const AccountsPage: React.FC = () => {
               <AddAccountRow
                 typeOptions={LIABILITY_TYPES}
                 isLiability
-                onAdd={handleAddAccount}
+                onAdd={addAccount}
                 baseCurrency={baseCurrency}
                 enabledCurrencies={enabledCurrencies}
-                colSpan={7}
+                colSpan={9}
               />
             </tbody>
           </table>

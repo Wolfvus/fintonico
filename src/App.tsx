@@ -6,7 +6,8 @@ import { AuthForm } from './components/Auth/AuthForm';
 import { ExpenseForm } from './components/ExpenseForm/ExpenseForm';
 import { IncomeForm } from './components/IncomeForm/IncomeForm';
 import { Dashboard } from './components/Dashboard/Dashboard';
-import { AccountsPage } from './components/Accounts/AccountsPage';
+import { NetWorthPage } from './components/NetWorth/NetWorthPage';
+import { ChartOfAccountsPage } from './components/ChartOfAccounts/ChartOfAccountsPage';
 import { AssetsPage } from './components/Assets/AssetsPage';
 import { LiabilitiesPage } from './components/Liabilities/LiabilitiesPage';
 import { DataList } from './components/Shared/DataList';
@@ -121,7 +122,7 @@ function IncomeTab() {
 function App() {
   const { user, loading, checkUser } = useAuthStore();
   const { initializeDefaultAccounts } = useLedgerStore();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'expenses' | 'income' | 'assets' | 'liabilities' | 'networth'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'expenses' | 'income' | 'assets' | 'liabilities' | 'networth' | 'accounts'>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => {
@@ -240,7 +241,13 @@ function App() {
 
           {activeTab === 'networth' && (
             <ErrorBoundary>
-              <AccountsPage />
+              <NetWorthPage />
+            </ErrorBoundary>
+          )}
+
+          {activeTab === 'accounts' && (
+            <ErrorBoundary>
+              <ChartOfAccountsPage />
             </ErrorBoundary>
           )}
         </div>
