@@ -52,6 +52,7 @@ export interface Account {
   recurringDueDate?: number;       // Day of month (1-31) for recurring payments
   isPaidThisMonth?: boolean;       // Whether this month's payment has been made
   lastPaidDate?: string;           // Date of last payment (YYYY-MM-DD)
+  estimatedYield?: number;         // Annual yield percentage (e.g., 5.5 for 5.5%)
   // Kept for backwards compatibility during migration
   balances?: AccountBalance[];
 }

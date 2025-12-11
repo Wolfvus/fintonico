@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from './stores/authStore';
 import { useLedgerStore } from './stores/ledgerStore';
+import { useThemeStore } from './stores/themeStore';
 import { checkAndGenerateRecurring } from './utils/recurringUtils';
 import { AuthForm } from './components/Auth/AuthForm';
 import { ExpenseForm } from './components/ExpenseForm/ExpenseForm';
@@ -120,13 +121,10 @@ function IncomeTab() {
 function App() {
   const { user, loading, checkUser } = useAuthStore();
   const { initializeDefaultAccounts } = useLedgerStore();
+  const { isDark, toggleTheme, initializeTheme } = useThemeStore();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'expenses' | 'income' | 'networth' | 'accounts'>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('fintonico-theme');
-    return saved !== 'light'; // Default to dark theme unless explicitly set to light
-  });
 
   useEffect(() => {
     checkUser();
@@ -134,24 +132,16 @@ function App() {
     initializeDefaultAccounts();
     // Check and generate recurring transactions on app load
     checkAndGenerateRecurring();
-  }, [checkUser, initializeDefaultAccounts]);
-
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('fintonico-theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('fintonico-theme', 'light');
-    }
-  }, [isDark]);
+    // Initialize theme from localStorage or system preference
+    initializeTheme();
+  }, [checkUser, initializeDefaultAccounts, initializeTheme]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-surface-bg)' }}>
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-3 border-t-transparent rounded-full animate-spin border-green-500"></div>
-          <span className="text-gray-900 dark:text-white">Loading...</span>
+          <div className="w-12 h-12 border-3 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-primary)' }}></div>
+          <span className="text-primary">Loading...</span>
         </div>
       </div>
     );
@@ -162,47 +152,47 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-blue-50 dark:bg-gray-900">
-      <Navigation 
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-bg)' }}>
+      <Navigation
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab as typeof activeTab)}
         isMobileMenuOpen={isMobileMenuOpen}
         onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         isDark={isDark}
-        onThemeToggle={() => setIsDark(!isDark)}
+        onThemeToggle={toggleTheme}
         onLogoClick={() => setActiveTab('dashboard')}
         onDateClick={() => setActiveTab('dashboard')}
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
-      
+
       {/* Desktop Top Bar */}
-      <div className="hidden lg:block fixed top-0 left-16 right-0 z-30 bg-blue-100 dark:bg-gray-800 border-b border-blue-200 dark:border-gray-700">
+      <div className="hidden lg:block fixed top-0 left-16 right-0 z-30 nav-sidebar border-b" style={{ borderColor: 'var(--color-border)' }}>
         <div className="flex items-center justify-between px-6 py-3 gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-900 dark:text-white">FINTONICO</span>
-            <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">• The Ultimate Personal Finance Dashboard</span>
+            <span className="text-sm font-medium text-primary">FINTONICO</span>
+            <span className="text-xs text-muted flex items-center">• The Ultimate Personal Finance Dashboard</span>
           </div>
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={() => setActiveTab('dashboard')}
-              className="h-8 px-3 flex items-center bg-blue-200 dark:bg-gray-700 rounded-lg hover:bg-blue-300 dark:hover:bg-gray-600 transition-colors"
+              className="h-8 px-3 flex items-center rounded-lg transition-colors btn-secondary"
             >
-              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                {new Date().toLocaleDateString('en-US', { 
-                  month: 'short', 
+              <span className="text-sm font-medium">
+                {new Date().toLocaleDateString('en-US', {
+                  month: 'short',
                   day: 'numeric',
                   year: 'numeric'
                 })}
               </span>
             </button>
-            <div className="h-6 w-px bg-blue-300 dark:bg-gray-600"></div>
+            <div className="h-6 w-px" style={{ backgroundColor: 'var(--color-border)' }}></div>
             <CurrencySelector />
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="p-2 rounded-lg hover:bg-blue-200 dark:hover:bg-gray-700 transition-colors"
+              className="p-2 rounded-lg hover:opacity-80 transition-colors text-secondary"
               aria-label="Open settings"
             >
-              <SettingsIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+              <SettingsIcon className="w-4 h-4" />
             </button>
           </div>
         </div>

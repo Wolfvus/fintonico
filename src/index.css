@@ -9,47 +9,53 @@
      CSS Custom Properties (Design Tokens)
      ======================================== */
   :root {
-    /* Brand Colors */
-    --color-primary: #2FA5A9;
-    --color-primary-hover: #268F92;
-    --color-primary-light: #4DB8BC;
+    /* Brand Colors - Refined Teal */
+    --color-primary: #0D9488;
+    --color-primary-hover: #0F766E;
+    --color-primary-light: #14B8A6;
 
-    --color-accent: #F5B700;
-    --color-accent-hover: #E5A600;
-    --color-accent-light: #FFD43B;
+    /* Accent - Warm Amber */
+    --color-accent: #F59E0B;
+    --color-accent-hover: #D97706;
+    --color-accent-light: #FBBF24;
 
-    /* Text Colors */
-    --color-text-primary: #1E2A38;
-    --color-text-secondary: #475569;
-    --color-text-muted: #64748B;
+    /* Text Colors - Warmer neutrals */
+    --color-text-primary: #1F2937;
+    --color-text-secondary: #4B5563;
+    --color-text-muted: #9CA3AF;
     --color-text-inverse: #FFFFFF;
 
-    /* Surface Colors (Light Mode) */
-    --color-surface-bg: #EFF6FF;
+    /* Surface Colors (Light Mode) - Clean warm whites */
+    --color-surface-bg: #F9FAFB;
     --color-surface-card: #FFFFFF;
-    --color-surface-elevated: #DBEAFE;
-    --color-surface-muted: #F1F5F9;
+    --color-surface-elevated: #F3F4F6;
+    --color-surface-muted: #F3F4F6;
 
-    /* Border Colors */
-    --color-border: #BFDBFE;
-    --color-border-light: #DBEAFE;
-    --color-border-focus: #2FA5A9;
+    /* Border Colors - Subtle grays */
+    --color-border: #E5E7EB;
+    --color-border-light: #F3F4F6;
+    --color-border-focus: #0D9488;
 
     /* Semantic Colors */
-    --color-success: #22C55E;
-    --color-success-bg: #DCFCE7;
+    --color-success: #10B981;
+    --color-success-bg: #ECFDF5;
     --color-error: #EF4444;
-    --color-error-bg: #FEE2E2;
+    --color-error-bg: #FEF2F2;
     --color-warning: #F59E0B;
-    --color-warning-bg: #FEF3C7;
+    --color-warning-bg: #FFFBEB;
     --color-info: #3B82F6;
-    --color-info-bg: #DBEAFE;
+    --color-info-bg: #EFF6FF;
 
     /* Focus ring */
-    --color-focus-ring: rgba(47, 165, 169, 0.25);
+    --color-focus-ring: rgba(13, 148, 136, 0.25);
   }
 
   .dark {
+    /* Brand Colors (Dark Mode) - Brighter teal for dark bg */
+    --color-primary: #14B8A6;
+    --color-primary-hover: #0D9488;
+    --color-primary-light: #2DD4BF;
+
     /* Text Colors (Dark Mode) */
     --color-text-primary: #F9FAFB;
     --color-text-secondary: #D1D5DB;
@@ -57,23 +63,24 @@
     --color-text-inverse: #111827;
 
     /* Surface Colors (Dark Mode) */
-    --color-surface-bg: #111827;
-    --color-surface-card: #1F2937;
-    --color-surface-elevated: #374151;
-    --color-surface-muted: #1F2937;
+    --color-surface-bg: #0F172A;
+    --color-surface-card: #1E293B;
+    --color-surface-elevated: #334155;
+    --color-surface-muted: #1E293B;
 
     /* Border Colors (Dark Mode) */
-    --color-border: #374151;
-    --color-border-light: #4B5563;
+    --color-border: #334155;
+    --color-border-light: #475569;
 
     /* Semantic Colors (Dark Mode - adjusted for dark backgrounds) */
-    --color-success-bg: rgba(34, 197, 94, 0.15);
+    --color-success: #10B981;
+    --color-success-bg: rgba(16, 185, 129, 0.15);
     --color-error-bg: rgba(239, 68, 68, 0.15);
     --color-warning-bg: rgba(245, 158, 11, 0.15);
     --color-info-bg: rgba(59, 130, 246, 0.15);
 
     /* Focus ring (Dark Mode) */
-    --color-focus-ring: rgba(77, 184, 188, 0.3);
+    --color-focus-ring: rgba(20, 184, 166, 0.3);
   }
 
   /* ========================================
@@ -256,6 +263,34 @@
 
   .text-warning {
     color: var(--color-warning);
+  }
+
+  /* ========================================
+     Navigation Components
+     ======================================== */
+  .nav-sidebar {
+    background-color: var(--color-surface-elevated);
+    border-color: var(--color-border);
+  }
+
+  .nav-item {
+    @apply w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200;
+    color: var(--color-text-secondary);
+  }
+
+  .nav-item:hover {
+    background-color: var(--color-surface-muted);
+  }
+
+  .nav-item-active {
+    @apply nav-item;
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+    border: 2px solid var(--color-success);
+  }
+
+  .nav-item-active:hover {
+    background-color: var(--color-success-bg);
   }
 
   /* ========================================

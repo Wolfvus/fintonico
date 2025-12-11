@@ -1,8 +1,22 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useAccountStore } from '../../stores/accountStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, Check, Calendar, EyeOff } from 'lucide-react';
 import type { AccountType, Account } from '../../types';
+
+// Format number with thousand separators
+const formatNumberWithCommas = (value: number | string): string => {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '';
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+// Parse formatted number back to raw number
+const parseFormattedNumber = (value: string): number => {
+  const cleaned = value.replace(/,/g, '');
+  return parseFloat(cleaned) || 0;
+};
 
 // Account type configurations
 const ASSET_TYPES: { value: AccountType; label: string; icon: string }[] = [
@@ -24,7 +38,7 @@ const LIABILITY_TYPES: { value: AccountType; label: string; icon: string }[] = [
 interface EditableCellProps {
   value: string;
   onChange: (value: string) => void;
-  type?: 'text' | 'number';
+  type?: 'text' | 'number' | 'currency' | 'percent';
   placeholder?: string;
   align?: 'left' | 'right';
   className?: string;
@@ -45,8 +59,18 @@ const EditableCell: React.FC<EditableCellProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setLocalValue(value);
-  }, [value]);
+    // Format the value when it changes (for currency type)
+    if (type === 'currency' && value) {
+      const num = parseFloat(value);
+      if (!isNaN(num)) {
+        setLocalValue(formatNumberWithCommas(num));
+      } else {
+        setLocalValue(value);
+      }
+    } else {
+      setLocalValue(value);
+    }
+  }, [value, type]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -57,7 +81,15 @@ const EditableCell: React.FC<EditableCellProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      onChange(localValue);
+      if (type === 'currency') {
+        onChange(String(parseFormattedNumber(localValue)));
+      } else if (type === 'percent') {
+        // Remove % sign if present and parse
+        const numVal = parseFloat(localValue.replace('%', '')) || 0;
+        onChange(String(numVal));
+      } else {
+        onChange(localValue);
+      }
       setIsEditing(false);
     } else if (e.key === 'Escape') {
       setLocalValue(value);
@@ -66,19 +98,79 @@ const EditableCell: React.FC<EditableCellProps> = ({
   };
 
   const handleBlur = () => {
-    if (localValue !== value) {
+    if (type === 'currency') {
+      const numValue = parseFormattedNumber(localValue);
+      if (String(numValue) !== value) {
+        onChange(String(numValue));
+      }
+    } else if (type === 'percent') {
+      const numVal = parseFloat(localValue.replace('%', '')) || 0;
+      if (String(numVal) !== value) {
+        onChange(String(numVal));
+      }
+    } else if (localValue !== value) {
       onChange(localValue);
     }
     setIsEditing(false);
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (type === 'currency') {
+      // Get cursor position before formatting
+      const cursorPos = e.target.selectionStart || 0;
+      const oldValue = localValue;
+
+      // Remove all non-numeric except decimal point
+      const rawValue = e.target.value.replace(/[^0-9.]/g, '');
+
+      // Handle decimal places
+      const parts = rawValue.split('.');
+      let formatted = parts[0];
+
+      // Add thousand separators
+      formatted = formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+      // Add decimal part if exists
+      if (parts.length > 1) {
+        formatted += '.' + parts[1].slice(0, 2); // Limit to 2 decimal places
+      }
+
+      setLocalValue(formatted);
+
+      // Adjust cursor position after formatting
+      setTimeout(() => {
+        if (inputRef.current) {
+          const newCommas = (formatted.match(/,/g) || []).length;
+          const oldCommas = (oldValue.match(/,/g) || []).length;
+          const newPos = cursorPos + (newCommas - oldCommas);
+          inputRef.current.setSelectionRange(newPos, newPos);
+        }
+      }, 0);
+    } else if (type === 'percent') {
+      // Allow only numbers and decimal point
+      const rawValue = e.target.value.replace(/[^0-9.]/g, '');
+      setLocalValue(rawValue);
+    } else {
+      setLocalValue(e.target.value);
+    }
+  };
+
+  // Format display value based on type
+  let displayValue = value;
+  if (type === 'currency' && value && !isEditing) {
+    displayValue = formatNumberWithCommas(parseFloat(value));
+  } else if (type === 'percent' && value && !isEditing) {
+    const num = parseFloat(value);
+    displayValue = !isNaN(num) ? `${num.toFixed(2)}%` : value;
+  }
+
   if (isEditing && !disabled) {
     return (
       <input
         ref={inputRef}
-        type={type}
+        type={(type === 'currency' || type === 'percent') ? 'text' : type}
         value={localValue}
-        onChange={(e) => setLocalValue(e.target.value)}
+        onChange={handleChange}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         step={type === 'number' ? '0.01' : undefined}
@@ -96,12 +188,12 @@ const EditableCell: React.FC<EditableCellProps> = ({
         align === 'right' ? 'justify-end' : 'justify-start'
       } ${className}`}
     >
-      {value || <span className="text-gray-400 dark:text-gray-500 italic">{placeholder}</span>}
+      {displayValue || <span className="text-gray-400 dark:text-gray-500 italic">{placeholder}</span>}
     </div>
   );
 };
 
-// Generic Dropdown Selector
+// Generic Dropdown Selector with Portal
 interface DropdownSelectorProps<T extends string> {
   value: T;
   options: { value: T; label: string; icon?: string }[];
@@ -120,13 +212,18 @@ function DropdownSelector<T extends string>({
   disabled = false,
 }: DropdownSelectorProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = options.find((opt) => opt.value === value);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        buttonRef.current && !buttonRef.current.contains(event.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -134,9 +231,21 @@ function DropdownSelector<T extends string>({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: Math.max(rect.width, 120),
+      });
+    }
+  }, [isOpen]);
+
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
+    <div className={`relative ${className}`}>
       <button
+        ref={buttonRef}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={`flex items-center gap-2 px-2 py-1.5 text-sm ${disabled ? 'cursor-default opacity-60' : 'hover:bg-gray-100 dark:hover:bg-gray-700/50'} rounded-md transition-colors w-full`}
@@ -148,8 +257,17 @@ function DropdownSelector<T extends string>({
         {!disabled && <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />}
       </button>
 
-      {isOpen && !disabled && (
-        <div className="absolute top-full left-0 mt-1 w-full min-w-[120px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 py-1 max-h-48 overflow-y-auto">
+      {isOpen && !disabled && createPortal(
+        <div
+          ref={dropdownRef}
+          className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 max-h-48 overflow-y-auto"
+          style={{
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            minWidth: dropdownPosition.width,
+            zIndex: 9999,
+          }}
+        >
           {options.map((option) => (
             <button
               key={option.value}
@@ -165,13 +283,14 @@ function DropdownSelector<T extends string>({
               <span className="text-gray-700 dark:text-gray-300">{option.label}</span>
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
 }
 
-// Day of Month Selector
+// Day of Month Selector with Portal
 interface DayOfMonthSelectorProps {
   value: number | undefined;
   onChange: (value: number | undefined) => void;
@@ -180,11 +299,16 @@ interface DayOfMonthSelectorProps {
 
 const DayOfMonthSelector: React.FC<DayOfMonthSelectorProps> = ({ value, onChange, disabled }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        buttonRef.current && !buttonRef.current.contains(event.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -192,9 +316,21 @@ const DayOfMonthSelector: React.FC<DayOfMonthSelectorProps> = ({ value, onChange
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      // Position to the left to avoid going off-screen
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.right + window.scrollX - 192, // 192px = w-48
+      });
+    }
+  }, [isOpen]);
+
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative">
       <button
+        ref={buttonRef}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={`flex items-center gap-1 px-2 py-1.5 text-sm ${disabled ? 'cursor-default opacity-60' : 'hover:bg-gray-100 dark:hover:bg-gray-700/50'} rounded-md transition-colors`}
@@ -206,8 +342,16 @@ const DayOfMonthSelector: React.FC<DayOfMonthSelectorProps> = ({ value, onChange
         {!disabled && <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
       </button>
 
-      {isOpen && !disabled && (
-        <div className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 p-2 w-48">
+      {isOpen && !disabled && createPortal(
+        <div
+          ref={dropdownRef}
+          className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2 w-48"
+          style={{
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            zIndex: 9999,
+          }}
+        >
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 px-1">Payment due day</div>
           <div className="grid grid-cols-7 gap-1">
             {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
@@ -236,7 +380,8 @@ const DayOfMonthSelector: React.FC<DayOfMonthSelectorProps> = ({ value, onChange
           >
             Clear
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -298,10 +443,8 @@ interface AccountRowProps {
   onUpdate: (updates: Partial<Account>) => void;
   onToggleExclude: () => void;
   onDelete: () => void;
-  formatAmount: (amount: number) => string;
-  baseCurrency: string;
-  convertAmount: (amount: number, from: string, to: string) => number;
   enabledCurrencies: string[];
+  index: number;
 }
 
 const AccountRow: React.FC<AccountRowProps> = ({
@@ -311,13 +454,19 @@ const AccountRow: React.FC<AccountRowProps> = ({
   onUpdate,
   onToggleExclude,
   onDelete,
-  formatAmount,
-  baseCurrency,
-  convertAmount,
   enabledCurrencies,
+  index,
 }) => {
   const isExcluded = account.excludeFromTotal || false;
-  const convertedAmount = convertAmount(account.balance, account.currency, baseCurrency);
+  const isEven = index % 2 === 0;
+
+  // Calculate returns based on yield (for any asset type with yield)
+  const monthlyReturn = account.estimatedYield
+    ? (account.balance * (account.estimatedYield / 100) / 12)
+    : 0;
+  const yearlyReturn = account.estimatedYield
+    ? (account.balance * (account.estimatedYield / 100))
+    : 0;
 
   const currencyOptions = enabledCurrencies.map((code) => ({
     value: code,
@@ -325,7 +474,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
   }));
 
   return (
-    <tr className={`group border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors ${isExcluded ? 'opacity-50' : ''}`}>
+    <tr className={`group border-b border-gray-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors ${isExcluded ? 'opacity-50' : ''} ${isEven ? 'bg-gray-50/50 dark:bg-gray-800/30' : ''}`}>
       {/* Name */}
       <td className="py-1 px-1">
         <EditableCell
@@ -356,15 +505,15 @@ const AccountRow: React.FC<AccountRowProps> = ({
         />
       </td>
 
-      {/* Balance */}
-      <td className="py-1 px-1 w-32">
+      {/* Value */}
+      <td className="py-1 px-1 w-32 border-l border-gray-200 dark:border-gray-700">
         <EditableCell
           value={String(Math.abs(account.balance))}
           onChange={(val) => {
             const numVal = parseFloat(val) || 0;
             onUpdate({ balance: isLiability ? -Math.abs(numVal) : numVal });
           }}
-          type="number"
+          type="currency"
           placeholder="0.00"
           align="right"
           disabled={isExcluded}
@@ -372,18 +521,49 @@ const AccountRow: React.FC<AccountRowProps> = ({
         />
       </td>
 
-      {/* Converted (if different currency) */}
-      <td className="py-1 px-1 w-28">
-        <div className={`px-2 py-1.5 text-sm text-right ${
-          isLiability ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
-        }`}>
-          {account.currency !== baseCurrency ? formatAmount(Math.abs(convertedAmount)) : '-'}
-        </div>
-      </td>
+      {/* Yield % (assets only, editable for all types) */}
+      {!isLiability && (
+        <td className="py-1 px-1 w-20 border-l border-gray-200 dark:border-gray-700">
+          <EditableCell
+            value={account.estimatedYield ? String(account.estimatedYield) : ''}
+            onChange={(val) => {
+              const numVal = parseFloat(val) || 0;
+              onUpdate({ estimatedYield: numVal > 0 ? numVal : undefined });
+            }}
+            type="percent"
+            placeholder="-"
+            align="right"
+            disabled={isExcluded}
+            className="text-blue-600 dark:text-blue-400"
+          />
+        </td>
+      )}
+
+      {/* Monthly Return (assets only) */}
+      {!isLiability && (
+        <td className="py-1 px-1 w-24">
+          <div className={`px-2 py-1.5 text-sm text-right ${
+            monthlyReturn > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
+          }`}>
+            {monthlyReturn > 0 ? formatNumberWithCommas(monthlyReturn) : '-'}
+          </div>
+        </td>
+      )}
+
+      {/* Yearly Return (assets only) */}
+      {!isLiability && (
+        <td className="py-1 px-1 w-28">
+          <div className={`px-2 py-1.5 text-sm text-right ${
+            yearlyReturn > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
+          }`}>
+            {yearlyReturn > 0 ? formatNumberWithCommas(yearlyReturn) : '-'}
+          </div>
+        </td>
+      )}
 
       {/* Due Date (liabilities only) */}
       {isLiability && (
-        <td className="py-1 px-1 w-20">
+        <td className="py-1 px-1 w-20 border-l border-gray-200 dark:border-gray-700">
           <DayOfMonthSelector
             value={account.recurringDueDate}
             onChange={(recurringDueDate) => onUpdate({ recurringDueDate })}
@@ -463,7 +643,7 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({
 
   const handleAdd = () => {
     if (name.trim()) {
-      const numAmount = parseFloat(amount) || 0;
+      const numAmount = parseFormattedNumber(amount);
       onAdd({
         name: name.trim(),
         type,
@@ -538,12 +718,15 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({
       </td>
       <td className="py-1 px-1 w-32">
         <input
-          type="number"
+          type="text"
           value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          onChange={(e) => {
+            // Allow only numbers, commas, periods
+            const filtered = e.target.value.replace(/[^0-9.,]/g, '');
+            setAmount(filtered);
+          }}
           onKeyDown={handleKeyDown}
           placeholder="0.00"
-          step="0.01"
           className="w-full px-2 py-1.5 text-sm text-right bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
         />
       </td>
@@ -573,6 +756,20 @@ export const NetWorthPage: React.FC = () => {
   // Define which account types are assets vs liabilities
   const assetTypes: AccountType[] = ['cash', 'bank', 'exchange', 'investment', 'property', 'other'];
   const liabilityTypes: AccountType[] = ['loan', 'credit-card', 'mortgage'];
+
+  // Calculate total estimated returns from all assets with yields
+  const { totalMonthlyReturn, totalYearlyReturn } = useMemo(() => {
+    let monthly = 0;
+    let yearly = 0;
+    accounts.forEach((account) => {
+      if (assetTypes.includes(account.type) && account.estimatedYield && !account.excludeFromTotal) {
+        const converted = convertAmount(account.balance, account.currency, baseCurrency);
+        yearly += converted * (account.estimatedYield / 100);
+        monthly += converted * (account.estimatedYield / 100) / 12;
+      }
+    });
+    return { totalMonthlyReturn: monthly, totalYearlyReturn: yearly };
+  }, [accounts, convertAmount, baseCurrency]);
 
   // Filter accounts
   const assetAccounts = useMemo(
@@ -621,7 +818,7 @@ export const NetWorthPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
           <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Assets</h3>
           <p className="text-2xl font-bold text-green-600 dark:text-green-400">
@@ -658,6 +855,17 @@ export const NetWorthPage: React.FC = () => {
             {excludedCount > 0 && `${excludedCount} excluded`}
           </p>
         </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Est. Investment Returns</h3>
+          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            {formatAmount(totalYearlyReturn)}
+            <span className="text-sm font-normal text-gray-400 dark:text-gray-500">/yr</span>
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            {formatAmount(totalMonthlyReturn)}/mo
+          </p>
+        </div>
       </div>
 
       {/* Assets Table */}
@@ -679,18 +887,24 @@ export const NetWorthPage: React.FC = () => {
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
                   Currency
                 </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
-                  Balance
+                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-200 dark:border-gray-700">
+                  Value
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20 border-l border-gray-200 dark:border-gray-700">
+                  Yield
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                  /Month
                 </th>
                 <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
-                  In {baseCurrency}
+                  /Year
                 </th>
                 <th className="w-10"></th>
                 <th className="w-10"></th>
               </tr>
             </thead>
             <tbody>
-              {assetAccounts.map((account) => (
+              {assetAccounts.map((account, index) => (
                 <AccountRow
                   key={account.id}
                   account={account}
@@ -698,10 +912,8 @@ export const NetWorthPage: React.FC = () => {
                   onUpdate={(updates) => updateAccount(account.id, updates)}
                   onToggleExclude={() => toggleExcludeFromTotal(account.id)}
                   onDelete={() => deleteAccount(account.id)}
-                  formatAmount={formatAmount}
-                  baseCurrency={baseCurrency}
-                  convertAmount={convertAmount}
                   enabledCurrencies={enabledCurrencies}
+                  index={index}
                 />
               ))}
               <AddAccountRow
@@ -709,7 +921,7 @@ export const NetWorthPage: React.FC = () => {
                 onAdd={addAccount}
                 baseCurrency={baseCurrency}
                 enabledCurrencies={enabledCurrencies}
-                colSpan={7}
+                colSpan={9}
               />
             </tbody>
           </table>
@@ -735,13 +947,10 @@ export const NetWorthPage: React.FC = () => {
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
                   Currency
                 </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
-                  Balance
+                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-200 dark:border-gray-700">
+                  Value
                 </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
-                  In {baseCurrency}
-                </th>
-                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20">
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20 border-l border-gray-200 dark:border-gray-700">
                   Due
                 </th>
                 <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12">
@@ -752,7 +961,7 @@ export const NetWorthPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {liabilityAccounts.map((account) => (
+              {liabilityAccounts.map((account, index) => (
                 <AccountRow
                   key={account.id}
                   account={account}
@@ -761,10 +970,8 @@ export const NetWorthPage: React.FC = () => {
                   onUpdate={(updates) => updateAccount(account.id, updates)}
                   onToggleExclude={() => toggleExcludeFromTotal(account.id)}
                   onDelete={() => deleteAccount(account.id)}
-                  formatAmount={formatAmount}
-                  baseCurrency={baseCurrency}
-                  convertAmount={convertAmount}
                   enabledCurrencies={enabledCurrencies}
+                  index={index}
                 />
               ))}
               <AddAccountRow
@@ -773,7 +980,7 @@ export const NetWorthPage: React.FC = () => {
                 onAdd={addAccount}
                 baseCurrency={baseCurrency}
                 enabledCurrencies={enabledCurrencies}
-                colSpan={9}
+                colSpan={8}
               />
             </tbody>
           </table>

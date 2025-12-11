@@ -1,19 +1,27 @@
+// Form styles using CSS custom properties for consistent theming
+// These classes leverage the design tokens defined in index.css
+
 export const formStyles = {
   input: {
-    base: 'w-full px-3.5 py-2.5 sm:py-2 sm:px-3 border rounded-lg bg-white dark:bg-gray-700 transition-colors text-gray-900 dark:text-white focus:ring-1 text-base sm:text-sm min-h-[44px] sm:min-h-0 border-blue-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-gray-500 focus:ring-blue-200 dark:focus:ring-gray-600',
+    // Uses CSS variables: --color-surface-card, --color-border, --color-text-primary, --color-border-focus
+    base: 'w-full px-3.5 py-2.5 sm:py-2 sm:px-3 rounded-lg transition-colors text-base sm:text-sm min-h-[44px] sm:min-h-0 input',
   },
-  
-  label: {
-    base: 'flex items-center gap-2 text-sm font-medium mb-2 text-gray-900 dark:text-gray-100',
-  },
-  
-  button: {
-    primary: 'w-full text-white font-medium py-3 px-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-sm min-h-[44px]',
-    secondary: 'w-full text-gray-700 dark:text-gray-300 font-medium py-3 px-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-sm min-h-[44px]',
-  },
-  
-  card: 'bg-blue-50 dark:bg-gray-800 rounded-xl shadow-lg border border-blue-200 dark:border-gray-700 p-6',
-  
-  error: 'text-xs mt-1 text-red-500',
-};
 
+  label: {
+    // Uses CSS variable: --color-text-primary
+    base: 'flex items-center gap-2 text-sm font-medium mb-2 text-primary',
+  },
+
+  button: {
+    // Uses CSS variables: --color-primary, --color-primary-hover
+    primary: 'w-full font-medium py-3 px-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm min-h-[44px] btn-primary',
+    // Uses CSS variables: --color-surface-elevated, --color-text-primary, --color-border
+    secondary: 'w-full font-medium py-3 px-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm min-h-[44px] btn-secondary',
+  },
+
+  // Uses CSS variables: --color-surface-card, --color-border
+  card: 'card rounded-xl shadow-lg p-6',
+
+  // Uses CSS variable: --color-error
+  error: 'text-xs mt-1 text-error',
+};

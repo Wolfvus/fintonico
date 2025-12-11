@@ -136,37 +136,38 @@ interface LedgerAccount {
 **Color Palette:**
 ```
 Brand Colors:
-- Primary: Teal (#2FA5A9) - main actions, links
-- Accent: Gold (#F5B700) - highlights, badges
-- Navy: (#1E2A38) - text, headers
+- Primary: Teal (#0D9488 light / #14B8A6 dark) - main actions, links
+- Accent: Amber (#F59E0B) - highlights, badges
 
 Semantic Colors:
-- Success: Green (#22C55E)
+- Success: Emerald (#10B981)
 - Error: Red (#EF4444)
 - Warning: Amber (#F59E0B)
 - Info: Blue (#3B82F6)
 
 Surfaces (Light):
-- Background: Blue-50 (#EFF6FF)
+- Background: Gray-50 (#F9FAFB)
 - Card: White (#FFFFFF)
-- Elevated: Blue-100 (#DBEAFE)
-- Border: Blue-200 (#BFDBFE)
+- Elevated: Gray-100 (#F3F4F6)
+- Border: Gray-200 (#E5E7EB)
 
 Surfaces (Dark):
-- Background: Gray-900 (#111827)
-- Card: Gray-800 (#1F2937)
-- Elevated: Gray-700 (#374151)
-- Border: Gray-700 (#374151)
+- Background: Slate-900 (#0F172A)
+- Card: Slate-800 (#1E293B)
+- Elevated: Slate-700 (#334155)
+- Border: Slate-700 (#334155)
 ```
 
-### Step 2: Improve Dark/Light Mode Consistency ☐
+### Step 2: Improve Dark/Light Mode Consistency ✅
 
 | Task | Status | Files |
 | --- | --- | --- |
-| Audit hardcoded colors in components | ☐ | All component files |
-| Replace with Tailwind custom colors | ☐ | Use `bg-surface-*`, `text-*` |
-| Consolidate theme state management | ☐ | Remove duplicate theme state |
-| Update formStyles.ts | ☐ | Use semantic color classes |
+| Audit hardcoded colors in components | ✅ | All component files |
+| Replace with CSS custom properties | ✅ | Use `var(--color-*)` tokens |
+| Consolidate theme state management | ✅ | App.tsx now uses themeStore |
+| Update formStyles.ts | ✅ | Use semantic color classes |
+| Update Navigation component | ✅ | `src/components/Navigation/Navigation.tsx` |
+| Add navigation CSS utility classes | ✅ | `src/index.css` (nav-sidebar, nav-item, nav-item-active) |
 
 ### Step 3: Ensure Accessible Contrast Ratios ☐
 
