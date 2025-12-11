@@ -582,11 +582,11 @@ export const IncomePage: React.FC = () => {
           <table className="w-full table-fixed">
             <colgroup>
               <col className="w-auto" /> {/* Source - flexible */}
-              <col className="w-24" /> {/* Amount */}
-              <col className="w-16" /> {/* Currency */}
+              <col className="w-28" /> {/* Amount */}
+              <col className="w-20" /> {/* Currency */}
               <col className="w-24" /> {/* Frequency */}
               <col className="w-20" /> {/* Date */}
-              <col className="w-8" /> {/* Delete */}
+              <col className="w-10" /> {/* Delete */}
             </colgroup>
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
