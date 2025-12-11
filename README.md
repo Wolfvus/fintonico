@@ -1,12 +1,12 @@
 # Fintonico
 
-Personal finance management application with double-entry accounting, multi-currency support, and comprehensive reporting.
+Personal finance management application with multi-currency support, expense tracking, income management, and comprehensive net worth reporting.
 
 ## Project Status
 
-**Version:** 2.0.0
-**Last Updated:** 2025-12-10
-**Status:** All core features complete, ready for UI/UX enhancements
+**Version:** 2.1.0
+**Last Updated:** 2025-12-11
+**Status:** Core features complete with refreshed UI/UX
 
 ### Architecture Overview
 
@@ -40,31 +40,45 @@ Personal finance management application with double-entry accounting, multi-curr
 
 ## Features
 
-### Core Accounting
-- **Double-Entry Bookkeeping**: Every transaction has balanced debits and credits
-- **Chart of Accounts**: Asset, Liability, Equity, Income, Expense categories
-- **Multi-Currency Support**: MXN base currency with USD, EUR conversion
-- **Historical Exchange Rates**: Stored rates for accurate historical reporting
+### Dashboard
+- **Monthly Overview**: Income, expenses, and cashflow for selected period
+- **Savings Rate**: Calculated savings percentage
+- **Recent Transactions**: Table view with type, amount, currency, and date
+- **Pending Recurring**: Collapsible section showing recurring entries not yet added to current month
+- **Period Navigation**: Month/Year/Custom date range selection
 
-### Transaction Management
-- **Expense Tracking**: Categorized expenses with recurrence support
-- **Income Recording**: Multiple income sources with scheduling
-- **Transfers**: Inter-account transfers with automatic postings
-- **CSV Import**: Import bank statements with duplicate detection
+### Income & Expense Management
+- **Quick Add Forms**: Fast entry with description, amount, currency selection
+- **Notion-Style Tables**: Inline editing with click-to-edit cells
+- **3 Expense Categories**: Essential, Discretionary, Luxury
+- **Recurring Support**: Mark entries as recurring for easy month-to-month tracking
+- **Mini Calendar Date Picker**: Visual calendar dropdown for date selection
+- **Currency Formatting**: Proper thousand separators (1,895.00)
 
-### Reporting
-- **Dashboard**: Monthly summary, upcoming bills, recent transactions
-- **Net Worth**: Assets minus liabilities with currency conversion
-- **Trial Balance**: All accounts with debit/credit totals
-- **Balance Sheet**: Assets, liabilities, equity breakdown
-- **Income Statement**: Revenue vs expenses for period
-- **Cashflow**: Inflows vs outflows summary
+### Net Worth Tracking
+- **Assets & Liabilities**: Unified table with account types
+- **Account Types**: Cash, Bank, Exchange, Investment, Property, Credit Card, Loan, Mortgage
+- **Due Date Tracking**: Day-of-month selector for liability payments
+- **Paid Status**: Checkbox to mark monthly payments as complete
+- **Exclude Toggle**: Hide accounts from net worth totals
+- **Estimated Yield**: Track annual yield for investment accounts
+
+### Chart of Accounts
+- **Ledger Accounts**: Reference accounts with account numbers and CLABE
+- **Copy to Clipboard**: Quick copy for account numbers and CLABE codes
+- **Normal Balance**: Debit/Credit classification
+- **Active/Inactive**: Toggle account status
+
+### Multi-Currency Support
+- **Base Currency**: MXN, USD, EUR, BTC, ETH
+- **Live Exchange Rates**: Automatic rate fetching
+- **Currency Conversion**: All amounts shown in base currency equivalent
+- **Per-Entry Currency**: Each income/expense can have its own currency
 
 ### Data Management
 - **Local Storage Mode**: Works offline with localStorage
 - **API Mode**: Full backend with Supabase database
-- **Migration Tools**: CLI and browser utilities to migrate data
-- **Backup/Restore**: Export and download localStorage data
+- **Theme Support**: Light/Dark mode with system preference detection
 
 ## Quick Start
 
@@ -132,10 +146,21 @@ fintonico/
 ├── src/
 │   ├── api/              # API client modules
 │   ├── components/       # React components
+│   │   ├── Auth/         # Authentication
+│   │   ├── ChartOfAccounts/  # Ledger accounts management
+│   │   ├── Currency/     # Currency selector
+│   │   ├── Dashboard/    # Main dashboard
+│   │   ├── Expense/      # Expense tracking
+│   │   ├── Income/       # Income tracking
+│   │   ├── Navigation/   # App navigation
+│   │   ├── NetWorth/     # Assets & liabilities
+│   │   ├── Settings/     # User settings modal
+│   │   └── Shared/       # Reusable components
+│   ├── config/           # App configuration
+│   ├── domain/           # Domain models (Money class)
 │   ├── lib/              # Supabase client
-│   ├── selectors/        # Data selectors (finance, cashflow)
 │   ├── stores/           # Zustand stores
-│   ├── tests/            # Frontend tests
+│   ├── styles/           # CSS and style utilities
 │   ├── types/            # TypeScript types
 │   └── utils/            # Utility functions
 ├── server/
@@ -151,116 +176,50 @@ fintonico/
 └── scripts/              # CLI utilities
 ```
 
-## API Endpoints
+## Data Types
 
-### Accounts
-- `GET /api/accounts` - List accounts (paginated, filterable)
-- `GET /api/accounts/:id` - Get single account
-- `POST /api/accounts` - Create account
-- `PUT /api/accounts/:id` - Update account
-- `DELETE /api/accounts/:id` - Delete account
-- `GET /api/accounts/:id/balance` - Get account balance
-
-### Transactions
-- `GET /api/transactions` - List transactions
-- `GET /api/transactions/:id` - Get transaction with postings
-- `POST /api/transactions` - Create balanced transaction
-- `PUT /api/transactions/:id` - Update transaction
-- `DELETE /api/transactions/:id` - Delete transaction
+### Expense
+```typescript
+interface Expense {
+  id: string;
+  what: string;
+  amount: number;
+  currency: string;
+  rating: 'essential' | 'discretionary' | 'luxury';
+  date: string;
+  recurring?: boolean;
+}
+```
 
 ### Income
-- `GET /api/income` - List income entries
-- `POST /api/income` - Create income
-- `PUT /api/income/:id` - Update income
-- `DELETE /api/income/:id` - Delete income
-
-### Expenses
-- `GET /api/expenses` - List expenses
-- `POST /api/expenses` - Create expense
-- `PUT /api/expenses/:id` - Update expense
-- `DELETE /api/expenses/:id` - Delete expense
-- `POST /api/expenses/:id/categorize` - AI categorization
-
-### Reports
-- `GET /api/reports/trial-balance` - Trial balance
-- `GET /api/reports/balance-sheet` - Balance sheet
-- `GET /api/reports/income-statement` - Income statement
-- `GET /api/reports/account-balances` - All account balances
-
-### Exchange Rates
-- `GET /api/rates` - Get exchange rates
-- `POST /api/rates/refresh` - Refresh from external APIs
-- `GET /api/rates/convert` - Convert between currencies
-
-Full API documentation: `server/docs/openapi.yaml`
-
-## Data Consistency Rules
-
-### Account Balance Storage
-- **Assets**: Stored as positive values (e.g., 12000 for $12k savings)
-- **Liabilities**: Stored as negative values (e.g., -1800 for $1.8k debt)
-
-### Net Worth Calculation
-```
-Total Assets = Sum of all asset account balances (positive)
-Total Liabilities = Sum of absolute values of liability balances
-Net Worth = Total Assets - Total Liabilities
+```typescript
+interface Income {
+  id: string;
+  source: string;
+  amount: number;
+  currency: string;
+  frequency: 'one-time' | 'weekly' | 'monthly' | 'yearly';
+  date: string;
+}
 ```
 
-### Single Source of Truth
-- `accountStore` (external accounts) = Balance sheet positions
-- `ledgerStore` = Transaction tracking and P&L calculations
-- No double-counting between ledger and external accounts
-
-## Testing
-
-### Test Coverage
-- **Frontend**: 30+ tests for stores, selectors, components
-- **AccountService**: 14 tests (CRUD, balance, soft delete)
-- **ReportService**: 8 tests (trial balance, balance sheet, income statement)
-- **Account Routes**: 10 tests (all API endpoints)
-
-### Running Tests
-```bash
-# All tests
-npm test
-
-# Watch mode
-npm run test:watch
-
-# Coverage report
-npm run test:coverage
-
-# Specific test file
-npm test -- src/tests/networth.test.ts
+### Account (Net Worth)
+```typescript
+interface Account {
+  id: string;
+  name: string;
+  type: 'cash' | 'bank' | 'exchange' | 'investment' | 'property' | 'loan' | 'credit-card' | 'mortgage' | 'other';
+  currency: string;
+  balance: number;
+  excludeFromTotal?: boolean;
+  recurringDueDate?: number;
+  isPaidThisMonth?: boolean;
+  estimatedYield?: number;
+  lastUpdated?: string;
+}
 ```
 
-## Style Guide
-
-### Code Style
-- TypeScript with strict mode
-- Functional components with hooks
-- Zustand for state management
-- Tailwind CSS for styling
-
-### Naming Conventions
-- **Files**: kebab-case (`account-service.ts`)
-- **Components**: PascalCase (`AccountsPage.tsx`)
-- **Functions**: camelCase (`getAccountBalance`)
-- **Types**: PascalCase (`AccountType`)
-- **Constants**: UPPER_SNAKE_CASE (`DEFAULT_CURRENCY`)
-
-### Commit Messages
-```
-type(scope): description
-
-feat(accounts): add balance history endpoint
-fix(reports): correct net worth calculation
-docs(api): update OpenAPI spec
-test(services): add AccountService tests
-```
-
-## Development Phases Completed
+## Development Phases
 
 | Phase | Description | Status |
 | --- | --- | --- |
@@ -271,6 +230,12 @@ test(services): add AccountService tests
 | 5 | Data Migration & Sync | ✅ |
 | 6 | Data Consistency & Validation | ✅ |
 | 7 | Testing & Documentation | ✅ |
+| 8 | UI/UX Refresh (v2.1) | ✅ |
+
+## Documentation
+
+- **[ROADMAP.md](./ROADMAP.md)** - Feature roadmap and completed work
+- **[STYLEROADMAP.md](./STYLEROADMAP.md)** - UI/UX style improvements roadmap
 
 ## License
 

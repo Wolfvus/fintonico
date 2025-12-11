@@ -1,201 +1,105 @@
-# Fintonico UI/UX Roadmap
+# Fintonico Roadmap
 
-## Phase 1: UI Consistency
+## Completed Phases
 
-### Step 1: Modal & Item Component Standardization ✅
+### Phase 1: Database Schema & Authentication ✅
+- Supabase database setup
+- Row Level Security (RLS) policies
+- User authentication flow
 
-**Goal:** Ensure all modals and list items follow the same design patterns across the application.
+### Phase 2: Backend API Layer ✅
+- Express + TypeScript server
+- REST API endpoints
+- Request validation middleware
 
-| Task | Status | Files |
-| --- | --- | --- |
-| Audit existing modals | ✅ | - |
-| Create base Modal component | ✅ | `src/components/common/Modal.tsx` |
-| Create base ListItem component | ✅ | `src/components/common/ListItem.tsx` |
-| Standardize Settings modal | ✅ | `src/components/Settings/SettingsModal.tsx` |
+### Phase 3: Service Layer Extraction ✅
+- Business logic separation
+- API client modules
+- Error handling
 
----
+### Phase 4: Frontend Integration ✅
+- React + Vite setup
+- Zustand state management
+- API integration
 
-### Step 2: Notion-Style Editable Tables ✅
+### Phase 5: Data Migration & Sync ✅
+- Local storage to API migration
+- Data synchronization
+- Offline fallback support
 
-**Goal:** Create a Notion-like inline editing experience for assets and liabilities.
+### Phase 6: Data Consistency & Validation ✅
+- Input validation
+- Data integrity checks
+- Type safety improvements
 
-| Task | Status | Files |
-| --- | --- | --- |
-| Create EditableTable component | ✅ | `src/components/common/EditableTable.tsx` |
-| Notion-style inline editing | ✅ | Click-to-edit with Enter/Escape support |
-| Type selector dropdown | ✅ | Emoji icons with dropdown selection |
-| Payment due date (day of month) | ✅ | Calendar grid picker for liabilities |
-| Paid status checkbox | ✅ | Green checkmark when paid this month |
+### Phase 7: Testing & Documentation ✅
+- Backend unit tests
+- API documentation (OpenAPI)
+- README documentation
 
----
+### Phase 8: UI/UX Refresh (v2.1) ✅
 
-### Step 3: Separate Net Worth & Accounts Sections ✅
+#### Step 1: Modal & Item Component Standardization ✅
 
-**Goal:** Split functionality into two distinct sections:
-1. **Net Worth** - Simple personal balance tracking (assets/liabilities)
-2. **Accounts** - Double-entry accounting chart of accounts
+| Task | Status |
+| --- | --- |
+| Audit existing modals | ✅ |
+| Create base Modal component | ✅ |
+| Create base ListItem component | ✅ |
+| Standardize Settings modal | ✅ |
 
-#### Step 3.1: Simplify Net Worth Section ✅
+#### Step 2: Notion-Style Editable Tables ✅
 
-| Task | Status | Files |
-| --- | --- | --- |
-| Single currency per asset/liability | ✅ | Remove multi-currency complexity |
-| Add "Exclude from total" toggle | ✅ | `excludeFromTotal` field |
-| Simplify columns | ✅ | Name, Type, Currency, Balance, Exclude |
-| Update Account type | ✅ | `src/types/index.ts` |
-| Update AccountsPage (rename to NetWorthPage) | ✅ | `src/components/NetWorth/NetWorthPage.tsx` |
-| Add data migration for existing accounts | ✅ | `src/stores/accountStore.ts` |
+| Task | Status |
+| --- | --- |
+| Create EditableTable component | ✅ |
+| Notion-style inline editing | ✅ |
+| Type selector dropdown | ✅ |
+| Payment due date (day of month) | ✅ |
+| Paid status checkbox | ✅ |
 
-**Net Worth Table Columns:**
-- Name (editable)
-- Type (dropdown: Cash, Bank, Exchange, Investment, Property, Credit Card, Loan, Mortgage, Other)
-- Currency (dropdown)
-- Balance (editable)
-- Converted amount (in base currency)
-- Due Date (liabilities only)
-- Paid (liabilities only)
-- Exclude (eye-off icon - grays out row, excludes from totals)
-- Delete
+#### Step 3: Separate Net Worth & Accounts Sections ✅
 
-#### Step 3.2: Create New Accounts Section (Chart of Accounts) ✅
+| Task | Status |
+| --- | --- |
+| Simplify Net Worth section (single currency per entry) | ✅ |
+| Add "Exclude from total" toggle | ✅ |
+| Create Chart of Accounts section | ✅ |
+| Update navigation structure | ✅ |
+| Remove legacy Assets/Liabilities sections | ✅ |
 
-| Task | Status | Files |
-| --- | --- | --- |
-| Create LedgerAccount type | ✅ | `src/types/index.ts` |
-| Create ledgerAccountStore | ✅ | `src/stores/ledgerAccountStore.ts` |
-| Create ChartOfAccountsPage component | ✅ | `src/components/ChartOfAccounts/ChartOfAccountsPage.tsx` |
-| Add to navigation | ✅ | Update routes/tabs |
+#### Step 4: Dashboard Improvements ✅
 
-**Accounts Table Columns:**
-- Name (editable)
-- Account Type (Debit/Credit - normal balance)
-- Category (Asset, Liability, Equity, Income, Expense)
-- Account Number (editable, optional)
-- Active toggle
-- Delete
+| Task | Status |
+| --- | --- |
+| Pending recurring section below transactions | ✅ |
+| Independently collapsible pending section | ✅ |
+| Pending section collapsed by default | ✅ |
+| Currency badges visible on all items | ✅ |
 
-**LedgerAccount Type:**
-```typescript
-interface LedgerAccount {
-  id: string;
-  name: string;
-  normalBalance: 'debit' | 'credit';  // Normal balance side
-  accountNumber?: string;              // Optional account code
-  category: 'asset' | 'liability' | 'equity' | 'income' | 'expense';
-  isActive: boolean;
-  description?: string;
-}
-```
+#### Step 5: Income & Expense Table Enhancements ✅
 
-#### Step 3.3: Update Navigation ✅
+| Task | Status |
+| --- | --- |
+| Currency formatting with thousand separators (1,895.00) | ✅ |
+| Full header names (Currency, Frequency) | ✅ |
+| Optimized column widths for UX | ✅ |
+| Mini calendar date picker | ✅ |
 
-| Task | Status | Files |
-| --- | --- | --- |
-| Keep "Net Worth" tab | ✅ | For assets/liabilities tracking |
-| Add "Accounts" tab | ✅ | For chart of accounts |
-| Update routing | ✅ | `src/App.tsx` |
-| Update Navigation component | ✅ | `src/components/Navigation/Navigation.tsx` |
+#### Step 6: Color Palette & Theme ✅
 
-#### Step 3.4: Remove Legacy Assets/Liabilities Sections ✅
-
-| Task | Status | Files |
-| --- | --- | --- |
-| Remove Assets tab from navigation | ✅ | Consolidated into Net Worth |
-| Remove Liabilities tab from navigation | ✅ | Consolidated into Net Worth |
-| Delete AssetsPage component | ✅ | `src/components/Assets/` |
-| Delete LiabilitiesPage component | ✅ | `src/components/Liabilities/` |
-| Delete AssetForm component | ✅ | `src/components/AssetForm/` |
-| Delete LiabilityForm component | ✅ | `src/components/LiabilityForm/` |
-| Delete old AccountsPage | ✅ | `src/components/Accounts/` |
-| Update App.tsx imports and routes | ✅ | `src/App.tsx` |
-
-**Final Navigation Structure:**
-- Dashboard
-- Income
-- Expenses
-- Net Worth (assets + liabilities in one table)
-- Accounts (chart of accounts)
+| Task | Status |
+| --- | --- |
+| Unified color palette (Tailwind config) | ✅ |
+| Semantic color tokens | ✅ |
+| Dark/Light mode consistency | ✅ |
+| Navigation CSS utility classes | ✅ |
 
 ---
 
-## Phase 2: Color Palette & Theme ☐
+## Future Phases
 
-**Goal:** Establish a unified, consistent color system with proper semantic tokens and accessible contrast ratios.
-
-### Step 1: Define Unified Color Palette ✅
-
-| Task | Status | Files |
-| --- | --- | --- |
-| Add brand colors to Tailwind config | ✅ | `tailwind.config.js` |
-| Create semantic color tokens | ✅ | Success, error, warning, info |
-| Define surface colors | ✅ | Background, card, elevated |
-| Remove unused theme.ts | ✅ | `src/styles/theme.ts` |
-| Update CSS custom properties | ✅ | `src/index.css` |
-| Create utility classes | ✅ | `.card`, `.btn-*`, `.badge-*`, etc. |
-
-**Color Palette:**
-```
-Brand Colors:
-- Primary: Teal (#0D9488 light / #14B8A6 dark) - main actions, links
-- Accent: Amber (#F59E0B) - highlights, badges
-
-Semantic Colors:
-- Success: Emerald (#10B981)
-- Error: Red (#EF4444)
-- Warning: Amber (#F59E0B)
-- Info: Blue (#3B82F6)
-
-Surfaces (Light):
-- Background: Gray-50 (#F9FAFB)
-- Card: White (#FFFFFF)
-- Elevated: Gray-100 (#F3F4F6)
-- Border: Gray-200 (#E5E7EB)
-
-Surfaces (Dark):
-- Background: Slate-900 (#0F172A)
-- Card: Slate-800 (#1E293B)
-- Elevated: Slate-700 (#334155)
-- Border: Slate-700 (#334155)
-```
-
-### Step 2: Improve Dark/Light Mode Consistency ✅
-
-| Task | Status | Files |
-| --- | --- | --- |
-| Audit hardcoded colors in components | ✅ | All component files |
-| Replace with CSS custom properties | ✅ | Use `var(--color-*)` tokens |
-| Consolidate theme state management | ✅ | App.tsx now uses themeStore |
-| Update formStyles.ts | ✅ | Use semantic color classes |
-| Update Navigation component | ✅ | `src/components/Navigation/Navigation.tsx` |
-| Add navigation CSS utility classes | ✅ | `src/index.css` (nav-sidebar, nav-item, nav-item-active) |
-
-### Step 3: Ensure Accessible Contrast Ratios ☐
-
-| Task | Status | Files |
-| --- | --- | --- |
-| Check text/background contrast | ☐ | WCAG AA (4.5:1 for text) |
-| Check interactive elements | ☐ | WCAG AA (3:1 for UI) |
-| Adjust colors if needed | ☐ | Update palette |
-| Test with color blindness simulators | ☐ | Verify accessibility |
-
----
-
-## Future Phases (Planned)
-
-### Phase 3: Typography & Spacing
-- Font hierarchy
-- Consistent spacing scale
-- Responsive typography
-
-### Phase 4: Mobile Responsiveness
-- Touch-friendly interactions
-- Mobile navigation
-- Responsive tables/lists
-
-### Phase 5: Micro-interactions
-- Loading states
-- Transitions & animations
-- Feedback indicators
+See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvements.
 
 ---
 
