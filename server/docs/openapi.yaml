@@ -1,0 +1,1248 @@
+openapi: 3.1.0
+info:
+  title: Fintonico API
+  description: Personal finance management API with double-entry accounting
+  version: 2.0.0
+  contact:
+    name: Fintonico Support
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://api.fintonico.app/api
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Accounts
+    description: Chart of accounts management
+  - name: Transactions
+    description: Double-entry transactions
+  - name: Income
+    description: Income tracking
+  - name: Expenses
+    description: Expense tracking
+  - name: Reports
+    description: Financial reports
+  - name: Rates
+    description: Exchange rates
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      tags: [System]
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: 2.0.0
+
+  /accounts:
+    get:
+      summary: List accounts
+      tags: [Accounts]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/AccountType'
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Paginated list of accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Account'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create account
+      tags: [Accounts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccountRequest'
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /accounts/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      summary: Get account by ID
+      tags: [Accounts]
+      responses:
+        '200':
+          description: Account details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update account
+      tags: [Accounts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAccountRequest'
+      responses:
+        '200':
+          description: Account updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete account
+      tags: [Accounts]
+      responses:
+        '204':
+          description: Account deleted
+        '400':
+          description: Cannot delete account with transactions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /accounts/{id}/balance:
+    get:
+      summary: Get account balance
+      tags: [Accounts]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: asOfDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Account balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountBalance'
+
+  /transactions:
+    get:
+      summary: List transactions
+      tags: [Transactions]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: accountId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Paginated list of transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      summary: Create transaction
+      tags: [Transactions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
+      responses:
+        '201':
+          description: Transaction created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Unbalanced transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /transactions/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      summary: Get transaction with postings
+      tags: [Transactions]
+      responses:
+        '200':
+          description: Transaction details with postings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionWithPostings'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update transaction
+      tags: [Transactions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTransactionRequest'
+      responses:
+        '200':
+          description: Transaction updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+
+    delete:
+      summary: Delete transaction
+      tags: [Transactions]
+      responses:
+        '204':
+          description: Transaction deleted
+
+  /income:
+    get:
+      summary: List income entries
+      tags: [Income]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Paginated list of income
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Income'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      summary: Create income entry
+      tags: [Income]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIncomeRequest'
+      responses:
+        '201':
+          description: Income created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Income'
+
+  /income/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      summary: Get income entry
+      tags: [Income]
+      responses:
+        '200':
+          description: Income details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Income'
+
+    put:
+      summary: Update income entry
+      tags: [Income]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateIncomeRequest'
+      responses:
+        '200':
+          description: Income updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Income'
+
+    delete:
+      summary: Delete income entry
+      tags: [Income]
+      responses:
+        '204':
+          description: Income deleted
+
+  /expenses:
+    get:
+      summary: List expenses
+      tags: [Expenses]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: rating
+          in: query
+          schema:
+            $ref: '#/components/schemas/ExpenseRating'
+      responses:
+        '200':
+          description: Paginated list of expenses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Expense'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      summary: Create expense
+      tags: [Expenses]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExpenseRequest'
+      responses:
+        '201':
+          description: Expense created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+
+  /expenses/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      summary: Get expense
+      tags: [Expenses]
+      responses:
+        '200':
+          description: Expense details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+
+    put:
+      summary: Update expense
+      tags: [Expenses]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExpenseRequest'
+      responses:
+        '200':
+          description: Expense updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+
+    delete:
+      summary: Delete expense
+      tags: [Expenses]
+      responses:
+        '204':
+          description: Expense deleted
+
+  /expenses/{id}/categorize:
+    post:
+      summary: AI categorize expense
+      tags: [Expenses]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Categorization result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  category:
+                    type: string
+                  subcategory:
+                    type: string
+                  confidence:
+                    type: number
+                    minimum: 0
+                    maximum: 1
+
+  /reports/trial-balance:
+    get:
+      summary: Trial balance report
+      tags: [Reports]
+      parameters:
+        - name: asOfDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Trial balance report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrialBalance'
+
+  /reports/balance-sheet:
+    get:
+      summary: Balance sheet report
+      tags: [Reports]
+      parameters:
+        - name: asOfDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Balance sheet report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceSheet'
+
+  /reports/income-statement:
+    get:
+      summary: Income statement report
+      tags: [Reports]
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Income statement report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncomeStatement'
+
+  /reports/account-balances:
+    get:
+      summary: All account balances
+      tags: [Reports]
+      parameters:
+        - name: asOfDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Account balances
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  as_of_date:
+                    type: string
+                    format: date
+                  accounts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AccountBalance'
+
+  /rates:
+    get:
+      summary: Get exchange rates
+      tags: [Rates]
+      parameters:
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Exchange rates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRates'
+
+  /rates/refresh:
+    post:
+      summary: Refresh exchange rates
+      tags: [Rates]
+      responses:
+        '200':
+          description: Rates refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRates'
+
+  /rates/convert:
+    get:
+      summary: Convert currency
+      tags: [Rates]
+      parameters:
+        - name: amount
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            example: USD
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            example: MXN
+      responses:
+        '200':
+          description: Conversion result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  amount:
+                    type: number
+                  from:
+                    type: string
+                  to:
+                    type: string
+                  result:
+                    type: number
+                  rate:
+                    type: number
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AccountType:
+      type: string
+      enum: [asset, liability, equity, income, expense]
+
+    ExpenseRating:
+      type: string
+      enum: [essential, non_essential, luxury]
+
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/AccountType'
+        currency:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    CreateAccountRequest:
+      type: object
+      required: [name, code, type]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        code:
+          type: string
+          maxLength: 20
+        type:
+          $ref: '#/components/schemas/AccountType'
+        currency:
+          type: string
+          default: MXN
+        is_active:
+          type: boolean
+          default: true
+
+    UpdateAccountRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        code:
+          type: string
+          maxLength: 20
+        type:
+          $ref: '#/components/schemas/AccountType'
+        currency:
+          type: string
+        is_active:
+          type: boolean
+
+    AccountBalance:
+      type: object
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        account_name:
+          type: string
+        account_type:
+          $ref: '#/components/schemas/AccountType'
+        balance_cents:
+          type: integer
+        currency:
+          type: string
+        as_of_date:
+          type: string
+          format: date
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        type:
+          type: string
+        reference:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Posting:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        transaction_id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        amount_cents:
+          type: integer
+        currency:
+          type: string
+        is_debit:
+          type: boolean
+
+    TransactionWithPostings:
+      allOf:
+        - $ref: '#/components/schemas/Transaction'
+        - type: object
+          properties:
+            postings:
+              type: array
+              items:
+                $ref: '#/components/schemas/Posting'
+
+    CreateTransactionRequest:
+      type: object
+      required: [date, description, postings]
+      properties:
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        type:
+          type: string
+        reference:
+          type: string
+        postings:
+          type: array
+          minItems: 2
+          items:
+            type: object
+            required: [account_id, amount_cents, currency, is_debit]
+            properties:
+              account_id:
+                type: string
+                format: uuid
+              amount_cents:
+                type: integer
+                minimum: 1
+              currency:
+                type: string
+              is_debit:
+                type: boolean
+
+    UpdateTransactionRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        type:
+          type: string
+        reference:
+          type: string
+        postings:
+          type: array
+          minItems: 2
+          items:
+            type: object
+            properties:
+              account_id:
+                type: string
+                format: uuid
+              amount_cents:
+                type: integer
+              currency:
+                type: string
+              is_debit:
+                type: boolean
+
+    Income:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        amount_cents:
+          type: integer
+        currency:
+          type: string
+        source:
+          type: string
+        received_date:
+          type: string
+          format: date
+        is_recurring:
+          type: boolean
+        recurrence_interval:
+          type: string
+        transaction_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+
+    CreateIncomeRequest:
+      type: object
+      required: [amount, currency, source, received_date]
+      properties:
+        amount:
+          type: number
+        currency:
+          type: string
+          default: MXN
+        source:
+          type: string
+        received_date:
+          type: string
+          format: date
+        is_recurring:
+          type: boolean
+          default: false
+        recurrence_interval:
+          type: string
+        create_transaction:
+          type: boolean
+          default: false
+
+    UpdateIncomeRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+        currency:
+          type: string
+        source:
+          type: string
+        received_date:
+          type: string
+          format: date
+        is_recurring:
+          type: boolean
+        recurrence_interval:
+          type: string
+
+    Expense:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        currency:
+          type: string
+        description:
+          type: string
+        rating:
+          $ref: '#/components/schemas/ExpenseRating'
+        date:
+          type: string
+          format: date
+        category:
+          type: string
+        subcategory:
+          type: string
+        transaction_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+
+    CreateExpenseRequest:
+      type: object
+      required: [amount, currency, description, date]
+      properties:
+        amount:
+          type: number
+        currency:
+          type: string
+          default: MXN
+        description:
+          type: string
+        rating:
+          $ref: '#/components/schemas/ExpenseRating'
+        date:
+          type: string
+          format: date
+        category:
+          type: string
+        subcategory:
+          type: string
+        create_transaction:
+          type: boolean
+          default: false
+
+    UpdateExpenseRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+        currency:
+          type: string
+        description:
+          type: string
+        rating:
+          $ref: '#/components/schemas/ExpenseRating'
+        date:
+          type: string
+          format: date
+        category:
+          type: string
+        subcategory:
+          type: string
+
+    TrialBalance:
+      type: object
+      properties:
+        as_of_date:
+          type: string
+          format: date
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountBalance'
+        totals:
+          type: object
+          properties:
+            debits_cents:
+              type: integer
+            credits_cents:
+              type: integer
+            is_balanced:
+              type: boolean
+
+    BalanceSheet:
+      type: object
+      properties:
+        as_of_date:
+          type: string
+          format: date
+        assets:
+          type: object
+          properties:
+            accounts:
+              type: array
+              items:
+                $ref: '#/components/schemas/AccountBalance'
+            total_cents:
+              type: integer
+        liabilities:
+          type: object
+          properties:
+            accounts:
+              type: array
+              items:
+                $ref: '#/components/schemas/AccountBalance'
+            total_cents:
+              type: integer
+        equity:
+          type: object
+          properties:
+            accounts:
+              type: array
+              items:
+                $ref: '#/components/schemas/AccountBalance'
+            total_cents:
+              type: integer
+            retained_earnings_cents:
+              type: integer
+            total_with_retained_cents:
+              type: integer
+        totals:
+          type: object
+          properties:
+            total_assets_cents:
+              type: integer
+            total_liabilities_equity_cents:
+              type: integer
+            is_balanced:
+              type: boolean
+
+    IncomeStatement:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date
+            end_date:
+              type: string
+              format: date
+        income:
+          type: object
+          properties:
+            accounts:
+              type: array
+              items:
+                type: object
+                properties:
+                  account_id:
+                    type: string
+                    format: uuid
+                  account_name:
+                    type: string
+                  amount_cents:
+                    type: integer
+            total_cents:
+              type: integer
+        expenses:
+          type: object
+          properties:
+            accounts:
+              type: array
+              items:
+                type: object
+                properties:
+                  account_id:
+                    type: string
+                    format: uuid
+                  account_name:
+                    type: string
+                  amount_cents:
+                    type: integer
+            total_cents:
+              type: integer
+        net_income_cents:
+          type: integer
+
+    ExchangeRates:
+      type: object
+      properties:
+        base_currency:
+          type: string
+          example: MXN
+        date:
+          type: string
+          format: date
+        rates:
+          type: object
+          additionalProperties:
+            type: number
+          example:
+            USD: 0.057
+            EUR: 0.052
+            BTC: 0.00000060
+            ETH: 0.000022
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Unauthorized
+              code:
+                type: string
+                example: UNAUTHORIZED
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Resource not found
+              code:
+                type: string
+                example: NOT_FOUND
+
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Conflict:
+      description: Conflict (duplicate resource)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Resource already exists
+              code:
+                type: string
+                example: CONFLICT

@@ -1,7 +1,7 @@
 // API client for backend communication
 import { useAuthStore, DEV_TOKEN } from '../stores/authStore';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 const DEV_MODE = import.meta.env.VITE_DEV_MODE === 'true';
 
 interface RequestOptions extends RequestInit {

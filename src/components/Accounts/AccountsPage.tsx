@@ -30,7 +30,8 @@ export const AccountsPage: React.FC = () => {
       if (assetTypes.includes(account.type)) {
         totalAssets += accountTotal;
       } else if (liabilityTypes.includes(account.type)) {
-        totalLiabilities += accountTotal;
+        // Liabilities are stored as negative values (debt), normalize to positive
+        totalLiabilities += Math.abs(accountTotal);
       }
     });
 
@@ -154,7 +155,7 @@ export const AccountsPage: React.FC = () => {
                   const accountTotal = account.balances.reduce((sum, balance) => {
                     return sum + convertAmount(balance.amount, balance.currency, baseCurrency);
                   }, 0);
-                  
+
                   return (
                     <div key={account.id} className="flex justify-between items-center">
                       <div>
@@ -166,7 +167,7 @@ export const AccountsPage: React.FC = () => {
                         </p>
                       </div>
                       <p className="text-sm font-bold text-red-600 dark:text-red-400">
-                        {formatAmount(accountTotal)}
+                        {formatAmount(Math.abs(accountTotal))}
                       </p>
                     </div>
                   );

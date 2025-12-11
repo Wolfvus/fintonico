@@ -31,77 +31,40 @@ const endOfMonth = (date: Date): Date => {
 
 // Core balance selectors
 export const getBalancesAt = (date: Date = new Date()) => {
-  const ledgerStore = useLedgerStore.getState();
   const { baseCurrency, convertAmount } = useCurrencyStore.getState();
-  const { accounts } = useAccountStore.getState();
+  const { accounts: externalAccounts } = useAccountStore.getState();
 
   const asOfDate = endOfDay(date);
 
-  // Get ledger account balances (using booked amounts)
-  const ledgerBalances = ledgerStore.getAllAccountBalances(asOfDate);
+  // For net worth calculation, we ONLY use external accounts (accountStore)
+  // These are the user's actual financial accounts with real balances
+  // The ledger is for transaction tracking, not for balance sheet positions
 
-  // Create map of external account IDs to their balances for quick lookup
-  const externalAccountMap = new Map(accounts.map(a => [a.id, a]));
-
-  // Get external account balances for accounts NOT in ledger
-  // These are accounts that haven't been used in any transactions yet
-  const ledgerAccountIds = new Set(ledgerStore.accounts.map(a => a.id));
-  const pureExternalBalances = accounts
-    .filter(account => !ledgerAccountIds.has(account.id))
-    .map(account => {
-      const accountTotal = account.balances.reduce((sum, balance) => {
-        return sum + convertAmount(balance.amount, balance.currency, baseCurrency);
-      }, 0);
-
-      return {
-        accountId: account.id,
-        accountName: account.name,
-        accountType: account.type,
-        balance: Money.fromMajorUnits(accountTotal, baseCurrency),
-        asOfDate
-      };
-    });
-
-  // Convert ledger balances to consistent format and currency
-  // For accounts that exist in both stores, combine: external balance + ledger activity
-  const processedLedgerBalances = ledgerBalances.map(balance => {
-    const ledgerAccount = ledgerStore.getAccount(balance.accountId);
-    const externalAccount = externalAccountMap.get(balance.accountId);
-
-    // Convert ledger balance to base currency
-    const currentCurrency = balance.balance.getCurrency();
-    let ledgerBalance: Money;
-
-    if (currentCurrency === baseCurrency) {
-      ledgerBalance = balance.balance;
-    } else {
-      const convertedAmount = convertAmount(balance.balance.toMajorUnits(), currentCurrency, baseCurrency);
-      ledgerBalance = Money.fromMajorUnits(convertedAmount, baseCurrency);
-    }
-
-    // If this ledger account also exists in accountStore (external account),
-    // add the external account's manual balance to the ledger transaction activity
-    let finalBalance = ledgerBalance;
-    if (externalAccount) {
-      const externalTotal = externalAccount.balances.reduce((sum, bal) => {
-        return sum + convertAmount(bal.amount, bal.currency, baseCurrency);
-      }, 0);
-      const externalBalance = Money.fromMajorUnits(externalTotal, baseCurrency);
-      finalBalance = externalBalance.add(ledgerBalance);
-    }
+  const processedBalances = externalAccounts.map(account => {
+    const accountTotal = account.balances.reduce((sum, balance) => {
+      return sum + convertAmount(balance.amount, balance.currency, baseCurrency);
+    }, 0);
 
     return {
-      accountId: balance.accountId,
-      accountName: ledgerAccount?.name || 'Unknown',
-      accountType: ledgerAccount?.nature || 'other',
-      balance: finalBalance,
-      asOfDate: balance.asOfDate
+      accountId: account.id,
+      accountName: account.name,
+      accountType: account.type,
+      balance: Money.fromMajorUnits(accountTotal, baseCurrency),
+      asOfDate
     };
   });
 
   return {
-    ledgerBalances: processedLedgerBalances,
-    externalBalances: pureExternalBalances,
+    // For backwards compatibility, put all balances in externalBalances
+    // since that's what getNetWorthAt uses for assets/liabilities
+    ledgerBalances: [] as Array<{
+      accountId: string;
+      accountName: string;
+      accountType: string;
+      balance: Money;
+      asOfDate: Date;
+    }>,
+    externalBalances: processedBalances,
     asOfDate
   };
 };
@@ -109,34 +72,24 @@ export const getBalancesAt = (date: Date = new Date()) => {
 export const getNetWorthAt = (date: Date = new Date()) => {
   const balances = getBalancesAt(date);
   const { baseCurrency } = useCurrencyStore.getState();
-  
-  // Calculate from ledger accounts (already converted to base currency in getBalancesAt)
-  const ledgerAssets = balances.ledgerBalances
-    .filter(b => ['asset'].includes(b.accountType as AccountNature))
-    .reduce((sum, b) => sum.add(b.balance), Money.fromMinorUnits(0, baseCurrency));
-    
+
+  // Normalize liability balances: they're stored as negative (debt), convert to positive for display
   const normaliseLiability = (balance: Money) => (balance.isNegative() ? balance.abs() : balance);
 
-  const ledgerLiabilities = balances.ledgerBalances
-    .filter(b => ['liability'].includes(b.accountType as AccountNature))
-    .reduce((sum, b) => sum.add(normaliseLiability(b.balance)), Money.fromMinorUnits(0, baseCurrency));
-  
-  // Calculate from external accounts
+  // Calculate from external accounts (accountStore) - the single source of truth for balances
   const assetTypes: AccountType[] = ['cash', 'bank', 'exchange', 'investment', 'property', 'other'];
   const liabilityTypes: AccountType[] = ['loan', 'credit-card', 'mortgage'];
-  
-  const externalAssets = balances.externalBalances
-    .filter(b => assetTypes.includes(b.accountType))
+
+  const totalAssets = balances.externalBalances
+    .filter(b => assetTypes.includes(b.accountType as AccountType))
     .reduce((sum, b) => sum.add(b.balance), Money.fromMinorUnits(0, baseCurrency));
-    
-  const externalLiabilities = balances.externalBalances
-    .filter(b => liabilityTypes.includes(b.accountType))
+
+  const totalLiabilities = balances.externalBalances
+    .filter(b => liabilityTypes.includes(b.accountType as AccountType))
     .reduce((sum, b) => sum.add(normaliseLiability(b.balance)), Money.fromMinorUnits(0, baseCurrency));
-  
-  const totalAssets = ledgerAssets.add(externalAssets);
-  const totalLiabilities = ledgerLiabilities.add(externalLiabilities);
+
   const netWorth = totalAssets.subtract(totalLiabilities);
-  
+
   return {
     totalAssets,
     totalLiabilities,
@@ -144,12 +97,12 @@ export const getNetWorthAt = (date: Date = new Date()) => {
     asOfDate: balances.asOfDate,
     breakdown: {
       ledger: {
-        assets: ledgerAssets,
-        liabilities: ledgerLiabilities
+        assets: Money.fromMinorUnits(0, baseCurrency),
+        liabilities: Money.fromMinorUnits(0, baseCurrency)
       },
       external: {
-        assets: externalAssets,
-        liabilities: externalLiabilities
+        assets: totalAssets,
+        liabilities: totalLiabilities
       }
     }
   };
@@ -576,6 +529,9 @@ export const getCombinedTransactions = (
     category: string;
     recurring?: boolean;
     formattedAmount: string;
+    fundingAccountId?: string;
+    fundingAccountName?: string;
+    fundingAccountNature?: 'asset' | 'liability';
   }> = [];
   
   // Convert ledger transactions to view models
