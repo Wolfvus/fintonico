@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useIncomeStore } from '../../stores/incomeStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { DollarSign, Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { DollarSign, Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calendar, Filter, X } from 'lucide-react';
 import type { Income } from '../../types';
 import type { IncomeFrequency } from '../../stores/incomeStore';
 
@@ -657,22 +657,144 @@ const IncomeRow: React.FC<IncomeRowProps> = ({
   );
 };
 
+// Filter Bar Component
+interface FilterBarProps {
+  sourceFilter: string;
+  setSourceFilter: (v: string) => void;
+  currencyFilter: string;
+  setCurrencyFilter: (v: string) => void;
+  frequencyFilter: string;
+  setFrequencyFilter: (v: string) => void;
+  enabledCurrencies: string[];
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+const FilterBar: React.FC<FilterBarProps> = ({
+  sourceFilter,
+  setSourceFilter,
+  currencyFilter,
+  setCurrencyFilter,
+  frequencyFilter,
+  setFrequencyFilter,
+  enabledCurrencies,
+  hasActiveFilters,
+  onClearFilters,
+  isOpen,
+  onToggle,
+}) => {
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+      <button
+        onClick={onToggle}
+        className="w-full px-3 py-2 flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors rounded-xl"
+      >
+        <Filter className="w-4 h-4" />
+        <span className="text-sm font-medium">Filters</span>
+        {hasActiveFilters && (
+          <span className="px-1.5 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full">
+            Active
+          </span>
+        )}
+      </button>
+
+      {isOpen && (
+        <div className="px-3 pb-3 flex items-center gap-3 flex-wrap border-t border-gray-100 dark:border-gray-700 pt-3">
+          {/* Source Filter */}
+          <input
+            type="text"
+            value={sourceFilter}
+            onChange={(e) => setSourceFilter(e.target.value)}
+            placeholder="Search source..."
+            className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-gray-900 dark:text-white placeholder-gray-400 w-40"
+          />
+
+          {/* Currency Filter */}
+          <select
+            value={currencyFilter}
+            onChange={(e) => setCurrencyFilter(e.target.value)}
+            className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-green-500 text-gray-900 dark:text-white"
+          >
+            <option value="">All Currencies</option>
+            {enabledCurrencies.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+
+          {/* Frequency Filter */}
+          <select
+            value={frequencyFilter}
+            onChange={(e) => setFrequencyFilter(e.target.value)}
+            className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-green-500 text-gray-900 dark:text-white"
+          >
+            <option value="">All Frequencies</option>
+            {FREQUENCY_OPTIONS.map((f) => (
+              <option key={f.value} value={f.value}>{f.label}</option>
+            ))}
+          </select>
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
+            <button
+              onClick={onClearFilters}
+              className="flex items-center gap-1 px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              <X className="w-3 h-3" />
+              Clear
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Main Component
 export const IncomePage: React.FC = () => {
   const { incomes, addIncome, deleteIncome } = useIncomeStore();
   const { baseCurrency, enabledCurrencies, formatAmount, convertAmount } = useCurrencyStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Filter incomes by selected month
+  // Filter states
+  const [sourceFilter, setSourceFilter] = useState('');
+  const [currencyFilter, setCurrencyFilter] = useState('');
+  const [frequencyFilter, setFrequencyFilter] = useState('');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const hasActiveFilters = sourceFilter !== '' || currencyFilter !== '' || frequencyFilter !== '';
+
+  const clearFilters = () => {
+    setSourceFilter('');
+    setCurrencyFilter('');
+    setFrequencyFilter('');
+  };
+
+  // Filter incomes by selected month and filters
   const filteredIncomes = useMemo(() => {
     const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
     const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59);
 
     return incomes.filter((income) => {
       const incomeDate = parseLocalDate(income.date);
-      return incomeDate >= startOfMonth && incomeDate <= endOfMonth;
+      const inMonth = incomeDate >= startOfMonth && incomeDate <= endOfMonth;
+      if (!inMonth) return false;
+
+      // Apply filters
+      if (sourceFilter && !income.source.toLowerCase().includes(sourceFilter.toLowerCase())) {
+        return false;
+      }
+      if (currencyFilter && income.currency !== currencyFilter) {
+        return false;
+      }
+      if (frequencyFilter && income.frequency !== frequencyFilter) {
+        return false;
+      }
+
+      return true;
     }).sort((a, b) => parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime());
-  }, [incomes, selectedDate]);
+  }, [incomes, selectedDate, sourceFilter, currencyFilter, frequencyFilter]);
 
   // Calculate monthly total
   const monthlyTotal = useMemo(() => {
@@ -765,6 +887,21 @@ export const IncomePage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Filter Bar */}
+      <FilterBar
+        sourceFilter={sourceFilter}
+        setSourceFilter={setSourceFilter}
+        currencyFilter={currencyFilter}
+        setCurrencyFilter={setCurrencyFilter}
+        frequencyFilter={frequencyFilter}
+        setFrequencyFilter={setFrequencyFilter}
+        enabledCurrencies={enabledCurrencies}
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={clearFilters}
+        isOpen={isFilterOpen}
+        onToggle={() => setIsFilterOpen(!isFilterOpen)}
+      />
 
       {/* Income Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">

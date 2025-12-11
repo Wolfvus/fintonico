@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useLedgerAccountStore } from '../../stores/ledgerAccountStore';
-import { CreditCard, Plus, Trash2, ChevronDown, Copy, Check } from 'lucide-react';
+import { CreditCard, Plus, Trash2, ChevronDown, Copy, Check, Filter, X } from 'lucide-react';
 import type { LedgerAccount, LedgerAccountNormalBalance } from '../../types';
 
 // Copyable Cell Component - shows copy button on hover
@@ -456,9 +456,109 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({ onAdd }) => {
   );
 };
 
+// Filter Bar Component
+interface FilterBarProps {
+  nameFilter: string;
+  setNameFilter: (v: string) => void;
+  typeFilter: string;
+  setTypeFilter: (v: string) => void;
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+const FilterBar: React.FC<FilterBarProps> = ({
+  nameFilter,
+  setNameFilter,
+  typeFilter,
+  setTypeFilter,
+  hasActiveFilters,
+  onClearFilters,
+  isOpen,
+  onToggle,
+}) => {
+  return (
+    <div className="border-b border-gray-200 dark:border-gray-700">
+      <button
+        onClick={onToggle}
+        className="w-full px-4 py-2 flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+      >
+        <Filter className="w-4 h-4" />
+        <span className="text-xs font-medium">Filters</span>
+        {hasActiveFilters && (
+          <span className="px-1.5 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
+            Active
+          </span>
+        )}
+      </button>
+
+      {isOpen && (
+        <div className="px-4 py-2 flex items-center gap-3 flex-wrap bg-gray-50/50 dark:bg-gray-900/30 border-t border-gray-100 dark:border-gray-700">
+          {/* Name Filter */}
+          <input
+            type="text"
+            value={nameFilter}
+            onChange={(e) => setNameFilter(e.target.value)}
+            placeholder="Search name..."
+            className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-blue-500 text-gray-900 dark:text-white placeholder-gray-400 w-32"
+          />
+
+          {/* Type Filter */}
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-blue-500 text-gray-900 dark:text-white"
+          >
+            <option value="">All Types</option>
+            <option value="debit">Debit</option>
+            <option value="credit">Credit</option>
+          </select>
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
+            <button
+              onClick={onClearFilters}
+              className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+            >
+              <X className="w-3 h-3" />
+              Clear
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Main Component
 export const ChartOfAccountsPage: React.FC = () => {
   const { accounts, addAccount, deleteAccount, updateAccount, toggleActive } = useLedgerAccountStore();
+
+  // Filter states
+  const [nameFilter, setNameFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const hasActiveFilters = nameFilter !== '' || typeFilter !== '';
+
+  const clearFilters = () => {
+    setNameFilter('');
+    setTypeFilter('');
+  };
+
+  // Apply filters
+  const filteredAccounts = useMemo(() => {
+    return accounts.filter((account) => {
+      if (nameFilter && !account.name.toLowerCase().includes(nameFilter.toLowerCase())) {
+        return false;
+      }
+      if (typeFilter && account.normalBalance !== typeFilter) {
+        return false;
+      }
+      return true;
+    });
+  }, [accounts, nameFilter, typeFilter]);
 
   const activeCount = accounts.filter(a => a.isActive).length;
 
@@ -479,6 +579,16 @@ export const ChartOfAccountsPage: React.FC = () => {
 
       {/* Accounts Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+        <FilterBar
+          nameFilter={nameFilter}
+          setNameFilter={setNameFilter}
+          typeFilter={typeFilter}
+          setTypeFilter={setTypeFilter}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearFilters}
+          isOpen={isFilterOpen}
+          onToggle={() => setIsFilterOpen(!isFilterOpen)}
+        />
         <div className="overflow-x-auto overflow-y-visible">
           <table className="w-full">
             <thead>
@@ -502,7 +612,7 @@ export const ChartOfAccountsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {accounts.map((account, index) => (
+              {filteredAccounts.map((account, index) => (
                 <AccountRow
                   key={account.id}
                   account={account}

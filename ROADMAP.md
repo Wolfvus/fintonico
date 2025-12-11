@@ -97,6 +97,49 @@
 
 ---
 
+## Phase 9: Table Filters & Collapsible Sections ✅
+
+### Step 1: Income & Expense Filters ✅
+
+**Goal:** Add simple column-based filters to Income and Expense tables.
+
+| Task | Status |
+| --- | --- |
+| Filter by description/source (text search) | ✅ |
+| Filter by currency (dropdown) | ✅ |
+| Filter by category/frequency (dropdown) | ✅ |
+| Filter by recurring status | ✅ |
+| Clear filters button | ✅ |
+
+**Columns filtered:**
+- **Income:** Source, Currency, Frequency
+- **Expense:** Description (What), Currency, Category (Rating), Recurring
+
+### Step 2: Net Worth Filters & Collapsible Sections ✅
+
+**Goal:** Add filters to Assets/Liabilities and make sections collapsible.
+
+| Task | Status |
+| --- | --- |
+| Collapsible Assets section | ✅ |
+| Collapsible Liabilities section | ✅ |
+| Filter by name (text search) | ✅ |
+| Filter by type (dropdown) | ✅ |
+| Filter by currency (dropdown) | ✅ |
+| Filter by paid status (liabilities) | ✅ |
+| Filter by excluded status | ✅ |
+
+### Step 3: Chart of Accounts Filters ✅
+
+**Goal:** Simple search filters for the Accounts section.
+
+| Task | Status |
+| --- | --- |
+| Filter by name (text search) | ✅ |
+| Filter by type (Normal Balance: Debit/Credit) | ✅ |
+
+---
+
 ## Future Phases
 
 See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvements.

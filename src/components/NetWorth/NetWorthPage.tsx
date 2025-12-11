@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useAccountStore } from '../../stores/accountStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, Check, Calendar, EyeOff } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, ChevronRight, Check, Calendar, EyeOff, Filter, X } from 'lucide-react';
 import type { AccountType, Account } from '../../types';
 
 // Format number with thousand separators
@@ -813,10 +813,183 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({
   );
 };
 
+// Filter Bar Component for Net Worth
+interface NetWorthFilterBarProps {
+  nameFilter: string;
+  setNameFilter: (v: string) => void;
+  typeFilter: string;
+  setTypeFilter: (v: string) => void;
+  currencyFilter: string;
+  setCurrencyFilter: (v: string) => void;
+  paidFilter: string;
+  setPaidFilter: (v: string) => void;
+  excludedFilter: string;
+  setExcludedFilter: (v: string) => void;
+  enabledCurrencies: string[];
+  typeOptions: { value: string; label: string }[];
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
+  showPaidFilter?: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
+  accentColor?: 'green' | 'red';
+}
+
+const NetWorthFilterBar: React.FC<NetWorthFilterBarProps> = ({
+  nameFilter,
+  setNameFilter,
+  typeFilter,
+  setTypeFilter,
+  currencyFilter,
+  setCurrencyFilter,
+  paidFilter,
+  setPaidFilter,
+  excludedFilter,
+  setExcludedFilter,
+  enabledCurrencies,
+  typeOptions,
+  hasActiveFilters,
+  onClearFilters,
+  showPaidFilter = false,
+  isOpen,
+  onToggle,
+  accentColor = 'green',
+}) => {
+  const badgeClasses = accentColor === 'green'
+    ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+    : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400';
+
+  return (
+    <div className="border-b border-gray-200 dark:border-gray-700">
+      <button
+        onClick={onToggle}
+        className="w-full px-4 py-2 flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+      >
+        <Filter className="w-4 h-4" />
+        <span className="text-xs font-medium">Filters</span>
+        {hasActiveFilters && (
+          <span className={`px-1.5 py-0.5 text-xs rounded-full ${badgeClasses}`}>
+            Active
+          </span>
+        )}
+      </button>
+
+      {isOpen && (
+        <div className="px-4 py-2 flex items-center gap-3 flex-wrap bg-gray-50/50 dark:bg-gray-900/30 border-t border-gray-100 dark:border-gray-700">
+          {/* Name Filter */}
+          <input
+            type="text"
+            value={nameFilter}
+            onChange={(e) => setNameFilter(e.target.value)}
+            placeholder="Search name..."
+            className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white placeholder-gray-400 w-32"
+          />
+
+          {/* Type Filter */}
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
+          >
+            <option value="">All Types</option>
+            {typeOptions.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+
+          {/* Currency Filter */}
+          <select
+            value={currencyFilter}
+            onChange={(e) => setCurrencyFilter(e.target.value)}
+            className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
+          >
+            <option value="">All Currencies</option>
+            {enabledCurrencies.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+
+          {/* Paid Filter (liabilities only) */}
+          {showPaidFilter && (
+            <select
+              value={paidFilter}
+              onChange={(e) => setPaidFilter(e.target.value)}
+              className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
+            >
+              <option value="">All</option>
+              <option value="paid">Paid</option>
+              <option value="unpaid">Unpaid</option>
+            </select>
+          )}
+
+          {/* Excluded Filter */}
+          <select
+            value={excludedFilter}
+            onChange={(e) => setExcludedFilter(e.target.value)}
+            className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
+          >
+            <option value="">All</option>
+            <option value="included">Included</option>
+            <option value="excluded">Excluded</option>
+          </select>
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
+            <button
+              onClick={onClearFilters}
+              className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+            >
+              <X className="w-3 h-3" />
+              Clear
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Main Component
 export const NetWorthPage: React.FC = () => {
   const { accounts, addAccount, deleteAccount, updateAccount, toggleExcludeFromTotal } = useAccountStore();
   const { baseCurrency, convertAmount, formatAmount, enabledCurrencies } = useCurrencyStore();
+
+  // Collapsible states
+  const [isAssetsCollapsed, setIsAssetsCollapsed] = useState(false);
+  const [isLiabilitiesCollapsed, setIsLiabilitiesCollapsed] = useState(false);
+
+  // Asset filter states
+  const [assetNameFilter, setAssetNameFilter] = useState('');
+  const [assetTypeFilter, setAssetTypeFilter] = useState('');
+  const [assetCurrencyFilter, setAssetCurrencyFilter] = useState('');
+  const [assetExcludedFilter, setAssetExcludedFilter] = useState('');
+  const [isAssetFilterOpen, setIsAssetFilterOpen] = useState(false);
+
+  // Liability filter states
+  const [liabilityNameFilter, setLiabilityNameFilter] = useState('');
+  const [liabilityTypeFilter, setLiabilityTypeFilter] = useState('');
+  const [liabilityCurrencyFilter, setLiabilityCurrencyFilter] = useState('');
+  const [liabilityPaidFilter, setLiabilityPaidFilter] = useState('');
+  const [liabilityExcludedFilter, setLiabilityExcludedFilter] = useState('');
+  const [isLiabilityFilterOpen, setIsLiabilityFilterOpen] = useState(false);
+
+  const hasAssetFilters = assetNameFilter !== '' || assetTypeFilter !== '' || assetCurrencyFilter !== '' || assetExcludedFilter !== '';
+  const hasLiabilityFilters = liabilityNameFilter !== '' || liabilityTypeFilter !== '' || liabilityCurrencyFilter !== '' || liabilityPaidFilter !== '' || liabilityExcludedFilter !== '';
+
+  const clearAssetFilters = () => {
+    setAssetNameFilter('');
+    setAssetTypeFilter('');
+    setAssetCurrencyFilter('');
+    setAssetExcludedFilter('');
+  };
+
+  const clearLiabilityFilters = () => {
+    setLiabilityNameFilter('');
+    setLiabilityTypeFilter('');
+    setLiabilityCurrencyFilter('');
+    setLiabilityPaidFilter('');
+    setLiabilityExcludedFilter('');
+  };
 
   // Define which account types are assets vs liabilities
   const assetTypes: AccountType[] = ['cash', 'bank', 'exchange', 'investment', 'property', 'other'];
@@ -836,15 +1009,65 @@ export const NetWorthPage: React.FC = () => {
     return { totalMonthlyReturn: monthly, totalYearlyReturn: yearly };
   }, [accounts, convertAmount, baseCurrency]);
 
-  // Filter accounts
-  const assetAccounts = useMemo(
+  // Filter accounts by type
+  const allAssetAccounts = useMemo(
     () => accounts.filter((account) => assetTypes.includes(account.type)),
     [accounts]
   );
-  const liabilityAccounts = useMemo(
+  const allLiabilityAccounts = useMemo(
     () => accounts.filter((account) => liabilityTypes.includes(account.type)),
     [accounts]
   );
+
+  // Apply filters to assets
+  const assetAccounts = useMemo(() => {
+    return allAssetAccounts.filter((account) => {
+      if (assetNameFilter && !account.name.toLowerCase().includes(assetNameFilter.toLowerCase())) {
+        return false;
+      }
+      if (assetTypeFilter && account.type !== assetTypeFilter) {
+        return false;
+      }
+      if (assetCurrencyFilter && account.currency !== assetCurrencyFilter) {
+        return false;
+      }
+      if (assetExcludedFilter === 'included' && account.excludeFromTotal) {
+        return false;
+      }
+      if (assetExcludedFilter === 'excluded' && !account.excludeFromTotal) {
+        return false;
+      }
+      return true;
+    });
+  }, [allAssetAccounts, assetNameFilter, assetTypeFilter, assetCurrencyFilter, assetExcludedFilter]);
+
+  // Apply filters to liabilities
+  const liabilityAccounts = useMemo(() => {
+    return allLiabilityAccounts.filter((account) => {
+      if (liabilityNameFilter && !account.name.toLowerCase().includes(liabilityNameFilter.toLowerCase())) {
+        return false;
+      }
+      if (liabilityTypeFilter && account.type !== liabilityTypeFilter) {
+        return false;
+      }
+      if (liabilityCurrencyFilter && account.currency !== liabilityCurrencyFilter) {
+        return false;
+      }
+      if (liabilityPaidFilter === 'paid' && !account.isPaidThisMonth) {
+        return false;
+      }
+      if (liabilityPaidFilter === 'unpaid' && account.isPaidThisMonth) {
+        return false;
+      }
+      if (liabilityExcludedFilter === 'included' && account.excludeFromTotal) {
+        return false;
+      }
+      if (liabilityExcludedFilter === 'excluded' && !account.excludeFromTotal) {
+        return false;
+      }
+      return true;
+    });
+  }, [allLiabilityAccounts, liabilityNameFilter, liabilityTypeFilter, liabilityCurrencyFilter, liabilityPaidFilter, liabilityExcludedFilter]);
 
   // Calculate totals (excluding excluded accounts)
   const { totalAssets, totalLiabilities, netWorth, excludedCount } = useMemo(() => {
@@ -875,8 +1098,8 @@ export const NetWorthPage: React.FC = () => {
     };
   }, [accounts, baseCurrency, convertAmount]);
 
-  // Count unpaid liabilities
-  const unpaidCount = liabilityAccounts.filter(
+  // Count unpaid liabilities (use all, not filtered)
+  const unpaidCount = allLiabilityAccounts.filter(
     (a) => a.recurringDueDate && !a.isPaidThisMonth && !a.excludeFromTotal
   ).length;
 
@@ -890,7 +1113,7 @@ export const NetWorthPage: React.FC = () => {
             {formatAmount(totalAssets)}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            {assetAccounts.filter(a => !a.excludeFromTotal).length} of {assetAccounts.length} accounts
+            {allAssetAccounts.filter(a => !a.excludeFromTotal).length} of {allAssetAccounts.length} accounts
           </p>
         </div>
 
@@ -900,7 +1123,7 @@ export const NetWorthPage: React.FC = () => {
             {formatAmount(totalLiabilities)}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            {liabilityAccounts.filter(a => !a.excludeFromTotal).length} of {liabilityAccounts.length} accounts
+            {allLiabilityAccounts.filter(a => !a.excludeFromTotal).length} of {allLiabilityAccounts.length} accounts
             {unpaidCount > 0 && (
               <span className="ml-2 text-amber-600 dark:text-amber-400">
                 ({unpaidCount} unpaid)
@@ -935,127 +1158,198 @@ export const NetWorthPage: React.FC = () => {
 
       {/* Assets Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+        <button
+          onClick={() => setIsAssetsCollapsed(!isAssetsCollapsed)}
+          className="w-full px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+        >
+          {isAssetsCollapsed ? (
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-gray-400" />
+          )}
           <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Assets</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-200 dark:border-gray-700">
-                  Type
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
-                  Currency
-                </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-300 dark:border-gray-600">
-                  Value
-                </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20 border-l border-gray-300 dark:border-gray-600">
-                  Yield
-                </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
-                  /Month
-                </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28 border-l border-gray-200 dark:border-gray-700">
-                  /Year
-                </th>
-                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16 border-l border-gray-200 dark:border-gray-700">
-                  Updated
-                </th>
-                <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
-                <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {assetAccounts.map((account, index) => (
-                <AccountRow
-                  key={account.id}
-                  account={account}
-                  typeOptions={ASSET_TYPES}
-                  onUpdate={(updates) => updateAccount(account.id, updates)}
-                  onToggleExclude={() => toggleExcludeFromTotal(account.id)}
-                  onDelete={() => deleteAccount(account.id)}
-                  enabledCurrencies={enabledCurrencies}
-                  index={index}
-                />
-              ))}
-              <AddAccountRow
-                typeOptions={ASSET_TYPES}
-                onAdd={addAccount}
-                baseCurrency={baseCurrency}
-                enabledCurrencies={enabledCurrencies}
-                colSpan={10}
-              />
-            </tbody>
-          </table>
-        </div>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left">Assets</h2>
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {assetAccounts.length} {hasAssetFilters ? `of ${allAssetAccounts.length}` : ''} accounts
+          </span>
+        </button>
+
+        {!isAssetsCollapsed && (
+          <>
+            <NetWorthFilterBar
+              nameFilter={assetNameFilter}
+              setNameFilter={setAssetNameFilter}
+              typeFilter={assetTypeFilter}
+              setTypeFilter={setAssetTypeFilter}
+              currencyFilter={assetCurrencyFilter}
+              setCurrencyFilter={setAssetCurrencyFilter}
+              paidFilter=""
+              setPaidFilter={() => {}}
+              excludedFilter={assetExcludedFilter}
+              setExcludedFilter={setAssetExcludedFilter}
+              enabledCurrencies={enabledCurrencies}
+              typeOptions={ASSET_TYPES.map(t => ({ value: t.value, label: t.label }))}
+              hasActiveFilters={hasAssetFilters}
+              onClearFilters={clearAssetFilters}
+              isOpen={isAssetFilterOpen}
+              onToggle={() => setIsAssetFilterOpen(!isAssetFilterOpen)}
+              accentColor="green"
+            />
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-200 dark:border-gray-700">
+                      Type
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
+                      Currency
+                    </th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-300 dark:border-gray-600">
+                      Value
+                    </th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20 border-l border-gray-300 dark:border-gray-600">
+                      Yield
+                    </th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
+                      /Month
+                    </th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28 border-l border-gray-200 dark:border-gray-700">
+                      /Year
+                    </th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16 border-l border-gray-200 dark:border-gray-700">
+                      Updated
+                    </th>
+                    <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
+                    <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assetAccounts.map((account, index) => (
+                    <AccountRow
+                      key={account.id}
+                      account={account}
+                      typeOptions={ASSET_TYPES}
+                      onUpdate={(updates) => updateAccount(account.id, updates)}
+                      onToggleExclude={() => toggleExcludeFromTotal(account.id)}
+                      onDelete={() => deleteAccount(account.id)}
+                      enabledCurrencies={enabledCurrencies}
+                      index={index}
+                    />
+                  ))}
+                  <AddAccountRow
+                    typeOptions={ASSET_TYPES}
+                    onAdd={addAccount}
+                    baseCurrency={baseCurrency}
+                    enabledCurrencies={enabledCurrencies}
+                    colSpan={10}
+                  />
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Liabilities Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+        <button
+          onClick={() => setIsLiabilitiesCollapsed(!isLiabilitiesCollapsed)}
+          className="w-full px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+        >
+          {isLiabilitiesCollapsed ? (
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-gray-400" />
+          )}
           <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Liabilities</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-200 dark:border-gray-700">
-                  Type
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
-                  Currency
-                </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-300 dark:border-gray-600">
-                  Value
-                </th>
-                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20 border-l border-gray-300 dark:border-gray-600">
-                  Due
-                </th>
-                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12 border-l border-gray-200 dark:border-gray-700">
-                  Paid
-                </th>
-                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16 border-l border-gray-200 dark:border-gray-700">
-                  Updated
-                </th>
-                <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
-                <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {liabilityAccounts.map((account, index) => (
-                <AccountRow
-                  key={account.id}
-                  account={account}
-                  typeOptions={LIABILITY_TYPES}
-                  isLiability
-                  onUpdate={(updates) => updateAccount(account.id, updates)}
-                  onToggleExclude={() => toggleExcludeFromTotal(account.id)}
-                  onDelete={() => deleteAccount(account.id)}
-                  enabledCurrencies={enabledCurrencies}
-                  index={index}
-                />
-              ))}
-              <AddAccountRow
-                typeOptions={LIABILITY_TYPES}
-                isLiability
-                onAdd={addAccount}
-                baseCurrency={baseCurrency}
-                enabledCurrencies={enabledCurrencies}
-                colSpan={9}
-              />
-            </tbody>
-          </table>
-        </div>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left">Liabilities</h2>
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {liabilityAccounts.length} {hasLiabilityFilters ? `of ${allLiabilityAccounts.length}` : ''} accounts
+          </span>
+        </button>
+
+        {!isLiabilitiesCollapsed && (
+          <>
+            <NetWorthFilterBar
+              nameFilter={liabilityNameFilter}
+              setNameFilter={setLiabilityNameFilter}
+              typeFilter={liabilityTypeFilter}
+              setTypeFilter={setLiabilityTypeFilter}
+              currencyFilter={liabilityCurrencyFilter}
+              setCurrencyFilter={setLiabilityCurrencyFilter}
+              paidFilter={liabilityPaidFilter}
+              setPaidFilter={setLiabilityPaidFilter}
+              excludedFilter={liabilityExcludedFilter}
+              setExcludedFilter={setLiabilityExcludedFilter}
+              enabledCurrencies={enabledCurrencies}
+              typeOptions={LIABILITY_TYPES.map(t => ({ value: t.value, label: t.label }))}
+              hasActiveFilters={hasLiabilityFilters}
+              onClearFilters={clearLiabilityFilters}
+              showPaidFilter
+              isOpen={isLiabilityFilterOpen}
+              onToggle={() => setIsLiabilityFilterOpen(!isLiabilityFilterOpen)}
+              accentColor="red"
+            />
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-200 dark:border-gray-700">
+                      Type
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
+                      Currency
+                    </th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-300 dark:border-gray-600">
+                      Value
+                    </th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20 border-l border-gray-300 dark:border-gray-600">
+                      Due
+                    </th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12 border-l border-gray-200 dark:border-gray-700">
+                      Paid
+                    </th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16 border-l border-gray-200 dark:border-gray-700">
+                      Updated
+                    </th>
+                    <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
+                    <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {liabilityAccounts.map((account, index) => (
+                    <AccountRow
+                      key={account.id}
+                      account={account}
+                      typeOptions={LIABILITY_TYPES}
+                      isLiability
+                      onUpdate={(updates) => updateAccount(account.id, updates)}
+                      onToggleExclude={() => toggleExcludeFromTotal(account.id)}
+                      onDelete={() => deleteAccount(account.id)}
+                      enabledCurrencies={enabledCurrencies}
+                      index={index}
+                    />
+                  ))}
+                  <AddAccountRow
+                    typeOptions={LIABILITY_TYPES}
+                    isLiability
+                    onAdd={addAccount}
+                    baseCurrency={baseCurrency}
+                    enabledCurrencies={enabledCurrencies}
+                    colSpan={9}
+                  />
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Empty State */}

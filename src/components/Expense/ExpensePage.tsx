@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calendar, RefreshCw, Home, ShoppingBag, Sparkles } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calendar, RefreshCw, Home, ShoppingBag, Sparkles, Filter, X } from 'lucide-react';
 import type { Expense, ExpenseRating } from '../../types';
 
 // Format date for display (compact format: Dec 11)
@@ -669,22 +669,167 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
   );
 };
 
+// Filter Bar Component
+interface FilterBarProps {
+  descriptionFilter: string;
+  setDescriptionFilter: (v: string) => void;
+  currencyFilter: string;
+  setCurrencyFilter: (v: string) => void;
+  categoryFilter: string;
+  setCategoryFilter: (v: string) => void;
+  recurringFilter: string;
+  setRecurringFilter: (v: string) => void;
+  enabledCurrencies: string[];
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+const FilterBar: React.FC<FilterBarProps> = ({
+  descriptionFilter,
+  setDescriptionFilter,
+  currencyFilter,
+  setCurrencyFilter,
+  categoryFilter,
+  setCategoryFilter,
+  recurringFilter,
+  setRecurringFilter,
+  enabledCurrencies,
+  hasActiveFilters,
+  onClearFilters,
+  isOpen,
+  onToggle,
+}) => {
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+      <button
+        onClick={onToggle}
+        className="w-full px-3 py-2 flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors rounded-xl"
+      >
+        <Filter className="w-4 h-4" />
+        <span className="text-sm font-medium">Filters</span>
+        {hasActiveFilters && (
+          <span className="px-1.5 py-0.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full">
+            Active
+          </span>
+        )}
+      </button>
+
+      {isOpen && (
+        <div className="px-3 pb-3 flex items-center gap-3 flex-wrap border-t border-gray-100 dark:border-gray-700 pt-3">
+          {/* Description Filter */}
+          <input
+            type="text"
+            value={descriptionFilter}
+            onChange={(e) => setDescriptionFilter(e.target.value)}
+            placeholder="Search description..."
+            className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-900 dark:text-white placeholder-gray-400 w-40"
+          />
+
+          {/* Currency Filter */}
+          <select
+            value={currencyFilter}
+            onChange={(e) => setCurrencyFilter(e.target.value)}
+            className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-red-500 text-gray-900 dark:text-white"
+          >
+            <option value="">All Currencies</option>
+            {enabledCurrencies.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+
+          {/* Category Filter */}
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-red-500 text-gray-900 dark:text-white"
+          >
+            <option value="">All Categories</option>
+            {RATING_OPTIONS.map((r) => (
+              <option key={r.value} value={r.value}>{r.label}</option>
+            ))}
+          </select>
+
+          {/* Recurring Filter */}
+          <select
+            value={recurringFilter}
+            onChange={(e) => setRecurringFilter(e.target.value)}
+            className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-red-500 text-gray-900 dark:text-white"
+          >
+            <option value="">All</option>
+            <option value="recurring">Recurring</option>
+            <option value="one-time">One-time</option>
+          </select>
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
+            <button
+              onClick={onClearFilters}
+              className="flex items-center gap-1 px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              <X className="w-3 h-3" />
+              Clear
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Main Component
 export const ExpensePage: React.FC = () => {
   const { expenses, addExpense, deleteExpense } = useExpenseStore();
   const { baseCurrency, enabledCurrencies, formatAmount, convertAmount } = useCurrencyStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Filter expenses by selected month
+  // Filter states
+  const [descriptionFilter, setDescriptionFilter] = useState('');
+  const [currencyFilter, setCurrencyFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [recurringFilter, setRecurringFilter] = useState('');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const hasActiveFilters = descriptionFilter !== '' || currencyFilter !== '' || categoryFilter !== '' || recurringFilter !== '';
+
+  const clearFilters = () => {
+    setDescriptionFilter('');
+    setCurrencyFilter('');
+    setCategoryFilter('');
+    setRecurringFilter('');
+  };
+
+  // Filter expenses by selected month and filters
   const filteredExpenses = useMemo(() => {
     const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
     const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59);
 
     return expenses.filter((expense) => {
       const expenseDate = parseLocalDate(expense.date);
-      return expenseDate >= startOfMonth && expenseDate <= endOfMonth;
+      const inMonth = expenseDate >= startOfMonth && expenseDate <= endOfMonth;
+      if (!inMonth) return false;
+
+      // Apply filters
+      if (descriptionFilter && !expense.what.toLowerCase().includes(descriptionFilter.toLowerCase())) {
+        return false;
+      }
+      if (currencyFilter && expense.currency !== currencyFilter) {
+        return false;
+      }
+      if (categoryFilter && expense.rating !== categoryFilter) {
+        return false;
+      }
+      if (recurringFilter === 'recurring' && !expense.recurring) {
+        return false;
+      }
+      if (recurringFilter === 'one-time' && expense.recurring) {
+        return false;
+      }
+
+      return true;
     }).sort((a, b) => parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime());
-  }, [expenses, selectedDate]);
+  }, [expenses, selectedDate, descriptionFilter, currencyFilter, categoryFilter, recurringFilter]);
 
   // Calculate monthly total
   const monthlyTotal = useMemo(() => {
@@ -794,6 +939,23 @@ export const ExpensePage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Filter Bar */}
+      <FilterBar
+        descriptionFilter={descriptionFilter}
+        setDescriptionFilter={setDescriptionFilter}
+        currencyFilter={currencyFilter}
+        setCurrencyFilter={setCurrencyFilter}
+        categoryFilter={categoryFilter}
+        setCategoryFilter={setCategoryFilter}
+        recurringFilter={recurringFilter}
+        setRecurringFilter={setRecurringFilter}
+        enabledCurrencies={enabledCurrencies}
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={clearFilters}
+        isOpen={isFilterOpen}
+        onToggle={() => setIsFilterOpen(!isFilterOpen)}
+      />
 
       {/* Expense Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
