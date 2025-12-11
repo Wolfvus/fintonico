@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { LedgerAccount, LedgerAccountNormalBalance, LedgerAccountCategory } from '../types';
+import type { LedgerAccount } from '../types';
 
 interface LedgerAccountState {
   accounts: LedgerAccount[];
@@ -12,7 +12,7 @@ interface LedgerAccountState {
 
 export const useLedgerAccountStore = create<LedgerAccountState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       accounts: [],
 
       addAccount: (newAccount) => {

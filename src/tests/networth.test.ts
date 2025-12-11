@@ -39,19 +39,22 @@ describe('net worth selector', () => {
     accountStore.addAccount({
       name: 'Savings Account',
       type: 'bank',
-      balances: [{ currency: 'MXN', amount: 50000 }],
+      currency: 'MXN',
+      balance: 50000,
     });
 
     accountStore.addAccount({
       name: 'Brokerage',
       type: 'investment',
-      balances: [{ currency: 'MXN', amount: 10000 }],
+      currency: 'MXN',
+      balance: 10000,
     });
 
     accountStore.addAccount({
       name: 'Visa Credit Card',
       type: 'credit-card',
-      balances: [{ currency: 'MXN', amount: -1800 }],
+      currency: 'MXN',
+      balance: -1800,
     });
 
     const snapshot = getNetWorthAt(new Date('2025-10-31'));
@@ -70,13 +73,15 @@ describe('net worth selector', () => {
     accountStore.addAccount({
       name: 'Credit Card',
       type: 'credit-card',
-      balances: [{ currency: 'MXN', amount: -5000 }], // Debt stored as negative
+      currency: 'MXN',
+      balance: -5000, // Debt stored as negative
     });
 
     accountStore.addAccount({
       name: 'Mortgage',
       type: 'mortgage',
-      balances: [{ currency: 'MXN', amount: -200000 }], // Debt stored as negative
+      currency: 'MXN',
+      balance: -200000, // Debt stored as negative
     });
 
     const snapshot = getNetWorthAt(new Date());
@@ -103,14 +108,16 @@ describe('net worth selector', () => {
     accountStore.addAccount({
       name: 'US Bank Account',
       type: 'bank',
-      balances: [{ currency: 'USD', amount: 1000 }],
+      currency: 'USD',
+      balance: 1000,
     });
 
     // MXN account: 5000 MXN
     accountStore.addAccount({
       name: 'Local Bank',
       type: 'bank',
-      balances: [{ currency: 'MXN', amount: 5000 }],
+      currency: 'MXN',
+      balance: 5000,
     });
 
     const snapshot = getNetWorthAt(new Date());
@@ -126,7 +133,8 @@ describe('net worth selector', () => {
     accountStore.addAccount({
       name: 'External Account',
       type: 'bank',
-      balances: [{ currency: 'MXN', amount: 10000 }],
+      currency: 'MXN',
+      balance: 10000,
     });
 
     const balances = getBalancesAt(new Date());
@@ -143,17 +151,17 @@ describe('net worth selector', () => {
     const accountStore = useAccountStore.getState();
 
     // Asset types
-    accountStore.addAccount({ name: 'Cash', type: 'cash', balances: [{ currency: 'MXN', amount: 1000 }] });
-    accountStore.addAccount({ name: 'Bank', type: 'bank', balances: [{ currency: 'MXN', amount: 2000 }] });
-    accountStore.addAccount({ name: 'Exchange', type: 'exchange', balances: [{ currency: 'MXN', amount: 3000 }] });
-    accountStore.addAccount({ name: 'Investment', type: 'investment', balances: [{ currency: 'MXN', amount: 4000 }] });
-    accountStore.addAccount({ name: 'Property', type: 'property', balances: [{ currency: 'MXN', amount: 5000 }] });
-    accountStore.addAccount({ name: 'Other', type: 'other', balances: [{ currency: 'MXN', amount: 6000 }] });
+    accountStore.addAccount({ name: 'Cash', type: 'cash', currency: 'MXN', balance: 1000 });
+    accountStore.addAccount({ name: 'Bank', type: 'bank', currency: 'MXN', balance: 2000 });
+    accountStore.addAccount({ name: 'Exchange', type: 'exchange', currency: 'MXN', balance: 3000 });
+    accountStore.addAccount({ name: 'Investment', type: 'investment', currency: 'MXN', balance: 4000 });
+    accountStore.addAccount({ name: 'Property', type: 'property', currency: 'MXN', balance: 5000 });
+    accountStore.addAccount({ name: 'Other', type: 'other', currency: 'MXN', balance: 6000 });
 
     // Liability types (stored as negative)
-    accountStore.addAccount({ name: 'Loan', type: 'loan', balances: [{ currency: 'MXN', amount: -100 }] });
-    accountStore.addAccount({ name: 'Credit Card', type: 'credit-card', balances: [{ currency: 'MXN', amount: -200 }] });
-    accountStore.addAccount({ name: 'Mortgage', type: 'mortgage', balances: [{ currency: 'MXN', amount: -300 }] });
+    accountStore.addAccount({ name: 'Loan', type: 'loan', currency: 'MXN', balance: -100 });
+    accountStore.addAccount({ name: 'Credit Card', type: 'credit-card', currency: 'MXN', balance: -200 });
+    accountStore.addAccount({ name: 'Mortgage', type: 'mortgage', currency: 'MXN', balance: -300 });
 
     const snapshot = getNetWorthAt(new Date());
 

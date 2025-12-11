@@ -22,8 +22,7 @@
 | Task | Status | Files |
 | --- | --- | --- |
 | Create EditableTable component | ✅ | `src/components/common/EditableTable.tsx` |
-| Redesign AccountsPage with editable tables | ✅ | `src/components/Accounts/AccountsPage.tsx` |
-| Inline editing for account name | ✅ | Click-to-edit with Enter/Escape support |
+| Notion-style inline editing | ✅ | Click-to-edit with Enter/Escape support |
 | Type selector dropdown | ✅ | Emoji icons with dropdown selection |
 | Payment due date (day of month) | ✅ | Calendar grid picker for liabilities |
 | Paid status checkbox | ✅ | Green checkmark when paid this month |
@@ -97,14 +96,90 @@ interface LedgerAccount {
 | Update routing | ✅ | `src/App.tsx` |
 | Update Navigation component | ✅ | `src/components/Navigation/Navigation.tsx` |
 
+#### Step 3.4: Remove Legacy Assets/Liabilities Sections ✅
+
+| Task | Status | Files |
+| --- | --- | --- |
+| Remove Assets tab from navigation | ✅ | Consolidated into Net Worth |
+| Remove Liabilities tab from navigation | ✅ | Consolidated into Net Worth |
+| Delete AssetsPage component | ✅ | `src/components/Assets/` |
+| Delete LiabilitiesPage component | ✅ | `src/components/Liabilities/` |
+| Delete AssetForm component | ✅ | `src/components/AssetForm/` |
+| Delete LiabilityForm component | ✅ | `src/components/LiabilityForm/` |
+| Delete old AccountsPage | ✅ | `src/components/Accounts/` |
+| Update App.tsx imports and routes | ✅ | `src/App.tsx` |
+
+**Final Navigation Structure:**
+- Dashboard
+- Income
+- Expenses
+- Net Worth (assets + liabilities in one table)
+- Accounts (chart of accounts)
+
+---
+
+## Phase 2: Color Palette & Theme ☐
+
+**Goal:** Establish a unified, consistent color system with proper semantic tokens and accessible contrast ratios.
+
+### Step 1: Define Unified Color Palette ✅
+
+| Task | Status | Files |
+| --- | --- | --- |
+| Add brand colors to Tailwind config | ✅ | `tailwind.config.js` |
+| Create semantic color tokens | ✅ | Success, error, warning, info |
+| Define surface colors | ✅ | Background, card, elevated |
+| Remove unused theme.ts | ✅ | `src/styles/theme.ts` |
+| Update CSS custom properties | ✅ | `src/index.css` |
+| Create utility classes | ✅ | `.card`, `.btn-*`, `.badge-*`, etc. |
+
+**Color Palette:**
+```
+Brand Colors:
+- Primary: Teal (#2FA5A9) - main actions, links
+- Accent: Gold (#F5B700) - highlights, badges
+- Navy: (#1E2A38) - text, headers
+
+Semantic Colors:
+- Success: Green (#22C55E)
+- Error: Red (#EF4444)
+- Warning: Amber (#F59E0B)
+- Info: Blue (#3B82F6)
+
+Surfaces (Light):
+- Background: Blue-50 (#EFF6FF)
+- Card: White (#FFFFFF)
+- Elevated: Blue-100 (#DBEAFE)
+- Border: Blue-200 (#BFDBFE)
+
+Surfaces (Dark):
+- Background: Gray-900 (#111827)
+- Card: Gray-800 (#1F2937)
+- Elevated: Gray-700 (#374151)
+- Border: Gray-700 (#374151)
+```
+
+### Step 2: Improve Dark/Light Mode Consistency ☐
+
+| Task | Status | Files |
+| --- | --- | --- |
+| Audit hardcoded colors in components | ☐ | All component files |
+| Replace with Tailwind custom colors | ☐ | Use `bg-surface-*`, `text-*` |
+| Consolidate theme state management | ☐ | Remove duplicate theme state |
+| Update formStyles.ts | ☐ | Use semantic color classes |
+
+### Step 3: Ensure Accessible Contrast Ratios ☐
+
+| Task | Status | Files |
+| --- | --- | --- |
+| Check text/background contrast | ☐ | WCAG AA (4.5:1 for text) |
+| Check interactive elements | ☐ | WCAG AA (3:1 for UI) |
+| Adjust colors if needed | ☐ | Update palette |
+| Test with color blindness simulators | ☐ | Verify accessibility |
+
 ---
 
 ## Future Phases (Planned)
-
-### Phase 2: Color Palette & Theme
-- Refine color palette
-- Improve dark/light mode consistency
-- Accessible contrast ratios
 
 ### Phase 3: Typography & Spacing
 - Font hierarchy

@@ -53,17 +53,20 @@ export const seedMockData = async (): Promise<void> => {
     {
       name: 'Brokerage Account',
       type: 'investment' as const,
-      balances: [{ currency: 'USD', amount: 12000 }],
+      currency: 'USD',
+      balance: 12000,
     },
     {
       name: 'Travel Fund',
       type: 'cash' as const,
-      balances: [{ currency: 'MXN', amount: 5000 }],
+      currency: 'MXN',
+      balance: 5000,
     },
     {
       name: 'Visa Credit Card',
       type: 'credit-card' as const,
-      balances: [{ currency: 'MXN', amount: -1800 }],
+      currency: 'MXN',
+      balance: -1800,
       dueDate: '2025-10-25',
     },
   ];

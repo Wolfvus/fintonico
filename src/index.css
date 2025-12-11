@@ -5,54 +5,97 @@
 @tailwind utilities;
 
 @layer base {
+  /* ========================================
+     CSS Custom Properties (Design Tokens)
+     ======================================== */
   :root {
-    --color-navy: #1E2A38;
-    --color-green: #2FA5A9;
-    --color-gray: #F2F4F7;
-    --color-gold: #F5B700;
-    --color-navy-light: #2A3A4E;
-    --color-navy-dark: #141C26;
-    --color-green-light: #4DB8BC;
-    --color-green-dark: #268F92;
-    --color-gold-light: #FFD43B;
-    --color-gold-dark: #E5A600;
+    /* Brand Colors */
+    --color-primary: #2FA5A9;
+    --color-primary-hover: #268F92;
+    --color-primary-light: #4DB8BC;
+
+    --color-accent: #F5B700;
+    --color-accent-hover: #E5A600;
+    --color-accent-light: #FFD43B;
+
+    /* Text Colors */
+    --color-text-primary: #1E2A38;
+    --color-text-secondary: #475569;
+    --color-text-muted: #64748B;
+    --color-text-inverse: #FFFFFF;
+
+    /* Surface Colors (Light Mode) */
+    --color-surface-bg: #EFF6FF;
+    --color-surface-card: #FFFFFF;
+    --color-surface-elevated: #DBEAFE;
+    --color-surface-muted: #F1F5F9;
+
+    /* Border Colors */
+    --color-border: #BFDBFE;
+    --color-border-light: #DBEAFE;
+    --color-border-focus: #2FA5A9;
+
+    /* Semantic Colors */
+    --color-success: #22C55E;
+    --color-success-bg: #DCFCE7;
+    --color-error: #EF4444;
+    --color-error-bg: #FEE2E2;
+    --color-warning: #F59E0B;
+    --color-warning-bg: #FEF3C7;
+    --color-info: #3B82F6;
+    --color-info-bg: #DBEAFE;
+
+    /* Focus ring */
+    --color-focus-ring: rgba(47, 165, 169, 0.25);
   }
 
   .dark {
-    --color-navy: #E5E7EB;
-    --color-green: #4DB8BC;
-    --color-gray: #111827;
-    --color-gold: #FFD43B;
-    --color-navy-light: #F3F4F6;
-    --color-navy-dark: #9CA3AF;
-    --color-green-light: #67E8F9;
-    --color-green-dark: #0891B2;
-    --color-gold-light: #FDE047;
-    --color-gold-dark: #CA8A04;
+    /* Text Colors (Dark Mode) */
+    --color-text-primary: #F9FAFB;
+    --color-text-secondary: #D1D5DB;
+    --color-text-muted: #9CA3AF;
+    --color-text-inverse: #111827;
+
+    /* Surface Colors (Dark Mode) */
+    --color-surface-bg: #111827;
+    --color-surface-card: #1F2937;
+    --color-surface-elevated: #374151;
+    --color-surface-muted: #1F2937;
+
+    /* Border Colors (Dark Mode) */
+    --color-border: #374151;
+    --color-border-light: #4B5563;
+
+    /* Semantic Colors (Dark Mode - adjusted for dark backgrounds) */
+    --color-success-bg: rgba(34, 197, 94, 0.15);
+    --color-error-bg: rgba(239, 68, 68, 0.15);
+    --color-warning-bg: rgba(245, 158, 11, 0.15);
+    --color-info-bg: rgba(59, 130, 246, 0.15);
+
+    /* Focus ring (Dark Mode) */
+    --color-focus-ring: rgba(77, 184, 188, 0.3);
   }
 
+  /* ========================================
+     Base Element Styles
+     ======================================== */
   body {
-    @apply antialiased transition-colors;
-    background-color: var(--color-gray);
-    color: var(--color-navy);
+    @apply antialiased transition-colors duration-200;
+    background-color: var(--color-surface-bg);
+    color: var(--color-text-primary);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   }
 
+  /* Focus styles for accessibility */
   input:focus,
   select:focus,
   textarea:focus,
-  button:focus {
+  button:focus-visible {
     @apply outline-none;
-    box-shadow: 0 0 0 3px rgba(47, 165, 169, 0.1);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
   }
 
-  .dark input:focus,
-  .dark select:focus,
-  .dark textarea:focus,
-  .dark button:focus {
-    box-shadow: 0 0 0 3px rgba(77, 184, 188, 0.2);
-  }
-
+  /* Remove number input spinners */
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
@@ -65,75 +108,183 @@
 }
 
 @layer components {
-  .app-card {
-    @apply rounded-xl shadow-lg p-6 transition-all;
-    background-color: var(--color-gray);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+  /* ========================================
+     Card Components
+     ======================================== */
+  .card {
+    @apply rounded-xl shadow-sm transition-all;
+    background-color: var(--color-surface-card);
+    border: 1px solid var(--color-border);
   }
 
-  .dark .app-card {
-    background-color: #1F2937;
-    border-color: rgba(255, 255, 255, 0.1);
+  .card-elevated {
+    @apply rounded-xl shadow-md transition-all;
+    background-color: var(--color-surface-card);
+    border: 1px solid var(--color-border);
+  }
+
+  /* ========================================
+     Form Components
+     ======================================== */
+  .input {
+    @apply rounded-lg px-3 py-2 text-sm transition-colors;
+    background-color: var(--color-surface-card);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+  }
+
+  .input:focus {
+    border-color: var(--color-border-focus);
+  }
+
+  .input::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  .select {
+    @apply rounded-lg px-3 py-2 text-sm appearance-none cursor-pointer transition-colors;
+    background-color: var(--color-surface-card);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+  }
+
+  /* ========================================
+     Button Components
+     ======================================== */
+  .btn {
+    @apply font-medium px-4 py-2 rounded-lg transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn text-white;
+    background-color: var(--color-primary);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--color-primary-hover);
+  }
+
+  .btn-secondary {
+    @apply btn;
+    background-color: var(--color-surface-elevated);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--color-surface-muted);
+  }
+
+  .btn-ghost {
+    @apply btn;
+    background-color: transparent;
+    color: var(--color-text-secondary);
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    background-color: var(--color-surface-elevated);
+  }
+
+  .btn-danger {
+    @apply btn text-white;
+    background-color: var(--color-error);
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background-color: #DC2626;
+  }
+
+  /* ========================================
+     Badge Components
+     ======================================== */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full;
+  }
+
+  .badge-success {
+    @apply badge;
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+  }
+
+  .badge-error {
+    @apply badge;
+    background-color: var(--color-error-bg);
+    color: var(--color-error);
+  }
+
+  .badge-warning {
+    @apply badge;
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning);
+  }
+
+  .badge-info {
+    @apply badge;
+    background-color: var(--color-info-bg);
+    color: var(--color-info);
+  }
+
+  .badge-neutral {
+    @apply badge;
+    background-color: var(--color-surface-elevated);
+    color: var(--color-text-secondary);
+  }
+
+  /* ========================================
+     Text Utility Classes
+     ======================================== */
+  .text-primary {
+    color: var(--color-text-primary);
+  }
+
+  .text-secondary {
+    color: var(--color-text-secondary);
+  }
+
+  .text-muted {
+    color: var(--color-text-muted);
+  }
+
+  .text-success {
+    color: var(--color-success);
+  }
+
+  .text-error {
+    color: var(--color-error);
+  }
+
+  .text-warning {
+    color: var(--color-warning);
+  }
+
+  /* ========================================
+     Legacy Classes (for backwards compatibility)
+     These map to the new design tokens
+     ======================================== */
+  .app-card {
+    @apply card p-6;
   }
 
   .app-input {
-    @apply rounded-lg px-4 py-2 transition-all;
-    background-color: var(--color-gray);
-    border: 1px solid var(--color-green);
-    color: var(--color-navy);
-  }
-
-  .dark .app-input {
-    background-color: #374151;
-    border-color: var(--color-green);
-    color: var(--color-navy);
+    @apply input;
+    border-color: var(--color-primary);
   }
 
   .app-button-primary {
-    background-color: var(--color-green);
-    @apply text-white font-semibold px-6 py-2 rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md;
-  }
-
-  .app-button-primary:hover {
-    background-color: var(--color-green-dark);
+    @apply btn-primary shadow-md hover:scale-[1.02];
   }
 
   .app-button-secondary {
-    @apply font-medium px-4 py-2 rounded-lg transition-all;
-    background-color: var(--color-gray);
-    border: 1px solid var(--color-navy);
-    color: var(--color-navy);
-  }
-
-  .dark .app-button-secondary {
-    background-color: #374151;
-    border-color: var(--color-navy);
-    color: var(--color-navy);
-  }
-
-  .app-button-secondary:hover {
-    background-color: var(--color-gray);
-    opacity: 0.8;
-  }
-
-  .dark .app-button-secondary:hover {
-    background-color: #4B5563;
+    @apply btn-secondary;
   }
 
   .app-badge {
-    @apply inline-block px-3 py-1 text-xs font-medium rounded-full;
+    @apply badge;
   }
 
   .app-select {
-    @apply rounded-lg px-4 py-2 appearance-none cursor-pointer transition-all;
-    background-color: var(--color-gray);
-    border: 1px solid var(--color-green);
-    color: var(--color-navy);
-  }
-
-  .dark .app-select {
-    background-color: #374151;
-    border-color: var(--color-green);
-    color: var(--color-navy);
+    @apply select;
+    border-color: var(--color-primary);
   }
 }

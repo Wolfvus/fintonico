@@ -49,7 +49,7 @@ interface AccountState {
 // Implement the Zustand Store
 export const useAccountStore = create<AccountState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       // Initial State
       accounts: [],
 

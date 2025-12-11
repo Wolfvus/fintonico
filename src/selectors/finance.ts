@@ -40,19 +40,20 @@ export const getBalancesAt = (date: Date = new Date()) => {
   // These are the user's actual financial accounts with real balances
   // The ledger is for transaction tracking, not for balance sheet positions
 
-  const processedBalances = externalAccounts.map(account => {
-    const accountTotal = account.balances.reduce((sum, balance) => {
-      return sum + convertAmount(balance.amount, balance.currency, baseCurrency);
-    }, 0);
+  const processedBalances = externalAccounts
+    .filter(account => !account.excludeFromTotal) // Respect exclude flag
+    .map(account => {
+      // Use the new single currency/balance format
+      const accountTotal = convertAmount(account.balance, account.currency, baseCurrency);
 
-    return {
-      accountId: account.id,
-      accountName: account.name,
-      accountType: account.type,
-      balance: Money.fromMajorUnits(accountTotal, baseCurrency),
-      asOfDate
-    };
-  });
+      return {
+        accountId: account.id,
+        accountName: account.name,
+        accountType: account.type,
+        balance: Money.fromMajorUnits(accountTotal, baseCurrency),
+        asOfDate
+      };
+    });
 
   return {
     // For backwards compatibility, put all balances in externalBalances

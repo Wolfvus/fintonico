@@ -341,11 +341,9 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
     }
     
     const yieldIncomes = investmentAccounts.map(account => {
-      // Calculate total value of the investment account
-      const accountTotal = account.balances.reduce((sum, balance) => {
-        const { convertAmount, baseCurrency } = useCurrencyStore.getState();
-        return sum + convertAmount(balance.amount, balance.currency, baseCurrency);
-      }, 0);
+      // Calculate total value of the investment account (using new single currency/balance format)
+      const { convertAmount, baseCurrency } = useCurrencyStore.getState();
+      const accountTotal = convertAmount(account.balance, account.currency, baseCurrency);
       
       // Assume 5% annual yield, calculate monthly
       const monthlyYield = (accountTotal * 0.05) / 12;

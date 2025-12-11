@@ -42,19 +42,22 @@ describe('month-end summary', () => {
     const checkingAccount = accountStore.addAccount({
       name: 'Checking Account',
       type: 'bank',
-      balances: [{ currency: 'MXN', amount: 0 }],
+      currency: 'MXN',
+      balance: 0,
     });
 
     const creditCardAccount = accountStore.addAccount({
       name: 'Visa Credit Card',
       type: 'credit-card',
-      balances: [{ currency: 'MXN', amount: -200 }],
+      currency: 'MXN',
+      balance: -200,
     });
 
     accountStore.addAccount({
       name: 'Beach House',
       type: 'property',
-      balances: [{ currency: 'MXN', amount: 500000 }],
+      currency: 'MXN',
+      balance: 500000,
     });
 
     await incomeStore.addIncome({

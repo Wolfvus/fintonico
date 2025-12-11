@@ -1,8 +1,6 @@
 import React from 'react';
 import {
   Home,
-  TrendingUp,
-  TrendingDown,
   Wallet,
   Menu,
   X,
@@ -49,8 +47,6 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: 'expenses', label: 'Expenses', icon: Wallet },
     { id: 'networth', label: 'Net Worth', icon: Landmark },
     { id: 'accounts', label: 'Accounts', icon: BookOpen },
-    { id: 'assets', label: 'Assets', icon: TrendingUp },
-    { id: 'liabilities', label: 'Liabilities', icon: TrendingDown },
   ];
 
   const handleSignOut = async () => {

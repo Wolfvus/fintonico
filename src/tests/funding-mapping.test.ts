@@ -83,7 +83,8 @@ describe('funding mapping for income and expenses', () => {
     const cardAccount = accountStore.addAccount({
       name: 'Visa Credit Card',
       type: 'credit-card',
-      balances: [{ currency: 'MXN', amount: -250 }],
+      currency: 'MXN',
+      balance: -250,
     });
 
     await expenseStore.addExpense({
@@ -117,7 +118,8 @@ describe('funding mapping for income and expenses', () => {
     const checkingAccount = accountStore.addAccount({
       name: 'Checking Account',
       type: 'bank',
-      balances: [{ currency: 'MXN', amount: 0 }],
+      currency: 'MXN',
+      balance: 0,
     });
 
     await incomeStore.addIncome({
