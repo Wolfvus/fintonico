@@ -31,7 +31,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const [customEndDate, setCustomEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isTransactionsCollapsed, setIsTransactionsCollapsed] = useState(false);
-  const [isPendingCollapsed, setIsPendingCollapsed] = useState(false);
+  const [isPendingCollapsed, setIsPendingCollapsed] = useState(true);
   const itemsPerPage = 10;
   
   // Generate investment yields on dashboard load
@@ -846,15 +846,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                             </span>
                           </td>
                           <td className="py-2 px-4">
-                            <span className="opacity-60">
-                              <CurrencyBadge
-                                currency={entry.currency}
-                                baseCurrency={baseCurrency}
-                              />
-                            </span>
+                            <CurrencyBadge
+                              currency={entry.currency}
+                              baseCurrency={baseCurrency}
+                            />
                           </td>
                           <td className="py-2 px-4">
-                            <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+                            <span className="text-xs text-gray-400 dark:text-gray-500">
                               Pending
                             </span>
                           </td>

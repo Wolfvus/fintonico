@@ -163,10 +163,17 @@ const QuickAddForm: React.FC<QuickAddFormProps> = ({ onAdd, baseCurrency, enable
 };
 
 // Editable Cell Component
+// Format number with thousands separator (1,895.00)
+const formatNumberWithCommas = (value: number | string): string => {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '';
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 interface EditableCellProps {
   value: string;
   onChange: (value: string) => void;
-  type?: 'text' | 'number' | 'date';
+  type?: 'text' | 'number' | 'date' | 'currency';
   placeholder?: string;
   align?: 'left' | 'right';
   className?: string;
@@ -216,7 +223,8 @@ const EditableCell: React.FC<EditableCellProps> = ({
     return (
       <input
         ref={inputRef}
-        type={type}
+        type={type === 'currency' ? 'number' : type}
+        step={type === 'currency' ? '0.01' : undefined}
         value={localValue}
         onChange={(e) => setLocalValue(e.target.value)}
         onBlur={handleBlur}
@@ -231,6 +239,8 @@ const EditableCell: React.FC<EditableCellProps> = ({
   let displayValue = value;
   if (type === 'date' && value) {
     displayValue = formatDateCompact(value);
+  } else if (type === 'currency' && value) {
+    displayValue = formatNumberWithCommas(value);
   }
 
   return (
@@ -407,11 +417,11 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       </td>
 
       {/* Amount */}
-      <td className="py-1 px-1 w-28 border-l border-gray-300 dark:border-gray-600">
+      <td className="py-1 px-1 border-l border-gray-300 dark:border-gray-600">
         <EditableCell
           value={String(expense.amount)}
           onChange={(val) => onUpdate(expense.id, { amount: parseFloat(val) || 0 })}
-          type="number"
+          type="currency"
           placeholder="0.00"
           align="right"
           className="text-red-600 dark:text-red-400 font-medium"
@@ -419,7 +429,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       </td>
 
       {/* Currency */}
-      <td className="py-1 px-1 w-20 border-l border-gray-200 dark:border-gray-700">
+      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700">
         <CurrencyDropdown
           value={expense.currency}
           onChange={(currency) => onUpdate(expense.id, { currency })}
@@ -428,7 +438,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       </td>
 
       {/* Rating */}
-      <td className="py-1 px-1 w-32 border-l border-gray-200 dark:border-gray-700">
+      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700">
         <RatingDropdown
           value={expense.rating}
           onChange={(rating) => onUpdate(expense.id, { rating })}
@@ -436,7 +446,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       </td>
 
       {/* Date */}
-      <td className="py-1 px-1 w-24 border-l border-gray-200 dark:border-gray-700">
+      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700">
         <EditableCell
           value={expense.date}
           onChange={(date) => onUpdate(expense.id, { date })}
@@ -446,7 +456,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       </td>
 
       {/* Recurring */}
-      <td className="py-1 px-1 w-10 border-l border-gray-200 dark:border-gray-700">
+      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-center">
           <RecurringToggle
             value={expense.recurring || false}
@@ -456,13 +466,13 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
       </td>
 
       {/* Delete */}
-      <td className="py-1 px-1 w-10 border-l border-gray-200 dark:border-gray-700">
+      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700">
         <button
           onClick={() => onDelete(expense.id)}
-          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-all"
+          className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-all"
           title="Delete expense"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-3.5 h-3.5" />
         </button>
       </td>
     </tr>
@@ -598,28 +608,37 @@ export const ExpensePage: React.FC = () => {
       {/* Expense Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto overflow-y-visible">
-          <table className="w-full">
+          <table className="w-full table-fixed">
+            <colgroup>
+              <col className="w-auto" /> {/* Description - flexible */}
+              <col className="w-28" /> {/* Amount */}
+              <col className="w-20" /> {/* Currency */}
+              <col className="w-28" /> {/* Category */}
+              <col className="w-20" /> {/* Date */}
+              <col className="w-10" /> {/* Recurring */}
+              <col className="w-10" /> {/* Delete */}
+            </colgroup>
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                   Description
                 </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28 border-l border-gray-300 dark:border-gray-600">
+                <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600">
                   Amount
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20 border-l border-gray-200 dark:border-gray-700">
+                <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700">
                   Curr
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-200 dark:border-gray-700">
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700">
                   Category
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700">
                   Date
                 </th>
-                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-10 border-l border-gray-200 dark:border-gray-700">
-                  <RefreshCw className="w-3 h-3 mx-auto" />
+                <th className="px-1 py-2 text-center border-l border-gray-200 dark:border-gray-700" title="Recurring">
+                  <RefreshCw className="w-3 h-3 mx-auto text-gray-400" />
                 </th>
-                <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
+                <th className="w-8 border-l border-gray-200 dark:border-gray-700"></th>
               </tr>
             </thead>
             <tbody>

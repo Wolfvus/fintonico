@@ -183,11 +183,18 @@ const QuickAddForm: React.FC<QuickAddFormProps> = ({ onAdd, baseCurrency, enable
   );
 };
 
+// Format number with thousands separator (1,895.00)
+const formatNumberWithCommas = (value: number | string): string => {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '';
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 // Editable Cell Component
 interface EditableCellProps {
   value: string;
   onChange: (value: string) => void;
-  type?: 'text' | 'number' | 'date';
+  type?: 'text' | 'number' | 'date' | 'currency';
   placeholder?: string;
   align?: 'left' | 'right';
   className?: string;
@@ -237,7 +244,8 @@ const EditableCell: React.FC<EditableCellProps> = ({
     return (
       <input
         ref={inputRef}
-        type={type}
+        type={type === 'currency' ? 'number' : type}
+        step={type === 'currency' ? '0.01' : undefined}
         value={localValue}
         onChange={(e) => setLocalValue(e.target.value)}
         onBlur={handleBlur}
@@ -252,6 +260,8 @@ const EditableCell: React.FC<EditableCellProps> = ({
   let displayValue = value;
   if (type === 'date' && value) {
     displayValue = formatDateCompact(value);
+  } else if (type === 'currency' && value) {
+    displayValue = formatNumberWithCommas(value);
   }
 
   return (
@@ -405,11 +415,11 @@ const IncomeRow: React.FC<IncomeRowProps> = ({
       </td>
 
       {/* Amount */}
-      <td className="py-1 px-1 w-28 border-l border-gray-300 dark:border-gray-600">
+      <td className="py-1 px-1 border-l border-gray-300 dark:border-gray-600">
         <EditableCell
           value={String(income.amount)}
           onChange={(val) => onUpdate(income.id, { amount: parseFloat(val) || 0 })}
-          type="number"
+          type="currency"
           placeholder="0.00"
           align="right"
           className="text-green-600 dark:text-green-400 font-medium"
@@ -417,7 +427,7 @@ const IncomeRow: React.FC<IncomeRowProps> = ({
       </td>
 
       {/* Currency */}
-      <td className="py-1 px-1 w-20 border-l border-gray-200 dark:border-gray-700">
+      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700">
         <CurrencyDropdown
           value={income.currency}
           onChange={(currency) => onUpdate(income.id, { currency })}
@@ -426,7 +436,7 @@ const IncomeRow: React.FC<IncomeRowProps> = ({
       </td>
 
       {/* Frequency */}
-      <td className="py-1 px-1 w-24 border-l border-gray-200 dark:border-gray-700">
+      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700">
         <FrequencyDropdown
           value={income.frequency}
           onChange={(frequency) => onUpdate(income.id, { frequency })}
@@ -434,7 +444,7 @@ const IncomeRow: React.FC<IncomeRowProps> = ({
       </td>
 
       {/* Date */}
-      <td className="py-1 px-1 w-24 border-l border-gray-200 dark:border-gray-700">
+      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700">
         <EditableCell
           value={income.date}
           onChange={(date) => onUpdate(income.id, { date })}
@@ -444,13 +454,13 @@ const IncomeRow: React.FC<IncomeRowProps> = ({
       </td>
 
       {/* Delete */}
-      <td className="py-1 px-1 w-10 border-l border-gray-200 dark:border-gray-700">
+      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700">
         <button
           onClick={() => onDelete(income.id)}
-          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-all"
+          className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-all"
           title="Delete income"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-3.5 h-3.5" />
         </button>
       </td>
     </tr>
@@ -569,25 +579,33 @@ export const IncomePage: React.FC = () => {
       {/* Income Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto overflow-y-visible">
-          <table className="w-full">
+          <table className="w-full table-fixed">
+            <colgroup>
+              <col className="w-auto" /> {/* Source - flexible */}
+              <col className="w-24" /> {/* Amount */}
+              <col className="w-16" /> {/* Currency */}
+              <col className="w-24" /> {/* Frequency */}
+              <col className="w-20" /> {/* Date */}
+              <col className="w-8" /> {/* Delete */}
+            </colgroup>
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                   Source
                 </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28 border-l border-gray-300 dark:border-gray-600">
+                <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600">
                   Amount
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20 border-l border-gray-200 dark:border-gray-700">
+                <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700">
                   Curr
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
-                  Frequency
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700">
+                  Freq
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700">
                   Date
                 </th>
-                <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
+                <th className="w-8 border-l border-gray-200 dark:border-gray-700"></th>
               </tr>
             </thead>
             <tbody>
