@@ -18,6 +18,13 @@ const parseFormattedNumber = (value: string): number => {
   return parseFloat(cleaned) || 0;
 };
 
+// Format date for display (compact format: Dec 11)
+const formatDateCompact = (dateStr: string | undefined): string => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr + 'T00:00:00');
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
 // Account type configurations
 const ASSET_TYPES: { value: AccountType; label: string; icon: string }[] = [
   { value: 'cash', label: 'Cash', icon: '💵' },
@@ -234,10 +241,32 @@ function DropdownSelector<T extends string>({
   useEffect(() => {
     if (isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      const dropdownHeight = 200; // Approximate max height of dropdown
+      const dropdownWidth = Math.max(rect.width, 120);
+
+      let top = rect.bottom + 4;
+      let left = rect.left;
+
+      // Check if dropdown would go off the bottom edge
+      if (top + dropdownHeight > window.innerHeight) {
+        // Position above the button instead
+        top = rect.top - dropdownHeight - 4;
+      }
+
+      // Ensure top is not negative
+      if (top < 8) {
+        top = 8;
+      }
+
+      // Check if dropdown would go off the right edge
+      if (left + dropdownWidth > window.innerWidth) {
+        left = window.innerWidth - dropdownWidth - 8;
+      }
+
       setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
-        width: Math.max(rect.width, 120),
+        top: top + window.scrollY,
+        left: left + window.scrollX,
+        width: dropdownWidth,
       });
     }
   }, [isOpen]);
@@ -319,10 +348,37 @@ const DayOfMonthSelector: React.FC<DayOfMonthSelectorProps> = ({ value, onChange
   useEffect(() => {
     if (isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      // Position to the left to avoid going off-screen
+      const dropdownWidth = 192; // w-48 = 12rem = 192px
+      const dropdownHeight = 220; // Approximate height of calendar grid
+
+      // Calculate initial position
+      let top = rect.bottom + 4;
+      let left = rect.right - dropdownWidth;
+
+      // Check if dropdown would go off the right edge
+      if (left + dropdownWidth > window.innerWidth) {
+        left = window.innerWidth - dropdownWidth - 8;
+      }
+
+      // Check if dropdown would go off the left edge
+      if (left < 8) {
+        left = 8;
+      }
+
+      // Check if dropdown would go off the bottom edge
+      if (top + dropdownHeight > window.innerHeight) {
+        // Position above the button instead
+        top = rect.top - dropdownHeight - 4;
+      }
+
+      // Ensure top is not negative
+      if (top < 8) {
+        top = 8;
+      }
+
       setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.right + window.scrollX - 192, // 192px = w-48
+        top: top + window.scrollY,
+        left: left + window.scrollX,
       });
     }
   }, [isOpen]);
@@ -335,11 +391,10 @@ const DayOfMonthSelector: React.FC<DayOfMonthSelectorProps> = ({ value, onChange
         disabled={disabled}
         className={`flex items-center gap-1 px-2 py-1.5 text-sm ${disabled ? 'cursor-default opacity-60' : 'hover:bg-gray-100 dark:hover:bg-gray-700/50'} rounded-md transition-colors`}
       >
-        <Calendar className="w-3.5 h-3.5 text-gray-400" />
-        <span className="text-gray-600 dark:text-gray-400">
-          {value ? `Day ${value}` : '-'}
+        <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
+          {value ? value : '-'}
         </span>
-        {!disabled && <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
+        {!disabled && <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />}
       </button>
 
       {isOpen && !disabled && createPortal(
@@ -486,7 +541,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
       </td>
 
       {/* Type */}
-      <td className="py-1 px-1 w-32">
+      <td className="py-1 px-1 w-32 border-l border-gray-200 dark:border-gray-700">
         <DropdownSelector
           value={account.type}
           options={typeOptions}
@@ -496,7 +551,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
       </td>
 
       {/* Currency */}
-      <td className="py-1 px-1 w-24">
+      <td className="py-1 px-1 w-24 border-l border-gray-200 dark:border-gray-700">
         <DropdownSelector
           value={account.currency}
           options={currencyOptions}
@@ -506,7 +561,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
       </td>
 
       {/* Value */}
-      <td className="py-1 px-1 w-32 border-l border-gray-200 dark:border-gray-700">
+      <td className="py-1 px-1 w-32 border-l border-gray-300 dark:border-gray-600">
         <EditableCell
           value={String(Math.abs(account.balance))}
           onChange={(val) => {
@@ -523,7 +578,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
 
       {/* Yield % (assets only, editable for all types) */}
       {!isLiability && (
-        <td className="py-1 px-1 w-20 border-l border-gray-200 dark:border-gray-700">
+        <td className="py-1 px-1 w-20 border-l border-gray-300 dark:border-gray-600">
           <EditableCell
             value={account.estimatedYield ? String(account.estimatedYield) : ''}
             onChange={(val) => {
@@ -541,7 +596,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
 
       {/* Monthly Return (assets only) */}
       {!isLiability && (
-        <td className="py-1 px-1 w-24">
+        <td className="py-1 px-1 w-24 border-l border-gray-200 dark:border-gray-700">
           <div className={`px-2 py-1.5 text-sm text-right ${
             monthlyReturn > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
           }`}>
@@ -552,7 +607,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
 
       {/* Yearly Return (assets only) */}
       {!isLiability && (
-        <td className="py-1 px-1 w-28">
+        <td className="py-1 px-1 w-28 border-l border-gray-200 dark:border-gray-700">
           <div className={`px-2 py-1.5 text-sm text-right ${
             yearlyReturn > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
           }`}>
@@ -563,7 +618,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
 
       {/* Due Date (liabilities only) */}
       {isLiability && (
-        <td className="py-1 px-1 w-20 border-l border-gray-200 dark:border-gray-700">
+        <td className="py-1 px-1 w-20 border-l border-gray-300 dark:border-gray-600">
           <DayOfMonthSelector
             value={account.recurringDueDate}
             onChange={(recurringDueDate) => onUpdate({ recurringDueDate })}
@@ -574,7 +629,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
 
       {/* Paid Status (liabilities only) */}
       {isLiability && (
-        <td className="py-1 px-1 w-12">
+        <td className="py-1 px-1 w-12 border-l border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-center">
             <PaidCheckbox
               isPaid={account.isPaidThisMonth || false}
@@ -588,8 +643,15 @@ const AccountRow: React.FC<AccountRowProps> = ({
         </td>
       )}
 
+      {/* Last Updated */}
+      <td className="py-1 px-1 w-16 border-l border-gray-200 dark:border-gray-700">
+        <div className="px-1 py-1.5 text-xs text-gray-400 dark:text-gray-500 text-center whitespace-nowrap">
+          {formatDateCompact(account.lastUpdated)}
+        </div>
+      </td>
+
       {/* Exclude Toggle */}
-      <td className="py-1 px-1 w-10">
+      <td className="py-1 px-1 w-10 border-l border-gray-200 dark:border-gray-700">
         <ExcludeToggle
           isExcluded={isExcluded}
           onChange={onToggleExclude}
@@ -597,7 +659,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
       </td>
 
       {/* Delete */}
-      <td className="py-1 px-1 w-10">
+      <td className="py-1 px-1 w-10 border-l border-gray-200 dark:border-gray-700">
         <button
           onClick={onDelete}
           className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-all"
@@ -730,9 +792,12 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({
           className="w-full px-2 py-1.5 text-sm text-right bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
         />
       </td>
-      <td className="py-1 px-1 w-28"></td>
+      {!isLiability && <td className="py-1 px-1 w-20"></td>}
+      {!isLiability && <td className="py-1 px-1 w-24"></td>}
+      {!isLiability && <td className="py-1 px-1 w-28"></td>}
       {isLiability && <td className="py-1 px-1 w-20"></td>}
       {isLiability && <td className="py-1 px-1 w-12"></td>}
+      <td className="py-1 px-1 w-16"></td>
       <td className="py-1 px-1 w-10"></td>
       <td className="py-1 px-1 w-10">
         <button
@@ -881,26 +946,29 @@ export const NetWorthPage: React.FC = () => {
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Name
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-200 dark:border-gray-700">
                   Type
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
                   Currency
                 </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-200 dark:border-gray-700">
+                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-300 dark:border-gray-600">
                   Value
                 </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20 border-l border-gray-200 dark:border-gray-700">
+                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20 border-l border-gray-300 dark:border-gray-600">
                   Yield
                 </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
                   /Month
                 </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
+                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28 border-l border-gray-200 dark:border-gray-700">
                   /Year
                 </th>
-                <th className="w-10"></th>
-                <th className="w-10"></th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16 border-l border-gray-200 dark:border-gray-700">
+                  Updated
+                </th>
+                <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
+                <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
               </tr>
             </thead>
             <tbody>
@@ -921,7 +989,7 @@ export const NetWorthPage: React.FC = () => {
                 onAdd={addAccount}
                 baseCurrency={baseCurrency}
                 enabledCurrencies={enabledCurrencies}
-                colSpan={9}
+                colSpan={10}
               />
             </tbody>
           </table>
@@ -941,23 +1009,26 @@ export const NetWorthPage: React.FC = () => {
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Name
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-200 dark:border-gray-700">
                   Type
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
                   Currency
                 </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-200 dark:border-gray-700">
+                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-300 dark:border-gray-600">
                   Value
                 </th>
-                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20 border-l border-gray-200 dark:border-gray-700">
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20 border-l border-gray-300 dark:border-gray-600">
                   Due
                 </th>
-                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12">
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12 border-l border-gray-200 dark:border-gray-700">
                   Paid
                 </th>
-                <th className="w-10"></th>
-                <th className="w-10"></th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16 border-l border-gray-200 dark:border-gray-700">
+                  Updated
+                </th>
+                <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
+                <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
               </tr>
             </thead>
             <tbody>
@@ -980,7 +1051,7 @@ export const NetWorthPage: React.FC = () => {
                 onAdd={addAccount}
                 baseCurrency={baseCurrency}
                 enabledCurrencies={enabledCurrencies}
-                colSpan={8}
+                colSpan={9}
               />
             </tbody>
           </table>

@@ -53,6 +53,7 @@ export interface Account {
   isPaidThisMonth?: boolean;       // Whether this month's payment has been made
   lastPaidDate?: string;           // Date of last payment (YYYY-MM-DD)
   estimatedYield?: number;         // Annual yield percentage (e.g., 5.5 for 5.5%)
+  lastUpdated?: string;            // Auto-updated timestamp when account is modified (YYYY-MM-DD)
   // Kept for backwards compatibility during migration
   balances?: AccountBalance[];
 }

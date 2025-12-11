@@ -58,6 +58,7 @@ export const useAccountStore = create<AccountState>()(
         const completeAccount: Account = {
           ...newAccount,
           id: crypto.randomUUID(),
+          lastUpdated: new Date().toISOString().split('T')[0],
         };
 
         set((state) => ({
@@ -76,10 +77,11 @@ export const useAccountStore = create<AccountState>()(
 
       // updateAccount function - now accepts partial updates
       updateAccount: (accountId, updates) => {
+        const today = new Date().toISOString().split('T')[0];
         set((state) => ({
           accounts: state.accounts.map(account =>
             account.id === accountId
-              ? { ...account, ...updates }
+              ? { ...account, ...updates, lastUpdated: today }
               : account
           )
         }));
@@ -87,10 +89,11 @@ export const useAccountStore = create<AccountState>()(
 
       // updateAccountBalance function - simplified for single balance
       updateAccountBalance: (accountId, newBalance) => {
+        const today = new Date().toISOString().split('T')[0];
         set((state) => ({
           accounts: state.accounts.map(account =>
             account.id === accountId
-              ? { ...account, balance: newBalance }
+              ? { ...account, balance: newBalance, lastUpdated: today }
               : account
           )
         }));
@@ -98,10 +101,11 @@ export const useAccountStore = create<AccountState>()(
 
       // toggleExcludeFromTotal function
       toggleExcludeFromTotal: (accountId) => {
+        const today = new Date().toISOString().split('T')[0];
         set((state) => ({
           accounts: state.accounts.map(account =>
             account.id === accountId
-              ? { ...account, excludeFromTotal: !account.excludeFromTotal }
+              ? { ...account, excludeFromTotal: !account.excludeFromTotal, lastUpdated: today }
               : account
           )
         }));
