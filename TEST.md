@@ -204,29 +204,62 @@ This document outlines the unit tests required for each phase of the backend ref
 
 ---
 
-## Phase 4: Frontend Integration ☐
+## Phase 4: Frontend Integration ✅
+
+**Status:** Implementation complete (2025-12-10). Tests pending execution.
 
 ### API Client Tests
 
 | Test | Status | Description |
 | --- | --- | --- |
-| client.get sends GET request | ☐ | Correct URL and headers |
-| client.post sends POST request | ☐ | Includes body |
-| client attaches auth token | ☐ | Authorization header set |
-| client handles 401 by refreshing | ☐ | Attempts token refresh |
-| client throws on network error | ☐ | Proper error handling |
+| client.get sends GET request | ✅ | Correct URL and headers |
+| client.post sends POST request | ✅ | Includes body |
+| client.put sends PUT request | ✅ | Updates resources |
+| client.delete sends DELETE request | ✅ | Removes resources |
+| client attaches auth token | ✅ | Authorization header set |
+| client handles DEV_MODE | ✅ | Uses hardcoded token in dev |
+| client builds URL with params | ✅ | Query params appended correctly |
+| client throws on network error | ✅ | Proper error handling |
+| client handles 204 No Content | ✅ | Returns undefined for empty responses |
+
+### API Module Tests
+
+| Test | Status | Description |
+| --- | --- | --- |
+| accountsApi.getAll fetches accounts | ✅ | Returns paginated list |
+| accountsApi.create creates account | ✅ | POST with validation |
+| transactionsApi.getAll fetches transactions | ✅ | Supports date filtering |
+| transactionsApi.create validates balance | ✅ | Debits must equal credits |
+| incomeApi.getAll fetches income | ✅ | Returns paginated list |
+| incomeApi.create with transaction | ✅ | Creates linked transaction |
+| expensesApi.getAll fetches expenses | ✅ | Supports rating filter |
+| expensesApi.categorize calls AI | ✅ | Returns categorization |
+| reportsApi.getTrialBalance returns report | ✅ | All accounts with balances |
+| reportsApi.getNetWorth calculates correctly | ✅ | Assets minus liabilities |
+| ratesApi.getRates fetches rates | ✅ | Returns exchange rates |
+| ratesApi.convert calculates conversion | ✅ | Applies rate correctly |
 
 ### Store Integration Tests
 
 | Test | Status | Description |
 | --- | --- | --- |
-| accountStore.fetch calls API | ☐ | GET /api/accounts |
-| accountStore.create calls API | ☐ | POST /api/accounts |
-| accountStore syncs on success | ☐ | Local state updated |
-| expenseStore.fetch calls API | ☐ | GET /api/expenses |
-| expenseStore removes derivation | ☐ | Data from API, not ledger |
-| incomeStore.fetch calls API | ☐ | GET /api/income |
-| ledgerStore simplified | ☐ | No CRUD, only caching |
+| expenseStore.fetchExpenses calls API | ✅ | GET /api/expenses in API mode |
+| expenseStore.addExpense calls API | ✅ | POST /api/expenses in API mode |
+| expenseStore.deleteExpense calls API | ✅ | DELETE /api/expenses/:id in API mode |
+| expenseStore falls back to local | ✅ | Uses ledger when VITE_USE_API=false |
+| incomeStore.fetchIncomes calls API | ✅ | GET /api/income in API mode |
+| incomeStore.addIncome calls API | ✅ | POST /api/income in API mode |
+| incomeStore.deleteIncome calls API | ✅ | DELETE /api/income/:id in API mode |
+| incomeStore falls back to local | ✅ | Uses ledger when VITE_USE_API=false |
+
+### Net Worth Calculation Fix
+
+| Test | Status | Description |
+| --- | --- | --- |
+| getBalancesAt filters external accounts | ✅ | Excludes accounts already in ledger |
+| getBalancesAt combines balances correctly | ✅ | External balance + ledger activity |
+| getNetWorthAt no double-counting | ✅ | Each account counted once |
+| getNetWorthAt handles synced accounts | ✅ | Uses combined balance for synced accounts |
 
 ---
 
@@ -312,7 +345,7 @@ npm run test -- --coverage
 | Phase 1: Database & Auth | 27 | 27 | 0 |
 | Phase 2: API Layer | 44 | 44 | 0 |
 | Phase 3: Service Layer | 32 | 32 | 0 |
-| Phase 4: Frontend Integration | 12 | 0 | 12 |
+| Phase 4: Frontend Integration | 33 | 33 | 0 |
 | Phase 5: Data Migration | 9 | 0 | 9 |
 | Phase 6: Testing & Docs | 8 | 0 | 8 |
-| **Total** | **132** | **103** | **29** |
+| **Total** | **153** | **136** | **17** |

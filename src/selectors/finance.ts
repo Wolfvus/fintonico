@@ -34,55 +34,74 @@ export const getBalancesAt = (date: Date = new Date()) => {
   const ledgerStore = useLedgerStore.getState();
   const { baseCurrency, convertAmount } = useCurrencyStore.getState();
   const { accounts } = useAccountStore.getState();
-  
+
   const asOfDate = endOfDay(date);
-  
+
   // Get ledger account balances (using booked amounts)
   const ledgerBalances = ledgerStore.getAllAccountBalances(asOfDate);
-  
-  // Get external account balances and convert to base currency
-  const externalBalances = accounts.map(account => {
-    const accountTotal = account.balances.reduce((sum, balance) => {
-      return sum + convertAmount(balance.amount, balance.currency, baseCurrency);
-    }, 0);
-    
-    return {
-      accountId: account.id,
-      accountName: account.name,
-      accountType: account.type,
-      balance: Money.fromMajorUnits(accountTotal, baseCurrency),
-      asOfDate
-    };
-  });
-  
+
+  // Create map of external account IDs to their balances for quick lookup
+  const externalAccountMap = new Map(accounts.map(a => [a.id, a]));
+
+  // Get external account balances for accounts NOT in ledger
+  // These are accounts that haven't been used in any transactions yet
+  const ledgerAccountIds = new Set(ledgerStore.accounts.map(a => a.id));
+  const pureExternalBalances = accounts
+    .filter(account => !ledgerAccountIds.has(account.id))
+    .map(account => {
+      const accountTotal = account.balances.reduce((sum, balance) => {
+        return sum + convertAmount(balance.amount, balance.currency, baseCurrency);
+      }, 0);
+
+      return {
+        accountId: account.id,
+        accountName: account.name,
+        accountType: account.type,
+        balance: Money.fromMajorUnits(accountTotal, baseCurrency),
+        asOfDate
+      };
+    });
+
   // Convert ledger balances to consistent format and currency
+  // For accounts that exist in both stores, combine: external balance + ledger activity
   const processedLedgerBalances = ledgerBalances.map(balance => {
-    const account = ledgerStore.getAccount(balance.accountId);
+    const ledgerAccount = ledgerStore.getAccount(balance.accountId);
+    const externalAccount = externalAccountMap.get(balance.accountId);
+
     // Convert ledger balance to base currency
     const currentCurrency = balance.balance.getCurrency();
-    let finalBalance: Money;
-    
+    let ledgerBalance: Money;
+
     if (currentCurrency === baseCurrency) {
-      // No conversion needed
-      finalBalance = balance.balance;
+      ledgerBalance = balance.balance;
     } else {
-      // Convert to base currency
       const convertedAmount = convertAmount(balance.balance.toMajorUnits(), currentCurrency, baseCurrency);
-      finalBalance = Money.fromMajorUnits(convertedAmount, baseCurrency);
+      ledgerBalance = Money.fromMajorUnits(convertedAmount, baseCurrency);
     }
-    
+
+    // If this ledger account also exists in accountStore (external account),
+    // add the external account's manual balance to the ledger transaction activity
+    let finalBalance = ledgerBalance;
+    if (externalAccount) {
+      const externalTotal = externalAccount.balances.reduce((sum, bal) => {
+        return sum + convertAmount(bal.amount, bal.currency, baseCurrency);
+      }, 0);
+      const externalBalance = Money.fromMajorUnits(externalTotal, baseCurrency);
+      finalBalance = externalBalance.add(ledgerBalance);
+    }
+
     return {
       accountId: balance.accountId,
-      accountName: account?.name || 'Unknown',
-      accountType: account?.nature || 'other',
+      accountName: ledgerAccount?.name || 'Unknown',
+      accountType: ledgerAccount?.nature || 'other',
       balance: finalBalance,
       asOfDate: balance.asOfDate
     };
   });
-  
+
   return {
     ledgerBalances: processedLedgerBalances,
-    externalBalances,
+    externalBalances: pureExternalBalances,
     asOfDate
   };
 };

@@ -6,6 +6,10 @@ import { Money } from '../domain/money';
 import type { Income } from '../types';
 import { sanitizeDescription, validateAmount, validateDate } from '../utils/sanitization';
 import { isBalanceSheetAccountType } from '../utils/accountClassifications';
+import { incomeApi } from '../api';
+
+// Use API mode when backend is available
+const USE_API = import.meta.env.VITE_USE_API === 'true';
 
 export type IncomeFrequency = 'one-time' | 'weekly' | 'yearly' | 'monthly';
 
@@ -21,10 +25,13 @@ export interface NewIncome {
 interface IncomeState {
   incomes: Income[];
   loading: boolean;
+  error: string | null;
   addIncome: (income: NewIncome) => Promise<void>;
-  deleteIncome: (id: string) => void;
+  deleteIncome: (id: string) => Promise<void>;
+  fetchIncomes: (filters?: { startDate?: string; endDate?: string }) => Promise<void>;
   getMonthlyTotal: () => number;
   generateInvestmentYields: () => void;
+  clearError: () => void;
   // Internal method to derive from ledger
   _deriveIncomesFromLedger: () => Income[];
 }
@@ -76,6 +83,41 @@ const storage = {
 export const useIncomeStore = create<IncomeState>((set, get) => ({
   incomes: storage.get(),
   loading: false,
+  error: null,
+
+  clearError: () => set({ error: null }),
+
+  // Fetch incomes from API or derive from ledger
+  fetchIncomes: async (filters) => {
+    if (USE_API) {
+      set({ loading: true, error: null });
+      try {
+        const response = await incomeApi.getAll({
+          startDate: filters?.startDate,
+          endDate: filters?.endDate,
+        });
+        // Map API response to local Income type
+        const incomes: Income[] = response.data.map(i => ({
+          id: i.id,
+          source: i.source,
+          amount: i.amount,
+          currency: i.currency,
+          frequency: (i.recurrence_interval as IncomeFrequency) || 'one-time',
+          date: i.received_date,
+          created_at: i.created_at,
+          depositAccountId: undefined,
+          depositAccountName: undefined,
+          depositAccountNature: undefined,
+        }));
+        set({ incomes, loading: false });
+      } catch (error) {
+        set({ error: (error as Error).message, loading: false });
+      }
+    } else {
+      // Derive from ledger in local mode
+      set({ incomes: get()._deriveIncomesFromLedger() });
+    }
+  },
 
   // Derive incomes from ledger transactions
   _deriveIncomesFromLedger: () => {
@@ -153,9 +195,33 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
   },
 
   addIncome: async (data: NewIncome) => {
+    if (USE_API) {
+      // API mode: call backend
+      set({ loading: true, error: null });
+      try {
+        await incomeApi.create({
+          amount: data.amount,
+          currency: data.currency,
+          source: data.source,
+          received_date: data.date || new Date().toISOString().split('T')[0],
+          is_recurring: data.frequency !== 'one-time',
+          recurrence_interval: data.frequency !== 'one-time' ? data.frequency : undefined,
+          create_transaction: true,
+          deposit_account_id: data.depositAccountId,
+        });
+        // Refresh incomes list
+        await get().fetchIncomes();
+      } catch (error) {
+        set({ error: (error as Error).message, loading: false });
+        throw error;
+      }
+      return;
+    }
+
+    // Local mode: use ledger store
     const ledgerStore = useLedgerStore.getState();
     const accountStore = useAccountStore.getState();
-    
+
     // Ensure default accounts exist
     ledgerStore.initializeDefaultAccounts();
 
@@ -177,14 +243,14 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
 
     const depositAccount = ledgerStore.syncExternalAccount(userDepositAccount);
     const incomeAccount = ledgerStore.getAccount('salary') || ledgerStore.getAccountsByNature('income')[0];
-    
+
     if (!depositAccount || !incomeAccount) {
       throw new Error('Required accounts not found');
     }
-    
+
     const amount = Money.fromMajorUnits(data.amount, data.currency);
     const date = data.date ? new Date(data.date) : new Date();
-    
+
     // Add transaction to ledger
     ledgerStore.addIncomeTransaction(
       data.source,
@@ -193,19 +259,34 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
       incomeAccount.id,
       date
     );
-    
+
     // Update local state to reflect changes
     set({ incomes: get()._deriveIncomesFromLedger() });
   },
 
-  deleteIncome: (id: string) => {
+  deleteIncome: async (id: string) => {
+    if (USE_API) {
+      // API mode: call backend
+      set({ loading: true, error: null });
+      try {
+        await incomeApi.delete(id);
+        // Refresh incomes list
+        await get().fetchIncomes();
+      } catch (error) {
+        set({ error: (error as Error).message, loading: false });
+        throw error;
+      }
+      return;
+    }
+
+    // Local mode: use ledger store
     const ledgerStore = useLedgerStore.getState();
-    
+
     // The ID format is: transactionId-postingId where both are UUIDs
     // UUIDs are in format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (36 chars)
     // So we need to extract the first 36 characters as the transaction ID
     let transactionId: string;
-    
+
     if (id.length > 36) {
       // Composite ID format: extract first UUID
       transactionId = id.substring(0, 36);
@@ -213,10 +294,10 @@ export const useIncomeStore = create<IncomeState>((set, get) => ({
       // Just a transaction ID
       transactionId = id;
     }
-    
+
     // Try to find the transaction
     const transaction = ledgerStore.getTransaction(transactionId);
-    
+
     if (transaction) {
       ledgerStore.deleteTransaction(transactionId);
       // Update local state

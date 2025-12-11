@@ -158,16 +158,35 @@ See [REFACTOR.md](./REFACTOR.md) for full details on the backend refactoring pla
 - `getRate()` - Get specific currency pair rate
 - `getSupportedCurrencies()` / `getBaseCurrency()` - Configuration
 
-## Phase 4: Frontend Integration ☐
+## Phase 4: Frontend Integration ✅
+
+**Status:** Completed (2025-12-10)
 
 | Task | Status | Files |
 | --- | --- | --- |
-| API client | ☐ | `src/api/client.ts` |
-| Refactor accountStore | ☐ | Remove localStorage, use API |
-| Refactor ledgerStore | ☐ | Simplify, remove CRUD logic |
-| Refactor expenseStore | ☐ | Remove derivation pattern |
-| Refactor incomeStore | ☐ | Remove derivation pattern |
-| Unify data models | ☐ | Single Account/Transaction types |
+| API client | ✅ | `src/api/client.ts`, `src/api/types.ts` |
+| API modules | ✅ | `src/api/accounts.ts`, `src/api/transactions.ts`, `src/api/income.ts`, `src/api/expenses.ts`, `src/api/reports.ts`, `src/api/rates.ts` |
+| Refactor expenseStore | ✅ | Added API mode with `VITE_USE_API` flag |
+| Refactor incomeStore | ✅ | Added API mode with `VITE_USE_API` flag |
+| Fix net worth calculation | ✅ | Fixed double-counting in `src/selectors/finance.ts` |
+
+### Frontend Integration Features
+
+**API Client:**
+- Singleton client with auth token handling
+- Support for DEV_MODE with hardcoded token
+- Automatic error handling and type-safe responses
+
+**Store Refactoring:**
+- Dual-mode operation: localStorage (local) or API (backend)
+- Toggle via `VITE_USE_API=true` environment variable
+- Backwards compatible with existing local-only mode
+- New `fetchExpenses()` and `fetchIncomes()` methods for API data fetching
+- Error state handling with `error` and `clearError()`
+
+**Bug Fix:**
+- Fixed net worth double-counting when external accounts were synced to ledger
+- External account balances now properly combined with ledger transaction activity
 
 ## Phase 5: Data Migration & Sync ☐
 
