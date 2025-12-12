@@ -1174,6 +1174,8 @@ export const ExpensePage: React.FC = () => {
 
   // CSV Import handler
   const handleImportCSV = async (file: File): Promise<{ success: boolean; message: string; count?: number }> => {
+    const MAX_IMPORT_ROWS = 500;
+
     try {
       const csvContent = await readCSVFile(file);
       const { data, errors } = parseExpenseCSV(csvContent);
@@ -1192,9 +1194,24 @@ export const ExpensePage: React.FC = () => {
         };
       }
 
+      // Limit import size
+      if (data.length > MAX_IMPORT_ROWS) {
+        return {
+          success: false,
+          message: `Too many rows (${data.length}). Maximum ${MAX_IMPORT_ROWS} rows per import.`,
+        };
+      }
+
+      // Build set of existing expenses for duplicate detection
+      // Key: date + description + amount + currency
+      const existingKeys = new Set(
+        expenses.map((e) => `${e.date}|${e.what.toLowerCase()}|${e.amount}|${e.currency}`)
+      );
+
       // Validate and import each row
       const validRatings = ['essential', 'discretionary', 'luxury'];
       let importedCount = 0;
+      let skippedDuplicates = 0;
       const importErrors: string[] = [];
 
       for (let i = 0; i < data.length; i++) {
@@ -1227,11 +1244,23 @@ export const ExpensePage: React.FC = () => {
           continue;
         }
 
+        const currency = row.currency?.toUpperCase() || baseCurrency;
+
+        // Check for duplicate
+        const key = `${row.date}|${row.description.toLowerCase()}|${amount}|${currency}`;
+        if (existingKeys.has(key)) {
+          skippedDuplicates++;
+          continue;
+        }
+
+        // Add to existing keys to prevent duplicates within the import
+        existingKeys.add(key);
+
         // Add the expense
         await addExpense({
           what: row.description,
           amount,
-          currency: row.currency?.toUpperCase() || baseCurrency,
+          currency,
           rating: category as ExpenseRating,
           date: row.date,
           recurring: row.recurring?.toLowerCase() === 'true',
@@ -1239,18 +1268,22 @@ export const ExpensePage: React.FC = () => {
         importedCount++;
       }
 
-      if (importErrors.length > 0 && importedCount === 0) {
+      if (importErrors.length > 0 && importedCount === 0 && skippedDuplicates === 0) {
         return {
           success: false,
           message: importErrors.slice(0, 5).join('\n') + (importErrors.length > 5 ? `\n...and ${importErrors.length - 5} more errors` : ''),
         };
       }
 
+      // Build result message
+      const messages: string[] = [];
+      if (importedCount > 0) messages.push(`${importedCount} imported`);
+      if (skippedDuplicates > 0) messages.push(`${skippedDuplicates} duplicates skipped`);
+      if (importErrors.length > 0) messages.push(`${importErrors.length} errors`);
+
       return {
-        success: true,
-        message: importErrors.length > 0
-          ? `Imported with ${importErrors.length} skipped rows`
-          : 'All expenses imported successfully',
+        success: importedCount > 0 || skippedDuplicates > 0,
+        message: messages.join(', ') || 'No expenses imported',
         count: importedCount,
       };
     } catch (error) {

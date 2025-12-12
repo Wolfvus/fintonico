@@ -1271,6 +1271,8 @@ export const NetWorthPage: React.FC = () => {
 
   // CSV Import handler
   const handleImportCSV = async (file: File): Promise<{ success: boolean; message: string; count?: number }> => {
+    const MAX_IMPORT_ROWS = 100;
+
     try {
       const csvContent = await readCSVFile(file);
       const { data, errors } = parseAccountCSV(csvContent);
@@ -1289,9 +1291,24 @@ export const NetWorthPage: React.FC = () => {
         };
       }
 
+      // Limit import size
+      if (data.length > MAX_IMPORT_ROWS) {
+        return {
+          success: false,
+          message: `Too many rows (${data.length}). Maximum ${MAX_IMPORT_ROWS} accounts per import.`,
+        };
+      }
+
+      // Build set of existing accounts for duplicate detection
+      // Key: name (case-insensitive) + type + currency
+      const existingKeys = new Set(
+        accounts.map((a) => `${a.name.toLowerCase()}|${a.type}|${a.currency}`)
+      );
+
       // Validate and import each row
       const validTypes = ['cash', 'bank', 'exchange', 'investment', 'property', 'loan', 'credit-card', 'mortgage', 'other'];
       let importedCount = 0;
+      let skippedDuplicates = 0;
       const importErrors: string[] = [];
 
       for (let i = 0; i < data.length; i++) {
@@ -1318,6 +1335,18 @@ export const NetWorthPage: React.FC = () => {
           continue;
         }
 
+        const currency = row.currency?.toUpperCase() || baseCurrency;
+
+        // Check for duplicate
+        const key = `${row.name.toLowerCase()}|${accountType}|${currency}`;
+        if (existingKeys.has(key)) {
+          skippedDuplicates++;
+          continue;
+        }
+
+        // Add to existing keys to prevent duplicates within the import
+        existingKeys.add(key);
+
         // Parse optional fields
         const estimatedYield = row.yield ? parseFloat(row.yield) : undefined;
         const recurringDueDate = row.due_date ? parseInt(row.due_date, 10) : undefined;
@@ -1328,7 +1357,7 @@ export const NetWorthPage: React.FC = () => {
         addAccount({
           name: row.name,
           type: accountType as AccountType,
-          currency: row.currency?.toUpperCase() || baseCurrency,
+          currency,
           balance: isLiability ? -Math.abs(balance) : balance,
           estimatedYield: estimatedYield && estimatedYield > 0 ? estimatedYield : undefined,
           recurringDueDate: recurringDueDate && recurringDueDate >= 1 && recurringDueDate <= 31 ? recurringDueDate : undefined,
@@ -1337,18 +1366,22 @@ export const NetWorthPage: React.FC = () => {
         importedCount++;
       }
 
-      if (importErrors.length > 0 && importedCount === 0) {
+      if (importErrors.length > 0 && importedCount === 0 && skippedDuplicates === 0) {
         return {
           success: false,
           message: importErrors.slice(0, 5).join('\n') + (importErrors.length > 5 ? `\n...and ${importErrors.length - 5} more errors` : ''),
         };
       }
 
+      // Build result message
+      const messages: string[] = [];
+      if (importedCount > 0) messages.push(`${importedCount} imported`);
+      if (skippedDuplicates > 0) messages.push(`${skippedDuplicates} duplicates skipped`);
+      if (importErrors.length > 0) messages.push(`${importErrors.length} errors`);
+
       return {
-        success: true,
-        message: importErrors.length > 0
-          ? `Imported with ${importErrors.length} skipped rows`
-          : 'All accounts imported successfully',
+        success: importedCount > 0 || skippedDuplicates > 0,
+        message: messages.join(', ') || 'No accounts imported',
         count: importedCount,
       };
     } catch (error) {

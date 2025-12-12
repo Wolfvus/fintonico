@@ -576,6 +576,8 @@ export const ChartOfAccountsPage: React.FC = () => {
 
   // CSV Import handler
   const handleImportCSV = async (file: File): Promise<{ success: boolean; message: string; count?: number }> => {
+    const MAX_IMPORT_ROWS = 50;
+
     try {
       const csvContent = await readCSVFile(file);
       const { data, errors } = parseLedgerAccountCSV(csvContent);
@@ -594,8 +596,23 @@ export const ChartOfAccountsPage: React.FC = () => {
         };
       }
 
+      // Limit import size
+      if (data.length > MAX_IMPORT_ROWS) {
+        return {
+          success: false,
+          message: `Too many rows (${data.length}). Maximum ${MAX_IMPORT_ROWS} accounts per import.`,
+        };
+      }
+
+      // Build set of existing accounts for duplicate detection
+      // Key: name (case-insensitive)
+      const existingKeys = new Set(
+        accounts.map((a) => a.name.toLowerCase())
+      );
+
       // Validate and import each row
       let importedCount = 0;
+      let skippedDuplicates = 0;
       const importErrors: string[] = [];
 
       for (let i = 0; i < data.length; i++) {
@@ -615,6 +632,16 @@ export const ChartOfAccountsPage: React.FC = () => {
           continue;
         }
 
+        // Check for duplicate
+        const key = row.name.toLowerCase();
+        if (existingKeys.has(key)) {
+          skippedDuplicates++;
+          continue;
+        }
+
+        // Add to existing keys to prevent duplicates within the import
+        existingKeys.add(key);
+
         // Add the account
         addAccount({
           name: row.name,
@@ -626,18 +653,22 @@ export const ChartOfAccountsPage: React.FC = () => {
         importedCount++;
       }
 
-      if (importErrors.length > 0 && importedCount === 0) {
+      if (importErrors.length > 0 && importedCount === 0 && skippedDuplicates === 0) {
         return {
           success: false,
           message: importErrors.slice(0, 5).join('\n') + (importErrors.length > 5 ? `\n...and ${importErrors.length - 5} more errors` : ''),
         };
       }
 
+      // Build result message
+      const messages: string[] = [];
+      if (importedCount > 0) messages.push(`${importedCount} imported`);
+      if (skippedDuplicates > 0) messages.push(`${skippedDuplicates} duplicates skipped`);
+      if (importErrors.length > 0) messages.push(`${importErrors.length} errors`);
+
       return {
-        success: true,
-        message: importErrors.length > 0
-          ? `Imported with ${importErrors.length} skipped rows`
-          : 'All accounts imported successfully',
+        success: importedCount > 0 || skippedDuplicates > 0,
+        message: messages.join(', ') || 'No accounts imported',
         count: importedCount,
       };
     } catch (error) {

@@ -351,11 +351,18 @@ export const exportLedgerAccountsToCSV = (
     isActive: boolean;
   }>
 ): string => {
+  // Prefix numeric strings with ' so spreadsheets treat them as text
+  const prefixNumeric = (val: string | undefined): string => {
+    if (!val) return '';
+    // If it looks like a long number, prefix with '
+    return /^\d{6,}$/.test(val) ? `'${val}` : val;
+  };
+
   return generateCSV(
     accounts.map((a) => ({
       name: a.name,
-      account_number: a.accountNumber ?? '',
-      clabe: a.clabe ?? '',
+      account_number: prefixNumeric(a.accountNumber),
+      clabe: prefixNumeric(a.clabe),
       normal_balance: a.normalBalance,
       active: a.isActive ? 'true' : 'false',
     })),
@@ -373,8 +380,41 @@ export const parseLedgerAccountCSV = (
   csvString: string
 ): { data: LedgerAccountCSVRow[]; errors: string[] } => {
   const result = parseCSV(csvString, ['name', 'normal_balance']);
+  const warnings: string[] = [];
+
+  // Clean numeric fields:
+  // - Strip leading ' if present (from our export or spreadsheet)
+  // - Convert scientific notation back to full number (Excel mangles long numbers)
+  // - Accept plain numbers for easy manual CSV creation
+  const cleanNumericField = (val: string, rowNum: number, fieldName: string): string => {
+    if (!val) return '';
+
+    // Strip leading ' if present
+    let cleaned = val.startsWith("'") ? val.slice(1) : val;
+
+    // Handle scientific notation (e.g., 6.46990404E+17)
+    // WARNING: This loses precision! Excel corrupts long numbers.
+    if (/^[\d.]+[eE][+-]?\d+$/.test(cleaned)) {
+      warnings.push(`Row ${rowNum}: ${fieldName} appears to be in scientific notation - precision may be lost. Re-export from original source if possible.`);
+      try {
+        const num = parseFloat(cleaned);
+        cleaned = num.toFixed(0);
+      } catch {
+        // If conversion fails, keep original
+      }
+    }
+
+    return cleaned;
+  };
+
+  const cleanedData = result.data.map((row, index) => ({
+    ...row,
+    account_number: cleanNumericField(row.account_number || '', index + 2, 'account_number'),
+    clabe: cleanNumericField(row.clabe || '', index + 2, 'clabe'),
+  }));
+
   return {
-    data: result.data as LedgerAccountCSVRow[],
-    errors: result.errors,
+    data: cleanedData as LedgerAccountCSVRow[],
+    errors: [...result.errors, ...warnings],
   };
 };
