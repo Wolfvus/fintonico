@@ -191,25 +191,62 @@
 
 ---
 
-## Future Phases
+## Phase 11.5: Net Worth & Accounts Filter UI Consistency ✅
 
-### Phase 12: Income Page Restructure (Planned)
+**Goal:** Make filter UI consistent across all tables. Net Worth tables (Assets/Liabilities) should use the same toggle-style filters as Income/Expense tables. Accounts section should have always-visible sticky filters for quick searching.
 
-**Goal:** Mirror the expense page structure for income - separate recurring and one-time income.
+### Step 1: Net Worth Tables - Toggle Filter Style ✅
 
 | Task | Status |
 | --- | --- |
-| Create "Recurring Income" collapsible section | Planned |
-| Create "Monthly Income" section (one-time) | Planned |
-| Add "bi-weekly" frequency option | Planned |
-| Each section has independent filters | Planned |
-| Summary shows totals for each section | Planned |
+| Assets table: Add Filter icon button in header | ✅ |
+| Assets table: Toggle filter row on click | ✅ |
+| Assets table: Highlight icon when filters active | ✅ |
+| Liabilities table: Add Filter icon button in header | ✅ |
+| Liabilities table: Toggle filter row on click | ✅ |
+| Liabilities table: Highlight icon when filters active | ✅ |
 
-**Layout:**
-- **Recurring Income** - Income sources that repeat (weekly/bi-weekly/monthly/yearly)
-- **Monthly Income** - One-time income for the selected month
+**Filter pattern (same as Income/Expense):**
+- Filter icon in last column header
+- Click to show/hide filter row
+- Icon highlighted (green for Assets, red for Liabilities) when filters are active
+- Clear button appears when filters are active
+
+### Step 2: Accounts Section - Always-Visible Filters ✅
+
+| Task | Status |
+| --- | --- |
+| Add sticky filter row to Accounts table | ✅ |
+| Name search filter (always visible) | ✅ |
+| Type filter dropdown (always visible) | ✅ |
+| Clear filters button | ✅ |
+
+**Rationale:** Accounts section is used for quick lookups, so filters should always be visible and sticky while scrolling.
 
 ---
+
+## Phase 12: Income Page Enhancements ✅
+
+**Goal:** Add bi-weekly frequency and improve income summary with expected monthly calculations.
+
+| Task | Status |
+| --- | --- |
+| Add "bi-weekly" frequency option | ✅ |
+| Add "Expected Monthly Income" summary card | ✅ |
+| Calculate normalized monthly totals from all frequencies | ✅ |
+
+**Rationale:** Most users have 1-2 income sources, so separating into multiple sections adds unnecessary complexity. Instead, focus on:
+- Supporting common pay schedules (bi-weekly is very common)
+- Showing actionable "Expected Monthly Income" that normalizes all frequencies
+
+**Monthly Conversion Factors:**
+- Weekly × 4
+- Bi-weekly × 2
+- Monthly × 1
+
+---
+
+## Future Phases
 
 ### Phase 13: Sticky Headers & Summary Cards (Planned)
 

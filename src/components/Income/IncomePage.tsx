@@ -28,9 +28,19 @@ const getTodayString = (): string => {
 const FREQUENCY_OPTIONS: { value: IncomeFrequency; label: string }[] = [
   { value: 'one-time', label: 'One-time' },
   { value: 'weekly', label: 'Weekly' },
+  { value: 'bi-weekly', label: 'Bi-weekly' },
   { value: 'monthly', label: 'Monthly' },
-  { value: 'yearly', label: 'Yearly' },
 ];
+
+// Monthly conversion factors for expected income calculation
+// Using Record<string, number> to handle legacy 'yearly' data
+const MONTHLY_FACTORS: Record<string, number> = {
+  'one-time': 0, // One-time doesn't contribute to expected monthly
+  'weekly': 4,
+  'bi-weekly': 2,
+  'monthly': 1,
+  'yearly': 1, // Legacy support - treat yearly as monthly for display
+};
 
 // Quick Add Form Component
 interface QuickAddFormProps {
@@ -765,7 +775,22 @@ interface FilterBarProps {
   onToggle: () => void;
 }
 
-const FilterBar: React.FC<FilterBarProps> = ({
+// Table Header with integrated Filter
+interface TableHeaderWithFilterProps {
+  sourceFilter: string;
+  setSourceFilter: (v: string) => void;
+  currencyFilter: string;
+  setCurrencyFilter: (v: string) => void;
+  frequencyFilter: string;
+  setFrequencyFilter: (v: string) => void;
+  enabledCurrencies: string[];
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+const TableHeaderWithFilter: React.FC<TableHeaderWithFilterProps> = ({
   sourceFilter,
   setSourceFilter,
   currencyFilter,
@@ -779,68 +804,89 @@ const FilterBar: React.FC<FilterBarProps> = ({
   onToggle,
 }) => {
   return (
-    <div className="px-3 py-2">
-      <button
-        onClick={onToggle}
-        className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-      >
-        <Filter className="w-4 h-4" />
-        <span className="text-sm font-medium">Filters</span>
-        {hasActiveFilters && (
-          <span className="px-1.5 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full">
-            Active
-          </span>
-        )}
-      </button>
-
+    <thead>
+      <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+          Source
+        </th>
+        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-28">
+          Amount
+        </th>
+        <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
+          Currency
+        </th>
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
+          Frequency
+        </th>
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
+          Date
+        </th>
+        <th className="w-10 border-l border-gray-200 dark:border-gray-700">
+          <button
+            onClick={onToggle}
+            className={`p-1.5 rounded-md transition-colors ${
+              hasActiveFilters
+                ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
+                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+            title="Toggle filters"
+          >
+            <Filter className="w-4 h-4" />
+          </button>
+        </th>
+      </tr>
       {isOpen && (
-        <div className="mt-3 flex items-center gap-3 flex-wrap">
-          {/* Source Filter */}
-          <input
-            type="text"
-            value={sourceFilter}
-            onChange={(e) => setSourceFilter(e.target.value)}
-            placeholder="Search source..."
-            className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-gray-900 dark:text-white placeholder-gray-400 w-40"
-          />
+        <tr className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+          <td colSpan={6} className="px-3 py-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Source Filter */}
+              <input
+                type="text"
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value)}
+                placeholder="Search source..."
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-gray-900 dark:text-white placeholder-gray-400 w-36"
+              />
 
-          {/* Currency Filter */}
-          <select
-            value={currencyFilter}
-            onChange={(e) => setCurrencyFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-green-500 text-gray-900 dark:text-white"
-          >
-            <option value="">All Currencies</option>
-            {enabledCurrencies.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+              {/* Currency Filter */}
+              <select
+                value={currencyFilter}
+                onChange={(e) => setCurrencyFilter(e.target.value)}
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
+              >
+                <option value="">All Currencies</option>
+                {enabledCurrencies.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
 
-          {/* Frequency Filter */}
-          <select
-            value={frequencyFilter}
-            onChange={(e) => setFrequencyFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-green-500 text-gray-900 dark:text-white"
-          >
-            <option value="">All Frequencies</option>
-            {FREQUENCY_OPTIONS.map((f) => (
-              <option key={f.value} value={f.value}>{f.label}</option>
-            ))}
-          </select>
+              {/* Frequency Filter */}
+              <select
+                value={frequencyFilter}
+                onChange={(e) => setFrequencyFilter(e.target.value)}
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
+              >
+                <option value="">All Frequencies</option>
+                {FREQUENCY_OPTIONS.map((f) => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </select>
 
-          {/* Clear Filters */}
-          {hasActiveFilters && (
-            <button
-              onClick={onClearFilters}
-              className="flex items-center gap-1 px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <X className="w-3 h-3" />
-              Clear
-            </button>
-          )}
-        </div>
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <button
+                  onClick={onClearFilters}
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                  Clear
+                </button>
+              )}
+            </div>
+          </td>
+        </tr>
       )}
-    </div>
+    </thead>
   );
 };
 
@@ -871,8 +917,16 @@ export const IncomePage: React.FC = () => {
 
     return incomes.filter((income) => {
       const incomeDate = parseLocalDate(income.date);
-      const inMonth = incomeDate >= startOfMonth && incomeDate <= endOfMonth;
-      if (!inMonth) return false;
+
+      // Recurring income: show if created on or before the selected month
+      // One-time income: only show in the month it was created
+      if (income.frequency === 'one-time') {
+        const inMonth = incomeDate >= startOfMonth && incomeDate <= endOfMonth;
+        if (!inMonth) return false;
+      } else {
+        // Recurring income shows in all months from creation date onwards
+        if (incomeDate > endOfMonth) return false;
+      }
 
       // Apply filters
       if (sourceFilter && !income.source.toLowerCase().includes(sourceFilter.toLowerCase())) {
@@ -886,14 +940,33 @@ export const IncomePage: React.FC = () => {
       }
 
       return true;
-    }).sort((a, b) => parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime());
+    }).sort((a, b) => {
+      // Sort recurring first, then by date
+      if ((a.frequency === 'one-time') !== (b.frequency === 'one-time')) {
+        return a.frequency === 'one-time' ? 1 : -1;
+      }
+      return parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime();
+    });
   }, [incomes, selectedDate, sourceFilter, currencyFilter, frequencyFilter]);
 
-  // Calculate monthly total
+  // Calculate monthly total (actual for selected month)
   const monthlyTotal = useMemo(() => {
     return filteredIncomes.reduce((total, income) => {
       return total + convertAmount(income.amount, income.currency, baseCurrency);
     }, 0);
+  }, [filteredIncomes, convertAmount, baseCurrency]);
+
+  // Calculate Expected Monthly Income (from recurring entries visible in the table)
+  const { expectedMonthlyIncome, recurringCount } = useMemo(() => {
+    const recurringEntries = filteredIncomes.filter((income) => income.frequency !== 'one-time');
+
+    const total = recurringEntries.reduce((sum, income) => {
+      const factor = MONTHLY_FACTORS[income.frequency] ?? 1; // Default to 1 if unknown frequency
+      const converted = convertAmount(income.amount, income.currency, baseCurrency);
+      return sum + (converted * factor);
+    }, 0);
+
+    return { expectedMonthlyIncome: total, recurringCount: recurringEntries.length };
   }, [filteredIncomes, convertAmount, baseCurrency]);
 
   // Navigation
@@ -935,22 +1008,38 @@ export const IncomePage: React.FC = () => {
           />
         </div>
 
-        {/* Summary Card */}
-        <div className="lg:col-span-2 flex items-stretch">
-          <div className="flex-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 flex items-center">
-            <div className="flex items-center gap-4 w-full">
-              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
-                <DollarSign className="w-8 h-8 text-green-600 dark:text-green-400" />
+        {/* Summary Cards */}
+        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Monthly Income (Actual) */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Monthly Income</p>
-                <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                <p className="text-xs text-gray-500 dark:text-gray-400">{getMonthLabel()}</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {formatAmount(monthlyTotal)}
                 </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{filteredIncomes.length} entries</p>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-500 dark:text-gray-400">{filteredIncomes.length} entries</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">{getMonthLabel()}</p>
+            </div>
+          </div>
+
+          {/* Expected Monthly Income */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Expected Monthly</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {formatAmount(expectedMonthlyIncome)}
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  {recurringCount > 0 ? `${recurringCount} recurring` : 'no recurring income'}
+                </p>
               </div>
             </div>
           </div>
@@ -981,45 +1070,23 @@ export const IncomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <FilterBar
-        sourceFilter={sourceFilter}
-        setSourceFilter={setSourceFilter}
-        currencyFilter={currencyFilter}
-        setCurrencyFilter={setCurrencyFilter}
-        frequencyFilter={frequencyFilter}
-        setFrequencyFilter={setFrequencyFilter}
-        enabledCurrencies={enabledCurrencies}
-        hasActiveFilters={hasActiveFilters}
-        onClearFilters={clearFilters}
-        isOpen={isFilterOpen}
-        onToggle={() => setIsFilterOpen(!isFilterOpen)}
-      />
-
       {/* Income Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto overflow-y-visible">
           <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                  Source
-                </th>
-                <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-28">
-                  Amount
-                </th>
-                <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
-                  Currency
-                </th>
-                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
-                  Frequency
-                </th>
-                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
-                  Date
-                </th>
-                <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
-              </tr>
-            </thead>
+            <TableHeaderWithFilter
+              sourceFilter={sourceFilter}
+              setSourceFilter={setSourceFilter}
+              currencyFilter={currencyFilter}
+              setCurrencyFilter={setCurrencyFilter}
+              frequencyFilter={frequencyFilter}
+              setFrequencyFilter={setFrequencyFilter}
+              enabledCurrencies={enabledCurrencies}
+              hasActiveFilters={hasActiveFilters}
+              onClearFilters={clearFilters}
+              isOpen={isFilterOpen}
+              onToggle={() => setIsFilterOpen(!isFilterOpen)}
+            />
             <tbody>
               {filteredIncomes.map((income, index) => (
                 <IncomeRow

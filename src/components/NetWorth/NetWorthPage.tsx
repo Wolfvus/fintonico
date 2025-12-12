@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useAccountStore } from '../../stores/accountStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, ChevronRight, Check, Calendar, EyeOff, Filter, X } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, ChevronRight, Check, EyeOff, X, Filter } from 'lucide-react';
 import type { AccountType, Account } from '../../types';
 
 // Format number with thousand separators
@@ -813,8 +813,148 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({
   );
 };
 
-// Filter Bar Component for Net Worth
-interface NetWorthFilterBarProps {
+// Assets Table Header with Toggle Filter (same pattern as Income/Expense)
+interface AssetsTableHeaderProps {
+  nameFilter: string;
+  setNameFilter: (v: string) => void;
+  typeFilter: string;
+  setTypeFilter: (v: string) => void;
+  currencyFilter: string;
+  setCurrencyFilter: (v: string) => void;
+  excludedFilter: string;
+  setExcludedFilter: (v: string) => void;
+  enabledCurrencies: string[];
+  typeOptions: { value: string; label: string }[];
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+const AssetsTableHeader: React.FC<AssetsTableHeaderProps> = ({
+  nameFilter,
+  setNameFilter,
+  typeFilter,
+  setTypeFilter,
+  currencyFilter,
+  setCurrencyFilter,
+  excludedFilter,
+  setExcludedFilter,
+  enabledCurrencies,
+  typeOptions,
+  hasActiveFilters,
+  onClearFilters,
+  isOpen,
+  onToggle,
+}) => {
+  return (
+    <thead>
+      <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+          Name
+        </th>
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
+          Type
+        </th>
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
+          Currency
+        </th>
+        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-32">
+          Value
+        </th>
+        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-20">
+          Yield
+        </th>
+        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
+          /Month
+        </th>
+        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-28">
+          /Year
+        </th>
+        <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-16">
+          Updated
+        </th>
+        <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-10">
+          Excl
+        </th>
+        <th className="w-10 border-l border-gray-200 dark:border-gray-700">
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggle(); }}
+            className={`p-1.5 rounded-md transition-colors ${
+              hasActiveFilters
+                ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
+                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+            title="Toggle filters"
+          >
+            <Filter className="w-4 h-4" />
+          </button>
+        </th>
+      </tr>
+      {isOpen && (
+        <tr className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+          <td colSpan={10} className="px-3 py-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Name Filter */}
+              <input
+                type="text"
+                value={nameFilter}
+                onChange={(e) => setNameFilter(e.target.value)}
+                placeholder="Search name..."
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-gray-900 dark:text-white placeholder-gray-400 w-40"
+              />
+              {/* Type Filter */}
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
+              >
+                <option value="">All Types</option>
+                {typeOptions.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+              {/* Currency Filter */}
+              <select
+                value={currencyFilter}
+                onChange={(e) => setCurrencyFilter(e.target.value)}
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
+              >
+                <option value="">All Currencies</option>
+                {enabledCurrencies.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              {/* Excluded Filter */}
+              <select
+                value={excludedFilter}
+                onChange={(e) => setExcludedFilter(e.target.value)}
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
+              >
+                <option value="">All Status</option>
+                <option value="included">Included</option>
+                <option value="excluded">Excluded</option>
+              </select>
+              {/* Clear Button */}
+              {hasActiveFilters && (
+                <button
+                  onClick={onClearFilters}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                  Clear
+                </button>
+              )}
+            </div>
+          </td>
+        </tr>
+      )}
+    </thead>
+  );
+};
+
+// Liabilities Table Header with Toggle Filter (same pattern as Income/Expense)
+interface LiabilitiesTableHeaderProps {
   nameFilter: string;
   setNameFilter: (v: string) => void;
   typeFilter: string;
@@ -829,13 +969,11 @@ interface NetWorthFilterBarProps {
   typeOptions: { value: string; label: string }[];
   hasActiveFilters: boolean;
   onClearFilters: () => void;
-  showPaidFilter?: boolean;
   isOpen: boolean;
   onToggle: () => void;
-  accentColor?: 'green' | 'red';
 }
 
-const NetWorthFilterBar: React.FC<NetWorthFilterBarProps> = ({
+const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
   nameFilter,
   setNameFilter,
   typeFilter,
@@ -850,102 +988,119 @@ const NetWorthFilterBar: React.FC<NetWorthFilterBarProps> = ({
   typeOptions,
   hasActiveFilters,
   onClearFilters,
-  showPaidFilter = false,
   isOpen,
   onToggle,
-  accentColor = 'green',
 }) => {
-  const badgeClasses = accentColor === 'green'
-    ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-    : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400';
-
   return (
-    <div className="border-b border-gray-200 dark:border-gray-700">
-      <button
-        onClick={onToggle}
-        className="w-full px-4 py-2 flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-      >
-        <Filter className="w-4 h-4" />
-        <span className="text-xs font-medium">Filters</span>
-        {hasActiveFilters && (
-          <span className={`px-1.5 py-0.5 text-xs rounded-full ${badgeClasses}`}>
-            Active
-          </span>
-        )}
-      </button>
-
+    <thead>
+      <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+          Name
+        </th>
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
+          Type
+        </th>
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
+          Currency
+        </th>
+        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-32">
+          Value
+        </th>
+        <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-20">
+          Due
+        </th>
+        <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-12">
+          Paid
+        </th>
+        <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-16">
+          Updated
+        </th>
+        <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-10">
+          Excl
+        </th>
+        <th className="w-10 border-l border-gray-200 dark:border-gray-700">
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggle(); }}
+            className={`p-1.5 rounded-md transition-colors ${
+              hasActiveFilters
+                ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30'
+                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+            title="Toggle filters"
+          >
+            <Filter className="w-4 h-4" />
+          </button>
+        </th>
+      </tr>
       {isOpen && (
-        <div className="px-4 py-2 flex items-center gap-3 flex-wrap bg-gray-50/50 dark:bg-gray-900/30 border-t border-gray-100 dark:border-gray-700">
-          {/* Name Filter */}
-          <input
-            type="text"
-            value={nameFilter}
-            onChange={(e) => setNameFilter(e.target.value)}
-            placeholder="Search name..."
-            className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white placeholder-gray-400 w-32"
-          />
-
-          {/* Type Filter */}
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
-          >
-            <option value="">All Types</option>
-            {typeOptions.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
-            ))}
-          </select>
-
-          {/* Currency Filter */}
-          <select
-            value={currencyFilter}
-            onChange={(e) => setCurrencyFilter(e.target.value)}
-            className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
-          >
-            <option value="">All Currencies</option>
-            {enabledCurrencies.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-
-          {/* Paid Filter (liabilities only) */}
-          {showPaidFilter && (
-            <select
-              value={paidFilter}
-              onChange={(e) => setPaidFilter(e.target.value)}
-              className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
-            >
-              <option value="">All</option>
-              <option value="paid">Paid</option>
-              <option value="unpaid">Unpaid</option>
-            </select>
-          )}
-
-          {/* Excluded Filter */}
-          <select
-            value={excludedFilter}
-            onChange={(e) => setExcludedFilter(e.target.value)}
-            className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
-          >
-            <option value="">All</option>
-            <option value="included">Included</option>
-            <option value="excluded">Excluded</option>
-          </select>
-
-          {/* Clear Filters */}
-          {hasActiveFilters && (
-            <button
-              onClick={onClearFilters}
-              className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-            >
-              <X className="w-3 h-3" />
-              Clear
-            </button>
-          )}
-        </div>
+        <tr className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+          <td colSpan={9} className="px-3 py-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Name Filter */}
+              <input
+                type="text"
+                value={nameFilter}
+                onChange={(e) => setNameFilter(e.target.value)}
+                placeholder="Search name..."
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-900 dark:text-white placeholder-gray-400 w-40"
+              />
+              {/* Type Filter */}
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
+              >
+                <option value="">All Types</option>
+                {typeOptions.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+              {/* Currency Filter */}
+              <select
+                value={currencyFilter}
+                onChange={(e) => setCurrencyFilter(e.target.value)}
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
+              >
+                <option value="">All Currencies</option>
+                {enabledCurrencies.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              {/* Paid Filter */}
+              <select
+                value={paidFilter}
+                onChange={(e) => setPaidFilter(e.target.value)}
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
+              >
+                <option value="">All Paid Status</option>
+                <option value="paid">Paid</option>
+                <option value="unpaid">Unpaid</option>
+              </select>
+              {/* Excluded Filter */}
+              <select
+                value={excludedFilter}
+                onChange={(e) => setExcludedFilter(e.target.value)}
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
+              >
+                <option value="">All Status</option>
+                <option value="included">Included</option>
+                <option value="excluded">Excluded</option>
+              </select>
+              {/* Clear Button */}
+              {hasActiveFilters && (
+                <button
+                  onClick={onClearFilters}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                  Clear
+                </button>
+              )}
+            </div>
+          </td>
+        </tr>
       )}
-    </div>
+    </thead>
   );
 };
 
@@ -958,12 +1113,15 @@ export const NetWorthPage: React.FC = () => {
   const [isAssetsCollapsed, setIsAssetsCollapsed] = useState(false);
   const [isLiabilitiesCollapsed, setIsLiabilitiesCollapsed] = useState(false);
 
+  // Filter open states
+  const [isAssetFilterOpen, setIsAssetFilterOpen] = useState(false);
+  const [isLiabilityFilterOpen, setIsLiabilityFilterOpen] = useState(false);
+
   // Asset filter states
   const [assetNameFilter, setAssetNameFilter] = useState('');
   const [assetTypeFilter, setAssetTypeFilter] = useState('');
   const [assetCurrencyFilter, setAssetCurrencyFilter] = useState('');
   const [assetExcludedFilter, setAssetExcludedFilter] = useState('');
-  const [isAssetFilterOpen, setIsAssetFilterOpen] = useState(false);
 
   // Liability filter states
   const [liabilityNameFilter, setLiabilityNameFilter] = useState('');
@@ -971,7 +1129,6 @@ export const NetWorthPage: React.FC = () => {
   const [liabilityCurrencyFilter, setLiabilityCurrencyFilter] = useState('');
   const [liabilityPaidFilter, setLiabilityPaidFilter] = useState('');
   const [liabilityExcludedFilter, setLiabilityExcludedFilter] = useState('');
-  const [isLiabilityFilterOpen, setIsLiabilityFilterOpen] = useState(false);
 
   const hasAssetFilters = assetNameFilter !== '' || assetTypeFilter !== '' || assetCurrencyFilter !== '' || assetExcludedFilter !== '';
   const hasLiabilityFilters = liabilityNameFilter !== '' || liabilityTypeFilter !== '' || liabilityCurrencyFilter !== '' || liabilityPaidFilter !== '' || liabilityExcludedFilter !== '';
@@ -1175,60 +1332,26 @@ export const NetWorthPage: React.FC = () => {
         </button>
 
         {!isAssetsCollapsed && (
-          <>
-            <NetWorthFilterBar
-              nameFilter={assetNameFilter}
-              setNameFilter={setAssetNameFilter}
-              typeFilter={assetTypeFilter}
-              setTypeFilter={setAssetTypeFilter}
-              currencyFilter={assetCurrencyFilter}
-              setCurrencyFilter={setAssetCurrencyFilter}
-              paidFilter=""
-              setPaidFilter={() => {}}
-              excludedFilter={assetExcludedFilter}
-              setExcludedFilter={setAssetExcludedFilter}
-              enabledCurrencies={enabledCurrencies}
-              typeOptions={ASSET_TYPES.map(t => ({ value: t.value, label: t.label }))}
-              hasActiveFilters={hasAssetFilters}
-              onClearFilters={clearAssetFilters}
-              isOpen={isAssetFilterOpen}
-              onToggle={() => setIsAssetFilterOpen(!isAssetFilterOpen)}
-              accentColor="green"
-            />
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-200 dark:border-gray-700">
-                      Type
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
-                      Currency
-                    </th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-300 dark:border-gray-600">
-                      Value
-                    </th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20 border-l border-gray-300 dark:border-gray-600">
-                      Yield
-                    </th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
-                      /Month
-                    </th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28 border-l border-gray-200 dark:border-gray-700">
-                      /Year
-                    </th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16 border-l border-gray-200 dark:border-gray-700">
-                      Updated
-                    </th>
-                    <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
-                    <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {assetAccounts.map((account, index) => (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <AssetsTableHeader
+                nameFilter={assetNameFilter}
+                setNameFilter={setAssetNameFilter}
+                typeFilter={assetTypeFilter}
+                setTypeFilter={setAssetTypeFilter}
+                currencyFilter={assetCurrencyFilter}
+                setCurrencyFilter={setAssetCurrencyFilter}
+                excludedFilter={assetExcludedFilter}
+                setExcludedFilter={setAssetExcludedFilter}
+                enabledCurrencies={enabledCurrencies}
+                typeOptions={ASSET_TYPES.map(t => ({ value: t.value, label: t.label }))}
+                hasActiveFilters={hasAssetFilters}
+                onClearFilters={clearAssetFilters}
+                isOpen={isAssetFilterOpen}
+                onToggle={() => setIsAssetFilterOpen(!isAssetFilterOpen)}
+              />
+              <tbody>
+                {assetAccounts.map((account, index) => (
                     <AccountRow
                       key={account.id}
                       account={account}
@@ -1250,7 +1373,6 @@ export const NetWorthPage: React.FC = () => {
                 </tbody>
               </table>
             </div>
-          </>
         )}
       </div>
 
@@ -1273,56 +1395,26 @@ export const NetWorthPage: React.FC = () => {
         </button>
 
         {!isLiabilitiesCollapsed && (
-          <>
-            <NetWorthFilterBar
-              nameFilter={liabilityNameFilter}
-              setNameFilter={setLiabilityNameFilter}
-              typeFilter={liabilityTypeFilter}
-              setTypeFilter={setLiabilityTypeFilter}
-              currencyFilter={liabilityCurrencyFilter}
-              setCurrencyFilter={setLiabilityCurrencyFilter}
-              paidFilter={liabilityPaidFilter}
-              setPaidFilter={setLiabilityPaidFilter}
-              excludedFilter={liabilityExcludedFilter}
-              setExcludedFilter={setLiabilityExcludedFilter}
-              enabledCurrencies={enabledCurrencies}
-              typeOptions={LIABILITY_TYPES.map(t => ({ value: t.value, label: t.label }))}
-              hasActiveFilters={hasLiabilityFilters}
-              onClearFilters={clearLiabilityFilters}
-              showPaidFilter
-              isOpen={isLiabilityFilterOpen}
-              onToggle={() => setIsLiabilityFilterOpen(!isLiabilityFilterOpen)}
-              accentColor="red"
-            />
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-200 dark:border-gray-700">
-                      Type
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
-                      Currency
-                    </th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32 border-l border-gray-300 dark:border-gray-600">
-                      Value
-                    </th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20 border-l border-gray-300 dark:border-gray-600">
-                      Due
-                    </th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12 border-l border-gray-200 dark:border-gray-700">
-                      Paid
-                    </th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16 border-l border-gray-200 dark:border-gray-700">
-                      Updated
-                    </th>
-                    <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
-                    <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
-                  </tr>
-                </thead>
+                <LiabilitiesTableHeader
+                  nameFilter={liabilityNameFilter}
+                  setNameFilter={setLiabilityNameFilter}
+                  typeFilter={liabilityTypeFilter}
+                  setTypeFilter={setLiabilityTypeFilter}
+                  currencyFilter={liabilityCurrencyFilter}
+                  setCurrencyFilter={setLiabilityCurrencyFilter}
+                  paidFilter={liabilityPaidFilter}
+                  setPaidFilter={setLiabilityPaidFilter}
+                  excludedFilter={liabilityExcludedFilter}
+                  setExcludedFilter={setLiabilityExcludedFilter}
+                  enabledCurrencies={enabledCurrencies}
+                  typeOptions={LIABILITY_TYPES.map(t => ({ value: t.value, label: t.label }))}
+                  hasActiveFilters={hasLiabilityFilters}
+                  onClearFilters={clearLiabilityFilters}
+                  isOpen={isLiabilityFilterOpen}
+                  onToggle={() => setIsLiabilityFilterOpen(!isLiabilityFilterOpen)}
+                />
                 <tbody>
                   {liabilityAccounts.map((account, index) => (
                     <AccountRow
@@ -1348,7 +1440,6 @@ export const NetWorthPage: React.FC = () => {
                 </tbody>
               </table>
             </div>
-          </>
         )}
       </div>
 

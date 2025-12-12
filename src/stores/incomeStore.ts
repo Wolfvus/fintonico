@@ -4,7 +4,7 @@ import { useCurrencyStore } from './currencyStore';
 import type { Income } from '../types';
 import { sanitizeDescription, validateAmount, validateDate } from '../utils/sanitization';
 
-export type IncomeFrequency = 'one-time' | 'weekly' | 'yearly' | 'monthly';
+export type IncomeFrequency = 'one-time' | 'weekly' | 'bi-weekly' | 'monthly';
 
 export interface NewIncome {
   source: string;
@@ -96,15 +96,22 @@ export const useIncomeStore = create<IncomeState>()(
             const amountResult = validateAmount(String(income.amount || ''));
             const dateResult = validateDate(income.date || '');
             return sourceResult && amountResult.isValid && dateResult.isValid;
-          }).map((income: any) => ({
-            id: String(income.id || crypto.randomUUID()),
-            source: sanitizeDescription(income.source),
-            amount: validateAmount(String(income.amount)).sanitizedValue,
-            currency: String(income.currency || 'MXN'),
-            frequency: String(income.frequency || 'one-time') as IncomeFrequency,
-            date: income.date,
-            created_at: String(income.created_at || new Date().toISOString()),
-          }));
+          }).map((income: any) => {
+            // Migrate 'yearly' frequency to 'monthly' (yearly was removed)
+            let frequency = String(income.frequency || 'one-time');
+            if (frequency === 'yearly') {
+              frequency = 'monthly';
+            }
+            return {
+              id: String(income.id || crypto.randomUUID()),
+              source: sanitizeDescription(income.source),
+              amount: validateAmount(String(income.amount)).sanitizedValue,
+              currency: String(income.currency || 'MXN'),
+              frequency: frequency as IncomeFrequency,
+              date: income.date,
+              created_at: String(income.created_at || new Date().toISOString()),
+            };
+          });
         }
       },
     }

@@ -95,10 +95,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   };
 
   // Filter incomes by selected date range
+  // Recurring income shows in all periods from creation date onwards
+  // One-time income only shows in the period it was created
   const filteredIncomes = useMemo(() => {
     return incomes.filter((income) => {
       const incomeDate = parseLocalDate(income.date);
-      return incomeDate >= startDate && incomeDate <= endDate;
+
+      if (income.frequency === 'one-time') {
+        // One-time: must be within the date range
+        return incomeDate >= startDate && incomeDate <= endDate;
+      } else {
+        // Recurring: show if created on or before the end of the period
+        return incomeDate <= endDate;
+      }
     });
   }, [incomes, startDate, endDate]);
 

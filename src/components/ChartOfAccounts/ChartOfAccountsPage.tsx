@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useLedgerAccountStore } from '../../stores/ledgerAccountStore';
-import { CreditCard, Plus, Trash2, ChevronDown, Copy, Check, Filter, X } from 'lucide-react';
+import { CreditCard, Plus, Trash2, ChevronDown, Copy, Check, X } from 'lucide-react';
 import type { LedgerAccount, LedgerAccountNormalBalance } from '../../types';
 
 // Copyable Cell Component - shows copy button on hover
@@ -456,78 +456,82 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({ onAdd }) => {
   );
 };
 
-// Filter Bar Component
-interface FilterBarProps {
+// Accounts Table Header with Always-Visible Sticky Filters
+interface AccountsTableHeaderProps {
   nameFilter: string;
   setNameFilter: (v: string) => void;
   typeFilter: string;
   setTypeFilter: (v: string) => void;
   hasActiveFilters: boolean;
   onClearFilters: () => void;
-  isOpen: boolean;
-  onToggle: () => void;
 }
 
-const FilterBar: React.FC<FilterBarProps> = ({
+const AccountsTableHeader: React.FC<AccountsTableHeaderProps> = ({
   nameFilter,
   setNameFilter,
   typeFilter,
   setTypeFilter,
   hasActiveFilters,
   onClearFilters,
-  isOpen,
-  onToggle,
 }) => {
   return (
-    <div className="border-b border-gray-200 dark:border-gray-700">
-      <button
-        onClick={onToggle}
-        className="w-full px-4 py-2 flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-      >
-        <Filter className="w-4 h-4" />
-        <span className="text-xs font-medium">Filters</span>
-        {hasActiveFilters && (
-          <span className="px-1.5 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
-            Active
-          </span>
-        )}
-      </button>
-
-      {isOpen && (
-        <div className="px-4 py-2 flex items-center gap-3 flex-wrap bg-gray-50/50 dark:bg-gray-900/30 border-t border-gray-100 dark:border-gray-700">
-          {/* Name Filter */}
+    <thead className="sticky top-0 z-10">
+      <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 w-40">
+          Name
+        </th>
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 w-44 border-l border-gray-200 dark:border-gray-700">
+          Account/Card #
+        </th>
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 w-52 border-l border-gray-200 dark:border-gray-700">
+          CLABE
+        </th>
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 w-24 border-l border-gray-200 dark:border-gray-700">
+          Type
+        </th>
+        <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 w-16 border-l border-gray-200 dark:border-gray-700">
+          Active
+        </th>
+        <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
+      </tr>
+      {/* Always-visible filter row */}
+      <tr className="bg-gray-50/80 dark:bg-gray-800/80 border-b border-gray-200 dark:border-gray-700">
+        <td className="py-2 px-2">
           <input
             type="text"
             value={nameFilter}
             onChange={(e) => setNameFilter(e.target.value)}
-            placeholder="Search name..."
-            className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-blue-500 text-gray-900 dark:text-white placeholder-gray-400 w-32"
+            placeholder="Search..."
+            className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-gray-900 dark:text-white placeholder-gray-400 w-full"
           />
-
-          {/* Type Filter */}
+        </td>
+        <td className="py-2 px-1 border-l border-gray-200 dark:border-gray-700"></td>
+        <td className="py-2 px-1 border-l border-gray-200 dark:border-gray-700"></td>
+        <td className="py-2 px-1 border-l border-gray-200 dark:border-gray-700">
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-blue-500 text-gray-900 dark:text-white"
+            className="px-1 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-teal-500 text-gray-900 dark:text-white w-full"
           >
-            <option value="">All Types</option>
+            <option value="">All</option>
             <option value="debit">Debit</option>
             <option value="credit">Credit</option>
           </select>
-
-          {/* Clear Filters */}
+        </td>
+        <td className="py-2 px-1 border-l border-gray-200 dark:border-gray-700"></td>
+        <td className="py-2 px-1 border-l border-gray-200 dark:border-gray-700">
           {hasActiveFilters && (
             <button
               onClick={onClearFilters}
-              className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              title="Clear filters"
             >
-              <X className="w-3 h-3" />
-              Clear
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
-        </div>
-      )}
-    </div>
+        </td>
+      </tr>
+    </thead>
   );
 };
 
@@ -538,7 +542,6 @@ export const ChartOfAccountsPage: React.FC = () => {
   // Filter states
   const [nameFilter, setNameFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const hasActiveFilters = nameFilter !== '' || typeFilter !== '';
 
@@ -578,39 +581,17 @@ export const ChartOfAccountsPage: React.FC = () => {
       </div>
 
       {/* Accounts Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <FilterBar
-          nameFilter={nameFilter}
-          setNameFilter={setNameFilter}
-          typeFilter={typeFilter}
-          setTypeFilter={setTypeFilter}
-          hasActiveFilters={hasActiveFilters}
-          onClearFilters={clearFilters}
-          isOpen={isFilterOpen}
-          onToggle={() => setIsFilterOpen(!isFilterOpen)}
-        />
-        <div className="overflow-x-auto overflow-y-visible">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="overflow-x-auto overflow-y-auto max-h-[500px]">
           <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-40">
-                  Name
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-44 border-l border-gray-200 dark:border-gray-700">
-                  Account/Card #
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-52 border-l border-gray-200 dark:border-gray-700">
-                  CLABE
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24 border-l border-gray-200 dark:border-gray-700">
-                  Type
-                </th>
-                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16 border-l border-gray-200 dark:border-gray-700">
-                  Active
-                </th>
-                <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
-              </tr>
-            </thead>
+            <AccountsTableHeader
+              nameFilter={nameFilter}
+              setNameFilter={setNameFilter}
+              typeFilter={typeFilter}
+              setTypeFilter={setTypeFilter}
+              hasActiveFilters={hasActiveFilters}
+              onClearFilters={clearFilters}
+            />
             <tbody>
               {filteredAccounts.map((account, index) => (
                 <AccountRow

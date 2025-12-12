@@ -786,16 +786,14 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
   );
 };
 
-// Filter Bar Component
-interface FilterBarProps {
+// Monthly Expenses Table Header with Filter (includes Date, Recurring columns)
+interface MonthlyTableHeaderProps {
   descriptionFilter: string;
   setDescriptionFilter: (v: string) => void;
   currencyFilter: string;
   setCurrencyFilter: (v: string) => void;
   categoryFilter: string;
   setCategoryFilter: (v: string) => void;
-  recurringFilter: string;
-  setRecurringFilter: (v: string) => void;
   enabledCurrencies: string[];
   hasActiveFilters: boolean;
   onClearFilters: () => void;
@@ -803,15 +801,13 @@ interface FilterBarProps {
   onToggle: () => void;
 }
 
-const FilterBar: React.FC<FilterBarProps> = ({
+const MonthlyTableHeader: React.FC<MonthlyTableHeaderProps> = ({
   descriptionFilter,
   setDescriptionFilter,
   currencyFilter,
   setCurrencyFilter,
   categoryFilter,
   setCategoryFilter,
-  recurringFilter,
-  setRecurringFilter,
   enabledCurrencies,
   hasActiveFilters,
   onClearFilters,
@@ -819,84 +815,94 @@ const FilterBar: React.FC<FilterBarProps> = ({
   onToggle,
 }) => {
   return (
-    <div className="px-3 py-2">
-      <button
-        onClick={onToggle}
-        className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-      >
-        <Filter className="w-4 h-4" />
-        <span className="text-sm font-medium">Filters</span>
-        {hasActiveFilters && (
-          <span className="px-1.5 py-0.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full">
-            Active
-          </span>
-        )}
-      </button>
-
+    <thead>
+      <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+          Description
+        </th>
+        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-28">
+          Amount
+        </th>
+        <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
+          Currency
+        </th>
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
+          Category
+        </th>
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
+          Date
+        </th>
+        <th className="w-10 border-l border-gray-200 dark:border-gray-700">
+          <button
+            onClick={onToggle}
+            className={`p-1.5 rounded-md transition-colors ${
+              hasActiveFilters
+                ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30'
+                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+            title="Toggle filters"
+          >
+            <Filter className="w-4 h-4" />
+          </button>
+        </th>
+      </tr>
       {isOpen && (
-        <div className="mt-3 flex items-center gap-3 flex-wrap">
-          {/* Description Filter */}
-          <input
-            type="text"
-            value={descriptionFilter}
-            onChange={(e) => setDescriptionFilter(e.target.value)}
-            placeholder="Search description..."
-            className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-900 dark:text-white placeholder-gray-400 w-40"
-          />
+        <tr className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+          <td colSpan={6} className="px-3 py-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Description Filter */}
+              <input
+                type="text"
+                value={descriptionFilter}
+                onChange={(e) => setDescriptionFilter(e.target.value)}
+                placeholder="Search description..."
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-900 dark:text-white placeholder-gray-400 w-36"
+              />
 
-          {/* Currency Filter */}
-          <select
-            value={currencyFilter}
-            onChange={(e) => setCurrencyFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-red-500 text-gray-900 dark:text-white"
-          >
-            <option value="">All Currencies</option>
-            {enabledCurrencies.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+              {/* Currency Filter */}
+              <select
+                value={currencyFilter}
+                onChange={(e) => setCurrencyFilter(e.target.value)}
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
+              >
+                <option value="">All Currencies</option>
+                {enabledCurrencies.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
 
-          {/* Category Filter */}
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-red-500 text-gray-900 dark:text-white"
-          >
-            <option value="">All Categories</option>
-            {RATING_OPTIONS.map((r) => (
-              <option key={r.value} value={r.value}>{r.label}</option>
-            ))}
-          </select>
+              {/* Category Filter */}
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
+              >
+                <option value="">All Categories</option>
+                {RATING_OPTIONS.map((r) => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
+              </select>
 
-          {/* Recurring Filter */}
-          <select
-            value={recurringFilter}
-            onChange={(e) => setRecurringFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-red-500 text-gray-900 dark:text-white"
-          >
-            <option value="">All</option>
-            <option value="recurring">Recurring</option>
-            <option value="one-time">One-time</option>
-          </select>
-
-          {/* Clear Filters */}
-          {hasActiveFilters && (
-            <button
-              onClick={onClearFilters}
-              className="flex items-center gap-1 px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <X className="w-3 h-3" />
-              Clear
-            </button>
-          )}
-        </div>
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <button
+                  onClick={onClearFilters}
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                  Clear
+                </button>
+              )}
+            </div>
+          </td>
+        </tr>
       )}
-    </div>
+    </thead>
   );
 };
 
-// Section Filter Bar Component (simplified for each section)
-interface SectionFilterBarProps {
+// Recurring Expenses Table Header with Filter (includes Due Date, no Recurring column)
+interface RecurringTableHeaderProps {
   descriptionFilter: string;
   setDescriptionFilter: (v: string) => void;
   currencyFilter: string;
@@ -910,7 +916,7 @@ interface SectionFilterBarProps {
   onToggle: () => void;
 }
 
-const SectionFilterBar: React.FC<SectionFilterBarProps> = ({
+const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
   descriptionFilter,
   setDescriptionFilter,
   currencyFilter,
@@ -924,68 +930,89 @@ const SectionFilterBar: React.FC<SectionFilterBarProps> = ({
   onToggle,
 }) => {
   return (
-    <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-      <button
-        onClick={onToggle}
-        className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-      >
-        <Filter className="w-4 h-4" />
-        <span className="text-xs font-medium">Filters</span>
-        {hasActiveFilters && (
-          <span className="px-1.5 py-0.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full">
-            Active
-          </span>
-        )}
-      </button>
-
+    <thead>
+      <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+          Description
+        </th>
+        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-28">
+          Amount
+        </th>
+        <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
+          Currency
+        </th>
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
+          Category
+        </th>
+        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
+          Due Date
+        </th>
+        <th className="w-10 border-l border-gray-200 dark:border-gray-700">
+          <button
+            onClick={onToggle}
+            className={`p-1.5 rounded-md transition-colors ${
+              hasActiveFilters
+                ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30'
+                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+            title="Toggle filters"
+          >
+            <Filter className="w-4 h-4" />
+          </button>
+        </th>
+      </tr>
       {isOpen && (
-        <div className="mt-3 flex items-center gap-3 flex-wrap">
-          {/* Description Filter */}
-          <input
-            type="text"
-            value={descriptionFilter}
-            onChange={(e) => setDescriptionFilter(e.target.value)}
-            placeholder="Search..."
-            className="px-2 py-1 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white placeholder-gray-400 w-32"
-          />
+        <tr className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+          <td colSpan={6} className="px-3 py-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Description Filter */}
+              <input
+                type="text"
+                value={descriptionFilter}
+                onChange={(e) => setDescriptionFilter(e.target.value)}
+                placeholder="Search..."
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-900 dark:text-white placeholder-gray-400 w-32"
+              />
 
-          {/* Currency Filter */}
-          <select
-            value={currencyFilter}
-            onChange={(e) => setCurrencyFilter(e.target.value)}
-            className="px-2 py-1 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
-          >
-            <option value="">All Currencies</option>
-            {enabledCurrencies.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+              {/* Currency Filter */}
+              <select
+                value={currencyFilter}
+                onChange={(e) => setCurrencyFilter(e.target.value)}
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
+              >
+                <option value="">All Currencies</option>
+                {enabledCurrencies.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
 
-          {/* Category Filter */}
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-2 py-1 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
-          >
-            <option value="">All Categories</option>
-            {RATING_OPTIONS.map((r) => (
-              <option key={r.value} value={r.value}>{r.label}</option>
-            ))}
-          </select>
+              {/* Category Filter */}
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
+              >
+                <option value="">All Categories</option>
+                {RATING_OPTIONS.map((r) => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
+              </select>
 
-          {/* Clear Filters */}
-          {hasActiveFilters && (
-            <button
-              onClick={onClearFilters}
-              className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-            >
-              <X className="w-3 h-3" />
-              Clear
-            </button>
-          )}
-        </div>
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <button
+                  onClick={onClearFilters}
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                  Clear
+                </button>
+              )}
+            </div>
+          </td>
+        </tr>
       )}
-    </div>
+    </thead>
   );
 };
 
@@ -1221,65 +1248,43 @@ export const ExpensePage: React.FC = () => {
         </button>
 
         {!isRecurringCollapsed && (
-          <>
-            <SectionFilterBar
-              descriptionFilter={recurringDescFilter}
-              setDescriptionFilter={setRecurringDescFilter}
-              currencyFilter={recurringCurrencyFilter}
-              setCurrencyFilter={setRecurringCurrencyFilter}
-              categoryFilter={recurringCategoryFilter}
-              setCategoryFilter={setRecurringCategoryFilter}
-              enabledCurrencies={enabledCurrencies}
-              hasActiveFilters={hasRecurringFilters}
-              onClearFilters={clearRecurringFilters}
-              isOpen={isRecurringFilterOpen}
-              onToggle={() => setIsRecurringFilterOpen(!isRecurringFilterOpen)}
-            />
-            <div className="overflow-x-auto overflow-y-visible">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                      Description
-                    </th>
-                    <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-28">
-                      Amount
-                    </th>
-                    <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
-                      Currency
-                    </th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
-                      Category
-                    </th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
-                      Due Date
-                    </th>
-                    <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
+          <div className="overflow-x-auto overflow-y-visible">
+            <table className="w-full">
+              <RecurringTableHeader
+                descriptionFilter={recurringDescFilter}
+                setDescriptionFilter={setRecurringDescFilter}
+                currencyFilter={recurringCurrencyFilter}
+                setCurrencyFilter={setRecurringCurrencyFilter}
+                categoryFilter={recurringCategoryFilter}
+                setCategoryFilter={setRecurringCategoryFilter}
+                enabledCurrencies={enabledCurrencies}
+                hasActiveFilters={hasRecurringFilters}
+                onClearFilters={clearRecurringFilters}
+                isOpen={isRecurringFilterOpen}
+                onToggle={() => setIsRecurringFilterOpen(!isRecurringFilterOpen)}
+              />
+              <tbody>
+                {filteredRecurringExpenses.map((expense, index) => (
+                  <ExpenseRow
+                    key={expense.id}
+                    expense={expense}
+                    onUpdate={handleUpdateExpense}
+                    onDelete={deleteExpense}
+                    enabledCurrencies={enabledCurrencies}
+                    index={index}
+                    hideRecurring
+                  />
+                ))}
+                {filteredRecurringExpenses.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+                      No recurring expenses. Mark an expense as recurring to have it appear here.
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {filteredRecurringExpenses.map((expense, index) => (
-                    <ExpenseRow
-                      key={expense.id}
-                      expense={expense}
-                      onUpdate={handleUpdateExpense}
-                      onDelete={deleteExpense}
-                      enabledCurrencies={enabledCurrencies}
-                      index={index}
-                      hideRecurring
-                    />
-                  ))}
-                  {filteredRecurringExpenses.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="py-6 text-center text-gray-500 dark:text-gray-400 text-sm">
-                        No recurring expenses. Mark an expense as recurring to have it appear here.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -1305,65 +1310,43 @@ export const ExpensePage: React.FC = () => {
         </button>
 
         {!isMonthlyCollapsed && (
-          <>
-            <SectionFilterBar
-              descriptionFilter={monthlyDescFilter}
-              setDescriptionFilter={setMonthlyDescFilter}
-              currencyFilter={monthlyCurrencyFilter}
-              setCurrencyFilter={setMonthlyCurrencyFilter}
-              categoryFilter={monthlyCategoryFilter}
-              setCategoryFilter={setMonthlyCategoryFilter}
-              enabledCurrencies={enabledCurrencies}
-              hasActiveFilters={hasMonthlyFilters}
-              onClearFilters={clearMonthlyFilters}
-              isOpen={isMonthlyFilterOpen}
-              onToggle={() => setIsMonthlyFilterOpen(!isMonthlyFilterOpen)}
-            />
-            <div className="overflow-x-auto overflow-y-visible">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                      Description
-                    </th>
-                    <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-28">
-                      Amount
-                    </th>
-                    <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
-                      Currency
-                    </th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
-                      Category
-                    </th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
-                      Date
-                    </th>
-                    <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
+          <div className="overflow-x-auto overflow-y-visible">
+            <table className="w-full">
+              <MonthlyTableHeader
+                descriptionFilter={monthlyDescFilter}
+                setDescriptionFilter={setMonthlyDescFilter}
+                currencyFilter={monthlyCurrencyFilter}
+                setCurrencyFilter={setMonthlyCurrencyFilter}
+                categoryFilter={monthlyCategoryFilter}
+                setCategoryFilter={setMonthlyCategoryFilter}
+                enabledCurrencies={enabledCurrencies}
+                hasActiveFilters={hasMonthlyFilters}
+                onClearFilters={clearMonthlyFilters}
+                isOpen={isMonthlyFilterOpen}
+                onToggle={() => setIsMonthlyFilterOpen(!isMonthlyFilterOpen)}
+              />
+              <tbody>
+                {filteredMonthlyExpenses.map((expense, index) => (
+                  <ExpenseRow
+                    key={expense.id}
+                    expense={expense}
+                    onUpdate={handleUpdateExpense}
+                    onDelete={deleteExpense}
+                    enabledCurrencies={enabledCurrencies}
+                    index={index}
+                    hideRecurring
+                  />
+                ))}
+                {filteredMonthlyExpenses.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+                      No expenses this month. Use the Quick Add form above to get started.
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {filteredMonthlyExpenses.map((expense, index) => (
-                    <ExpenseRow
-                      key={expense.id}
-                      expense={expense}
-                      onUpdate={handleUpdateExpense}
-                      onDelete={deleteExpense}
-                      enabledCurrencies={enabledCurrencies}
-                      index={index}
-                      hideRecurring
-                    />
-                  ))}
-                  {filteredMonthlyExpenses.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="py-6 text-center text-gray-500 dark:text-gray-400 text-sm">
-                        No expenses this month. Use the Quick Add form above to get started.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
