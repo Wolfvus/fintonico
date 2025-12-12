@@ -3,7 +3,7 @@ import { useCurrencyStore } from '../../stores/currencyStore';
 import { useLedgerStore } from '../../stores/ledgerStore';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useIncomeStore } from '../../stores/incomeStore';
-import { TrendingUp, TrendingDown, Wallet, DollarSign, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Landmark, PiggyBank, ArrowUpDown, Scissors, LayoutGrid, Plus, Clock } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, DollarSign, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Landmark, PiggyBank, ArrowUpDown, Scissors, LayoutGrid, Plus, Clock, X } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormat';
 import { useDateRange } from '../../hooks/finance/useDateRange';
 import { Card, SectionHeader, Tabs, Pagination } from '../ui';
@@ -20,8 +20,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const { formatAmount, baseCurrency, convertAmount } = useCurrencyStore();
   const ledgerStore = useLedgerStore();
   const snapshotStore = useSnapshotStore();
-  const expenseStore = useExpenseStore();
-  const incomeStore = useIncomeStore();
+  const { expenses, addExpense } = useExpenseStore();
+  const { incomes, addIncome } = useIncomeStore();
   
   
   const [entryFilter, setEntryFilter] = useState<'all' | 'income' | 'expense'>('all');
@@ -32,6 +32,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isTransactionsCollapsed, setIsTransactionsCollapsed] = useState(false);
   const [isPendingCollapsed, setIsPendingCollapsed] = useState(true);
+  const [skippedPendingIds, setSkippedPendingIds] = useState<Set<string>>(new Set());
   const itemsPerPage = 10;
   
   // Generate investment yields on dashboard load
@@ -92,19 +93,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
   // Filter incomes by selected date range
   const filteredIncomes = useMemo(() => {
-    return incomeStore.incomes.filter((income) => {
+    return incomes.filter((income) => {
       const incomeDate = parseLocalDate(income.date);
       return incomeDate >= startDate && incomeDate <= endDate;
     });
-  }, [incomeStore.incomes, startDate, endDate]);
+  }, [incomes, startDate, endDate]);
 
   // Filter expenses by selected date range
   const filteredExpenses = useMemo(() => {
-    return expenseStore.expenses.filter((expense) => {
+    return expenses.filter((expense) => {
       const expenseDate = parseLocalDate(expense.date);
       return expenseDate >= startDate && expenseDate <= endDate;
     });
-  }, [expenseStore.expenses, startDate, endDate]);
+  }, [expenses, startDate, endDate]);
 
   // Get pending recurring entries (recurring items that exist but haven't been added to current period)
   const pendingRecurringEntries = useMemo(() => {
@@ -125,18 +126,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     const monthPrefix = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
 
     // Find recurring expenses that don't have an entry in the selected month
-    const recurringExpenses = expenseStore.expenses.filter(e => e.recurring);
+    const recurringExpenses = expenses.filter(e => e.recurring);
     recurringExpenses.forEach((expense) => {
-      // Check if there's already an expense with same description in the selected month
-      const hasEntryThisMonth = expenseStore.expenses.some(e =>
+      const pendingId = `pending-expense-${expense.id}-${monthPrefix}`;
+
+      // Skip if user dismissed this pending item for this month
+      if (skippedPendingIds.has(pendingId)) {
+        return;
+      }
+
+      // Check if there's already a non-recurring expense with same description in the selected month
+      const hasEntryThisMonth = expenses.some(e =>
         !e.recurring &&
         e.date.startsWith(monthPrefix) &&
-        e.what === expense.what
+        e.what.toLowerCase() === expense.what.toLowerCase()
       );
 
       if (!hasEntryThisMonth) {
         pending.push({
-          id: `pending-expense-${expense.id}`,
+          id: pendingId,
           type: 'expense',
           description: expense.what,
           amount: expense.amount,
@@ -148,22 +156,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     });
 
     // Find recurring incomes (monthly frequency) that don't have an entry in the selected month
-    const recurringIncomes = incomeStore.incomes.filter(i => i.frequency === 'monthly');
+    const recurringIncomes = incomes.filter(i => i.frequency === 'monthly');
     recurringIncomes.forEach((income) => {
-      // Check if there's already an income with same source in the selected month
-      const hasEntryThisMonth = incomeStore.incomes.some(i =>
-        i.frequency !== 'monthly' &&
+      const pendingId = `pending-income-${income.id}-${monthPrefix}`;
+
+      // Skip if user dismissed this pending item for this month
+      if (skippedPendingIds.has(pendingId)) {
+        return;
+      }
+
+      // Check if there's already a one-time income with same source in the selected month
+      const hasEntryThisMonth = incomes.some(i =>
+        i.frequency === 'one-time' &&
         i.date.startsWith(monthPrefix) &&
-        i.source === income.source
-      ) || incomeStore.incomes.some(i =>
-        i.date.startsWith(monthPrefix) &&
-        i.source === income.source &&
-        i.id !== income.id
+        i.source.toLowerCase() === income.source.toLowerCase()
       );
 
       if (!hasEntryThisMonth) {
         pending.push({
-          id: `pending-income-${income.id}`,
+          id: pendingId,
           type: 'income',
           description: income.source,
           amount: income.amount,
@@ -175,7 +186,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     });
 
     return pending;
-  }, [expenseStore.expenses, incomeStore.incomes, startDate]);
+  }, [expenses, incomes, startDate, skippedPendingIds]);
 
   // Handler to confirm a pending recurring entry
   const handleConfirmRecurring = async (entry: typeof pendingRecurringEntries[0]) => {
@@ -184,7 +195,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     const firstDayOfMonth = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
 
     if (entry.type === 'expense') {
-      await expenseStore.addExpense({
+      await addExpense({
         what: entry.description,
         amount: entry.amount,
         currency: entry.currency,
@@ -193,7 +204,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         recurring: false,
       });
     } else {
-      await incomeStore.addIncome({
+      await addIncome({
         source: entry.description,
         amount: entry.amount,
         currency: entry.currency,
@@ -201,6 +212,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         date: firstDayOfMonth,
       });
     }
+  };
+
+  // Handler to skip/dismiss a pending recurring entry for this month
+  const handleSkipRecurring = (entry: typeof pendingRecurringEntries[0]) => {
+    setSkippedPendingIds(prev => new Set([...prev, entry.id]));
   };
 
   // Calculate period income total (converted to base currency)
@@ -229,6 +245,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     });
     return breakdown;
   }, [filteredExpenses, convertAmount, baseCurrency]);
+
+  // Calculate recurring expenses total (for analytics)
+  const recurringExpensesTotal = useMemo(() => {
+    const recurringExpenses = expenses.filter(e => e.recurring);
+    return recurringExpenses.reduce((total, expense) => {
+      return total + convertAmount(expense.amount, expense.currency, baseCurrency);
+    }, 0);
+  }, [expenses, convertAmount, baseCurrency]);
+
+  // Calculate one-time expenses for period
+  const oneTimeExpensesTotal = useMemo(() => {
+    return filteredExpenses
+      .filter(e => !e.recurring)
+      .reduce((total, expense) => {
+        return total + convertAmount(expense.amount, expense.currency, baseCurrency);
+      }, 0);
+  }, [filteredExpenses, convertAmount, baseCurrency]);
+
+  // Total monthly burden (one-time + recurring)
+  const totalMonthlyExpenses = oneTimeExpensesTotal + recurringExpensesTotal;
 
 
   // Ensure current month snapshot exists and get MoM change
@@ -336,9 +372,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const totalAssets = netWorthData.totalAssets.toMajorUnits();
   const totalLiabilities = netWorthData.totalLiabilities.toMajorUnits();
 
-  // Calculate KPIs - cashflow is income minus expenses for selected period
-  const monthlyCashFlow = cashflowNet;
-  const savingsRate = periodIncome > 0 ? ((periodIncome - periodExpenses) / periodIncome) * 100 : 0;
+  // Calculate KPIs - cashflow is income minus total expenses (one-time + recurring)
+  const monthlyCashFlow = periodIncome - totalMonthlyExpenses;
+  const savingsRate = periodIncome > 0 ? ((periodIncome - totalMonthlyExpenses) / periodIncome) * 100 : 0;
 
   // Calculate non-essential expenses for optimization tips
   const nonEssentialTotal = (expensesByRating['non_essential'] || 0) + (expensesByRating['luxury'] || 0);
@@ -637,7 +673,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         </button>
 
         {/* Monthly Expenses */}
-        <button 
+        <button
           className="w-full text-left"
           onClick={() => onNavigate?.('expenses')}
         >
@@ -647,11 +683,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               <p className={styles.kpiLabel}>Expenses</p>
             </div>
             <p className={styles.amountRed}>
-              {formatAmount(periodExpenses)}
+              {formatAmount(totalMonthlyExpenses)}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {filteredExpenses.length} transactions
-            </p>
+            <div className="text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
+              <div className="flex justify-between">
+                <span>One-time:</span>
+                <span>{formatAmount(oneTimeExpensesTotal)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Recurring:</span>
+                <span>{formatAmount(recurringExpensesTotal)}</span>
+              </div>
+            </div>
           </Card>
         </button>
       </div>
@@ -811,7 +854,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                         <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Amount</th>
                         <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Currency</th>
                         <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Status</th>
-                        <th className="w-20"></th>
+                        <th className="w-32"></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -857,17 +900,30 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                             </span>
                           </td>
                           <td className="py-2 px-4">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleConfirmRecurring(entry);
-                              }}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
-                              title="Add to this month"
-                            >
-                              <Plus className="w-3 h-3" />
-                              Add
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleConfirmRecurring(entry);
+                                }}
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
+                                title="Add to this month"
+                              >
+                                <Plus className="w-3 h-3" />
+                                Add
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSkipRecurring(entry);
+                                }}
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                title="Skip this month"
+                              >
+                                <X className="w-3 h-3" />
+                                Skip
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -896,46 +952,108 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <div className="p-4">
               {activeInsightTab === 'overview' && (
                 <div className="space-y-4">
-                  <h4 className={styles.sectionHeader}>Quick Stats</h4>
+                  <h4 className={styles.sectionHeader}>Expense Breakdown</h4>
 
-                  {/* Expense Breakdown by Rating */}
-                  <div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Expense Breakdown</p>
-                    <div className="space-y-2">
-                      {(['essential', 'discretionary', 'luxury'] as const).map((rating) => {
-                        const categoryTotal = expensesByRating[rating] || 0;
-                        const percentage = periodExpenses > 0 ? (categoryTotal / periodExpenses) * 100 : 0;
+                  {/* Pie Chart */}
+                  {periodExpenses > 0 ? (
+                    <div className="flex flex-col items-center">
+                      <svg viewBox="0 0 100 100" className="w-40 h-40">
+                        {(() => {
+                          const categories = [
+                            { key: 'essential', color: '#22c55e', label: 'Essential' },
+                            { key: 'discretionary', color: '#eab308', label: 'Discretionary' },
+                            { key: 'luxury', color: '#ef4444', label: 'Luxury' },
+                          ];
 
-                        return categoryTotal > 0 ? (
-                          <div key={rating} className="flex items-center justify-between">
-                            <span className="text-xs capitalize text-gray-700 dark:text-gray-300">
-                              {rating}
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                <div
-                                  className={`h-2 rounded-full ${
-                                    rating === 'essential' ? 'bg-green-500' :
-                                    rating === 'discretionary' ? 'bg-yellow-500' :
-                                    'bg-red-500'
-                                  }`}
-                                  style={{ width: `${Math.min(percentage, 100)}%` }}
+                          let cumulativePercent = 0;
+                          const slices: JSX.Element[] = [];
+
+                          categories.forEach(({ key, color }) => {
+                            const value = expensesByRating[key] || 0;
+                            const percent = (value / periodExpenses) * 100;
+
+                            if (percent > 0) {
+                              // Calculate SVG arc
+                              const startAngle = cumulativePercent * 3.6 - 90;
+                              const endAngle = (cumulativePercent + percent) * 3.6 - 90;
+
+                              const startRad = (startAngle * Math.PI) / 180;
+                              const endRad = (endAngle * Math.PI) / 180;
+
+                              const x1 = 50 + 40 * Math.cos(startRad);
+                              const y1 = 50 + 40 * Math.sin(startRad);
+                              const x2 = 50 + 40 * Math.cos(endRad);
+                              const y2 = 50 + 40 * Math.sin(endRad);
+
+                              const largeArc = percent > 50 ? 1 : 0;
+
+                              slices.push(
+                                <path
+                                  key={key}
+                                  d={`M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArc} 1 ${x2} ${y2} Z`}
+                                  fill={color}
+                                  className="transition-all hover:opacity-80"
                                 />
-                              </div>
-                              <span className="text-xs font-medium text-gray-900 dark:text-white w-10 text-right">
-                                {percentage.toFixed(0)}%
+                              );
+
+                              cumulativePercent += percent;
+                            }
+                          });
+
+                          return slices;
+                        })()}
+                        {/* Center circle for donut effect */}
+                        <circle cx="50" cy="50" r="20" className="fill-white dark:fill-gray-800" />
+                      </svg>
+
+                      {/* Legend */}
+                      <div className="flex flex-wrap justify-center gap-3 mt-4">
+                        {([
+                          { key: 'essential', color: 'bg-green-500', label: 'Essential' },
+                          { key: 'discretionary', color: 'bg-yellow-500', label: 'Discretionary' },
+                          { key: 'luxury', color: 'bg-red-500', label: 'Luxury' },
+                        ] as const).map(({ key, color, label }) => {
+                          const value = expensesByRating[key] || 0;
+                          const percent = periodExpenses > 0 ? (value / periodExpenses) * 100 : 0;
+
+                          return value > 0 ? (
+                            <div key={key} className="flex items-center gap-1.5">
+                              <div className={`w-3 h-3 rounded-full ${color}`} />
+                              <span className="text-xs text-gray-600 dark:text-gray-400">
+                                {label} ({percent.toFixed(0)}%)
                               </span>
                             </div>
-                          </div>
-                        ) : null;
-                      })}
-                      {Object.keys(expensesByRating).length === 0 && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-                          No expenses this period
-                        </p>
-                      )}
+                          ) : null;
+                        })}
+                      </div>
+
+                      {/* Category amounts */}
+                      <div className="w-full mt-4 space-y-2">
+                        {([
+                          { key: 'essential', color: 'text-green-600 dark:text-green-400', label: 'Essential' },
+                          { key: 'discretionary', color: 'text-yellow-600 dark:text-yellow-400', label: 'Discretionary' },
+                          { key: 'luxury', color: 'text-red-600 dark:text-red-400', label: 'Luxury' },
+                        ] as const).map(({ key, color, label }) => {
+                          const value = expensesByRating[key] || 0;
+                          return value > 0 ? (
+                            <div key={key} className="flex items-center justify-between text-xs">
+                              <span className="text-gray-600 dark:text-gray-400">{label}</span>
+                              <span className={`font-medium ${color}`}>{formatAmount(value)}</span>
+                            </div>
+                          ) : null;
+                        })}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex flex-col items-center py-8">
+                      <div className="w-40 h-40 rounded-full border-4 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center">
+                        <span className="text-xs text-gray-400 dark:text-gray-500">No data</span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 italic mt-4">
+                        No expenses this period
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 

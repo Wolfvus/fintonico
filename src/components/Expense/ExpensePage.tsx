@@ -42,6 +42,7 @@ const QuickAddForm: React.FC<QuickAddFormProps> = ({ onAdd, baseCurrency, enable
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState(baseCurrency);
   const [rating, setRating] = useState<ExpenseRating>('discretionary');
+  const [isRecurring, setIsRecurring] = useState(false);
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const currencyRef = useRef<HTMLDivElement>(null);
@@ -65,9 +66,11 @@ const QuickAddForm: React.FC<QuickAddFormProps> = ({ onAdd, baseCurrency, enable
         currency,
         rating,
         date: getTodayString(),
+        recurring: isRecurring,
       });
       setWhat('');
       setAmount('');
+      setIsRecurring(false);
       inputRef.current?.focus();
     }
   };
@@ -149,6 +152,20 @@ const QuickAddForm: React.FC<QuickAddFormProps> = ({ onAdd, baseCurrency, enable
             </button>
           ))}
         </div>
+
+        {/* Recurring Toggle */}
+        <button
+          type="button"
+          onClick={() => setIsRecurring(!isRecurring)}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-sm ${
+            isRecurring
+              ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400'
+              : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300'
+          }`}
+        >
+          <RefreshCw className="w-4 h-4" />
+          <span className="font-medium">Recurring</span>
+        </button>
 
         {/* Submit Button */}
         <button
@@ -586,6 +603,8 @@ interface ExpenseRowProps {
   onDelete: (id: string) => void;
   enabledCurrencies: string[];
   index: number;
+  hideDate?: boolean;
+  hideRecurring?: boolean;
 }
 
 const ExpenseRow: React.FC<ExpenseRowProps> = ({
@@ -594,6 +613,8 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
   onDelete,
   enabledCurrencies,
   index,
+  hideDate = false,
+  hideRecurring = false,
 }) => {
   const isEven = index % 2 === 0;
 
@@ -637,23 +658,27 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
         />
       </td>
 
-      {/* Date */}
-      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700 w-20">
-        <DatePickerCell
-          value={expense.date}
-          onChange={(date) => onUpdate(expense.id, { date })}
-        />
-      </td>
-
-      {/* Recurring */}
-      <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700 w-10">
-        <div className="flex items-center justify-center">
-          <RecurringToggle
-            value={expense.recurring || false}
-            onChange={(recurring) => onUpdate(expense.id, { recurring })}
+      {/* Date - conditionally rendered */}
+      {!hideDate && (
+        <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700 w-20">
+          <DatePickerCell
+            value={expense.date}
+            onChange={(date) => onUpdate(expense.id, { date })}
           />
-        </div>
-      </td>
+        </td>
+      )}
+
+      {/* Recurring - conditionally rendered */}
+      {!hideRecurring && (
+        <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700 w-10">
+          <div className="flex items-center justify-center">
+            <RecurringToggle
+              value={expense.recurring || false}
+              onChange={(recurring) => onUpdate(expense.id, { recurring })}
+            />
+          </div>
+        </td>
+      )}
 
       {/* Delete */}
       <td className="py-1 px-1 border-l border-gray-200 dark:border-gray-700 w-10">
@@ -778,80 +803,219 @@ const FilterBar: React.FC<FilterBarProps> = ({
   );
 };
 
+// Section Filter Bar Component (simplified for each section)
+interface SectionFilterBarProps {
+  descriptionFilter: string;
+  setDescriptionFilter: (v: string) => void;
+  currencyFilter: string;
+  setCurrencyFilter: (v: string) => void;
+  categoryFilter: string;
+  setCategoryFilter: (v: string) => void;
+  enabledCurrencies: string[];
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+const SectionFilterBar: React.FC<SectionFilterBarProps> = ({
+  descriptionFilter,
+  setDescriptionFilter,
+  currencyFilter,
+  setCurrencyFilter,
+  categoryFilter,
+  setCategoryFilter,
+  enabledCurrencies,
+  hasActiveFilters,
+  onClearFilters,
+  isOpen,
+  onToggle,
+}) => {
+  return (
+    <div className="border-b border-gray-200 dark:border-gray-700">
+      <button
+        onClick={onToggle}
+        className="w-full px-4 py-2 flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+      >
+        <Filter className="w-4 h-4" />
+        <span className="text-xs font-medium">Filters</span>
+        {hasActiveFilters && (
+          <span className="px-1.5 py-0.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full">
+            Active
+          </span>
+        )}
+      </button>
+
+      {isOpen && (
+        <div className="px-4 pb-3 flex items-center gap-3 flex-wrap border-t border-gray-100 dark:border-gray-700 pt-3">
+          {/* Description Filter */}
+          <input
+            type="text"
+            value={descriptionFilter}
+            onChange={(e) => setDescriptionFilter(e.target.value)}
+            placeholder="Search..."
+            className="px-2 py-1 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white placeholder-gray-400 w-32"
+          />
+
+          {/* Currency Filter */}
+          <select
+            value={currencyFilter}
+            onChange={(e) => setCurrencyFilter(e.target.value)}
+            className="px-2 py-1 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
+          >
+            <option value="">All Currencies</option>
+            {enabledCurrencies.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+
+          {/* Category Filter */}
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-2 py-1 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
+          >
+            <option value="">All Categories</option>
+            {RATING_OPTIONS.map((r) => (
+              <option key={r.value} value={r.value}>{r.label}</option>
+            ))}
+          </select>
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
+            <button
+              onClick={onClearFilters}
+              className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+            >
+              <X className="w-3 h-3" />
+              Clear
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Main Component
 export const ExpensePage: React.FC = () => {
   const { expenses, addExpense, deleteExpense } = useExpenseStore();
   const { baseCurrency, enabledCurrencies, formatAmount, convertAmount } = useCurrencyStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Filter states
-  const [descriptionFilter, setDescriptionFilter] = useState('');
-  const [currencyFilter, setCurrencyFilter] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [recurringFilter, setRecurringFilter] = useState('');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  // Section collapse states
+  const [isRecurringCollapsed, setIsRecurringCollapsed] = useState(false);
+  const [isMonthlyCollapsed, setIsMonthlyCollapsed] = useState(false);
 
-  const hasActiveFilters = descriptionFilter !== '' || currencyFilter !== '' || categoryFilter !== '' || recurringFilter !== '';
+  // Monthly expenses filter states
+  const [monthlyDescFilter, setMonthlyDescFilter] = useState('');
+  const [monthlyCurrencyFilter, setMonthlyCurrencyFilter] = useState('');
+  const [monthlyCategoryFilter, setMonthlyCategoryFilter] = useState('');
+  const [isMonthlyFilterOpen, setIsMonthlyFilterOpen] = useState(false);
 
-  const clearFilters = () => {
-    setDescriptionFilter('');
-    setCurrencyFilter('');
-    setCategoryFilter('');
-    setRecurringFilter('');
+  // Recurring expenses filter states
+  const [recurringDescFilter, setRecurringDescFilter] = useState('');
+  const [recurringCurrencyFilter, setRecurringCurrencyFilter] = useState('');
+  const [recurringCategoryFilter, setRecurringCategoryFilter] = useState('');
+  const [isRecurringFilterOpen, setIsRecurringFilterOpen] = useState(false);
+
+  const hasMonthlyFilters = monthlyDescFilter !== '' || monthlyCurrencyFilter !== '' || monthlyCategoryFilter !== '';
+  const hasRecurringFilters = recurringDescFilter !== '' || recurringCurrencyFilter !== '' || recurringCategoryFilter !== '';
+
+  const clearMonthlyFilters = () => {
+    setMonthlyDescFilter('');
+    setMonthlyCurrencyFilter('');
+    setMonthlyCategoryFilter('');
   };
 
-  // Filter expenses by selected month and filters
-  const filteredExpenses = useMemo(() => {
+  const clearRecurringFilters = () => {
+    setRecurringDescFilter('');
+    setRecurringCurrencyFilter('');
+    setRecurringCategoryFilter('');
+  };
+
+  // Separate recurring and monthly expenses
+  const allRecurringExpenses = useMemo(() => {
+    return expenses.filter((expense) => expense.recurring);
+  }, [expenses]);
+
+  const allMonthlyExpenses = useMemo(() => {
     const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
     const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59);
 
     return expenses.filter((expense) => {
+      if (expense.recurring) return false;
       const expenseDate = parseLocalDate(expense.date);
-      const inMonth = expenseDate >= startOfMonth && expenseDate <= endOfMonth;
-      if (!inMonth) return false;
+      return expenseDate >= startOfMonth && expenseDate <= endOfMonth;
+    });
+  }, [expenses, selectedDate]);
 
-      // Apply filters
-      if (descriptionFilter && !expense.what.toLowerCase().includes(descriptionFilter.toLowerCase())) {
+  // Apply filters to recurring expenses
+  const filteredRecurringExpenses = useMemo(() => {
+    return allRecurringExpenses.filter((expense) => {
+      if (recurringDescFilter && !expense.what.toLowerCase().includes(recurringDescFilter.toLowerCase())) {
         return false;
       }
-      if (currencyFilter && expense.currency !== currencyFilter) {
+      if (recurringCurrencyFilter && expense.currency !== recurringCurrencyFilter) {
         return false;
       }
-      if (categoryFilter && expense.rating !== categoryFilter) {
+      if (recurringCategoryFilter && expense.rating !== recurringCategoryFilter) {
         return false;
       }
-      if (recurringFilter === 'recurring' && !expense.recurring) {
-        return false;
-      }
-      if (recurringFilter === 'one-time' && expense.recurring) {
-        return false;
-      }
+      return true;
+    }).sort((a, b) => a.what.localeCompare(b.what));
+  }, [allRecurringExpenses, recurringDescFilter, recurringCurrencyFilter, recurringCategoryFilter]);
 
+  // Apply filters to monthly expenses
+  const filteredMonthlyExpenses = useMemo(() => {
+    return allMonthlyExpenses.filter((expense) => {
+      if (monthlyDescFilter && !expense.what.toLowerCase().includes(monthlyDescFilter.toLowerCase())) {
+        return false;
+      }
+      if (monthlyCurrencyFilter && expense.currency !== monthlyCurrencyFilter) {
+        return false;
+      }
+      if (monthlyCategoryFilter && expense.rating !== monthlyCategoryFilter) {
+        return false;
+      }
       return true;
     }).sort((a, b) => parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime());
-  }, [expenses, selectedDate, descriptionFilter, currencyFilter, categoryFilter, recurringFilter]);
+  }, [allMonthlyExpenses, monthlyDescFilter, monthlyCurrencyFilter, monthlyCategoryFilter]);
 
-  // Calculate monthly total
-  const monthlyTotal = useMemo(() => {
-    return filteredExpenses.reduce((total, expense) => {
+  // Calculate totals
+  const recurringTotal = useMemo(() => {
+    return allRecurringExpenses.reduce((total, expense) => {
       return total + convertAmount(expense.amount, expense.currency, baseCurrency);
     }, 0);
-  }, [filteredExpenses, convertAmount, baseCurrency]);
+  }, [allRecurringExpenses, convertAmount, baseCurrency]);
 
-  // Calculate breakdown by rating
+  const monthlyTotal = useMemo(() => {
+    return allMonthlyExpenses.reduce((total, expense) => {
+      return total + convertAmount(expense.amount, expense.currency, baseCurrency);
+    }, 0);
+  }, [allMonthlyExpenses, convertAmount, baseCurrency]);
+
+  // Calculate breakdown by rating (monthly + recurring)
   const ratingBreakdown = useMemo(() => {
     const breakdown: Record<ExpenseRating, number> = {
       essential: 0,
       discretionary: 0,
       luxury: 0,
     };
-    filteredExpenses.forEach((expense) => {
+    // Add monthly expenses
+    allMonthlyExpenses.forEach((expense) => {
+      if (breakdown[expense.rating] !== undefined) {
+        breakdown[expense.rating] += convertAmount(expense.amount, expense.currency, baseCurrency);
+      }
+    });
+    // Add recurring expenses
+    allRecurringExpenses.forEach((expense) => {
       if (breakdown[expense.rating] !== undefined) {
         breakdown[expense.rating] += convertAmount(expense.amount, expense.currency, baseCurrency);
       }
     });
     return breakdown;
-  }, [filteredExpenses, convertAmount, baseCurrency]);
+  }, [allMonthlyExpenses, allRecurringExpenses, convertAmount, baseCurrency]);
 
   // Navigation
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -900,6 +1064,9 @@ export const ExpensePage: React.FC = () => {
             <p className="text-xl font-bold text-red-600 dark:text-red-400">
               {formatAmount(monthlyTotal)}
             </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              + {formatAmount(recurringTotal)} recurring
+            </p>
           </div>
 
           {RATING_OPTIONS.map((rating) => (
@@ -940,71 +1107,172 @@ export const ExpensePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <FilterBar
-        descriptionFilter={descriptionFilter}
-        setDescriptionFilter={setDescriptionFilter}
-        currencyFilter={currencyFilter}
-        setCurrencyFilter={setCurrencyFilter}
-        categoryFilter={categoryFilter}
-        setCategoryFilter={setCategoryFilter}
-        recurringFilter={recurringFilter}
-        setRecurringFilter={setRecurringFilter}
-        enabledCurrencies={enabledCurrencies}
-        hasActiveFilters={hasActiveFilters}
-        onClearFilters={clearFilters}
-        isOpen={isFilterOpen}
-        onToggle={() => setIsFilterOpen(!isFilterOpen)}
-      />
+      {/* Recurring Expenses Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <button
+          onClick={() => setIsRecurringCollapsed(!isRecurringCollapsed)}
+          className="w-full px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+        >
+          {isRecurringCollapsed ? (
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-gray-400" />
+          )}
+          <RefreshCw className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left">Recurring Expenses</h2>
+          <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">
+            {formatAmount(recurringTotal)}/mo
+          </span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">
+            {filteredRecurringExpenses.length} {hasRecurringFilters ? `of ${allRecurringExpenses.length}` : ''} items
+          </span>
+        </button>
 
-      {/* Expense Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="overflow-x-auto overflow-y-visible">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                  Description
-                </th>
-                <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-28">
-                  Amount
-                </th>
-                <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
-                  Currency
-                </th>
-                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
-                  Category
-                </th>
-                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
-                  Date
-                </th>
-                <th className="px-1 py-2 text-center border-l border-gray-200 dark:border-gray-700 w-10" title="Recurring">
-                  <RefreshCw className="w-3 h-3 mx-auto text-gray-400" />
-                </th>
-                <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredExpenses.map((expense, index) => (
-                <ExpenseRow
-                  key={expense.id}
-                  expense={expense}
-                  onUpdate={handleUpdateExpense}
-                  onDelete={deleteExpense}
-                  enabledCurrencies={enabledCurrencies}
-                  index={index}
-                />
-              ))}
-              {filteredExpenses.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-gray-500 dark:text-gray-400">
-                    No expenses this month. Use the Quick Add form above to get started.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        {!isRecurringCollapsed && (
+          <>
+            <SectionFilterBar
+              descriptionFilter={recurringDescFilter}
+              setDescriptionFilter={setRecurringDescFilter}
+              currencyFilter={recurringCurrencyFilter}
+              setCurrencyFilter={setRecurringCurrencyFilter}
+              categoryFilter={recurringCategoryFilter}
+              setCategoryFilter={setRecurringCategoryFilter}
+              enabledCurrencies={enabledCurrencies}
+              hasActiveFilters={hasRecurringFilters}
+              onClearFilters={clearRecurringFilters}
+              isOpen={isRecurringFilterOpen}
+              onToggle={() => setIsRecurringFilterOpen(!isRecurringFilterOpen)}
+            />
+            <div className="overflow-x-auto overflow-y-visible">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                      Description
+                    </th>
+                    <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-28">
+                      Amount
+                    </th>
+                    <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
+                      Currency
+                    </th>
+                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
+                      Category
+                    </th>
+                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
+                      Due Date
+                    </th>
+                    <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRecurringExpenses.map((expense, index) => (
+                    <ExpenseRow
+                      key={expense.id}
+                      expense={expense}
+                      onUpdate={handleUpdateExpense}
+                      onDelete={deleteExpense}
+                      enabledCurrencies={enabledCurrencies}
+                      index={index}
+                      hideRecurring
+                    />
+                  ))}
+                  {filteredRecurringExpenses.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+                        No recurring expenses. Mark an expense as recurring to have it appear here.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Monthly Expenses Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <button
+          onClick={() => setIsMonthlyCollapsed(!isMonthlyCollapsed)}
+          className="w-full px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+        >
+          {isMonthlyCollapsed ? (
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-gray-400" />
+          )}
+          <Calendar className="w-5 h-5 text-red-600 dark:text-red-400" />
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left">Monthly Expenses</h2>
+          <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">
+            {formatAmount(monthlyTotal)}
+          </span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">
+            {filteredMonthlyExpenses.length} {hasMonthlyFilters ? `of ${allMonthlyExpenses.length}` : ''} items
+          </span>
+        </button>
+
+        {!isMonthlyCollapsed && (
+          <>
+            <SectionFilterBar
+              descriptionFilter={monthlyDescFilter}
+              setDescriptionFilter={setMonthlyDescFilter}
+              currencyFilter={monthlyCurrencyFilter}
+              setCurrencyFilter={setMonthlyCurrencyFilter}
+              categoryFilter={monthlyCategoryFilter}
+              setCategoryFilter={setMonthlyCategoryFilter}
+              enabledCurrencies={enabledCurrencies}
+              hasActiveFilters={hasMonthlyFilters}
+              onClearFilters={clearMonthlyFilters}
+              isOpen={isMonthlyFilterOpen}
+              onToggle={() => setIsMonthlyFilterOpen(!isMonthlyFilterOpen)}
+            />
+            <div className="overflow-x-auto overflow-y-visible">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                      Description
+                    </th>
+                    <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-28">
+                      Amount
+                    </th>
+                    <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
+                      Currency
+                    </th>
+                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
+                      Category
+                    </th>
+                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
+                      Date
+                    </th>
+                    <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredMonthlyExpenses.map((expense, index) => (
+                    <ExpenseRow
+                      key={expense.id}
+                      expense={expense}
+                      onUpdate={handleUpdateExpense}
+                      onDelete={deleteExpense}
+                      enabledCurrencies={enabledCurrencies}
+                      index={index}
+                      hideRecurring
+                    />
+                  ))}
+                  {filteredMonthlyExpenses.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+                        No expenses this month. Use the Quick Add form above to get started.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

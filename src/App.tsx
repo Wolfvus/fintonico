@@ -19,9 +19,20 @@ function App() {
   const { user, loading, checkUser } = useAuthStore();
   const { initializeDefaultAccounts } = useLedgerStore();
   const { isDark, toggleTheme, initializeTheme } = useThemeStore();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'expenses' | 'income' | 'networth' | 'accounts'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'expenses' | 'income' | 'networth' | 'accounts'>(() => {
+    const saved = localStorage.getItem('fintonico-active-tab');
+    if (saved && ['dashboard', 'expenses', 'income', 'networth', 'accounts'].includes(saved)) {
+      return saved as 'dashboard' | 'expenses' | 'income' | 'networth' | 'accounts';
+    }
+    return 'dashboard';
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Persist active tab to localStorage
+  useEffect(() => {
+    localStorage.setItem('fintonico-active-tab', activeTab);
+  }, [activeTab]);
 
   useEffect(() => {
     checkUser();

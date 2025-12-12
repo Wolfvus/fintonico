@@ -140,10 +140,31 @@
 
 ---
 
+## Phase 10: Expense Page Restructure ✅
+
+### Step 1: Separate Recurring & One-Time Expenses ✅
+
+**Goal:** Split the Expense page into two distinct sections for better organization.
+
+| Task | Status |
+| --- | --- |
+| Create "Recurring Expenses" collapsible section | ✅ |
+| Create "One-Time Expenses" section (current month) | ✅ |
+| Each section has its own table | ✅ |
+| Each section has independent filters | ✅ |
+| Quick add form adds to appropriate section | ✅ |
+| Summary shows totals for each section | ✅ |
+
+**Layout:**
+- **Recurring Expenses** - Template expenses that repeat monthly (collapsed by default)
+- **Monthly Expenses** - One-time expenses for the selected month
+
+---
+
 ## Future Phases
 
 See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvements.
 
 ---
 
-**Last Updated:** 2025-12-11
+**Last Updated:** 2025-12-12
