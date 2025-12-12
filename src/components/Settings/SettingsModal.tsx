@@ -9,14 +9,14 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
-const sectionTitle = 'text-sm font-semibold text-gray-900 dark:text-white';
-const sectionDescription = 'text-xs text-gray-500 dark:text-gray-400';
+const sectionTitle = 'text-sm font-semibold text-primary';
+const sectionDescription = 'text-xs text-muted';
 
 const preferenceRow =
-  'flex items-center justify-between gap-3 py-2.5 border-b border-gray-200 dark:border-gray-800 last:border-none';
+  'flex items-center justify-between gap-3 py-2.5 border-b last:border-none transition-colors hover:bg-[var(--color-surface-elevated)] border-[color:var(--color-border)]';
 
 const checkboxBase =
-  'h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded';
+  'h-4 w-4 rounded border-[color:var(--color-border)] text-[color:var(--color-primary)]';
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const {
@@ -105,8 +105,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
   const footerContent = (
     <>
-      <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mr-auto">
-        <RefreshCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-green-600 dark:text-green-400' : ''}`} />
+      <div className="flex items-center gap-2 text-xs text-muted mr-auto">
+        <RefreshCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[color:var(--color-primary)]' : ''}`} />
         <span>{loading ? 'Refreshing exchange rates...' : 'Exchange rates update every 5 minutes while open.'}</span>
       </div>
       <button
@@ -118,11 +118,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       <button
         onClick={handleSeedData}
         disabled={isSeedingData}
-        className={`px-3 py-2 text-sm font-medium border rounded-lg transition-colors ${
-          isSeedingData
-            ? 'border-blue-200 dark:border-blue-800 text-blue-400 opacity-60 cursor-not-allowed'
-            : 'border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
-        }`}
+        className="px-3 py-2 text-sm font-medium border rounded-lg transition-colors border-[color:var(--color-info)] text-[color:var(--color-info)] hover:bg-[var(--color-info-bg)] disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {isSeedingData ? 'Seeding...' : 'Seed mock data'}
       </button>
@@ -163,14 +159,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             Set your default reporting currency. Exchange rates will refresh when this changes.
           </p>
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <label htmlFor="base-currency-select" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+            <label htmlFor="base-currency-select" className="text-sm font-medium text-secondary">
               Base currency
             </label>
             <select
               id="base-currency-select"
               value={draftBaseCurrency}
               onChange={(event) => setDraftBaseCurrency(event.target.value)}
-              className="w-full sm:w-56 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="select w-full sm:w-56"
             >
               {SUPPORTED_CURRENCIES.map((currency) => (
                 <option key={currency.code} value={currency.code}>
@@ -195,8 +191,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               return (
                 <label
                   key={currency.code}
-                  className={`flex items-start gap-3 rounded-lg border border-gray-200 dark:border-gray-800 p-3 hover:border-gray-300 dark:hover:border-gray-600 transition-colors ${
-                    disabled ? 'bg-gray-50 dark:bg-gray-900/60 cursor-not-allowed' : 'bg-white dark:bg-gray-900 cursor-pointer'
+                  className={`flex items-start gap-3 rounded-lg border p-3 transition-colors border-[color:var(--color-border)] ${
+                    disabled
+                      ? 'bg-[var(--color-surface-elevated)] opacity-70 cursor-not-allowed'
+                      : 'bg-[var(--color-surface-card)] cursor-pointer hover:border-[color:var(--color-border-focus)] hover:bg-[var(--color-surface-elevated)]'
                   }`}
                 >
                   <input
@@ -208,7 +206,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     aria-label={`${currency.code} visibility toggle`}
                   />
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    <p className="text-sm font-medium text-primary">
                       {currency.code} - {currency.name}
                     </p>
                     <p className={sectionDescription}>
@@ -220,11 +218,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             })}
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted">
             <span className="font-medium">Preview:</span>
             <span>Showing {visibleCurrencyList.join(', ')}</span>
             {visibleCurrencyList.length === 1 && visibleCurrencyList[0] === baseCurrency && (
-              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+              <span className="inline-flex items-center gap-1 text-[color:var(--color-warning)]">
                 <AlertCircle className="w-3 h-3" />
                 Add another currency if you plan to track FX balances.
               </span>
@@ -237,15 +235,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           <p className={`${sectionDescription} mb-3`}>
             Feature toggles saved locally; expand as shared settings come online.
           </p>
-          <div className="rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-200 dark:divide-gray-800">
+          <div className="rounded-xl border divide-y bg-[var(--color-surface-card)] border-[color:var(--color-border)] divide-[color:var(--color-border)]">
             <div className={preferenceRow}>
               <div className="px-3">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                <p className="text-sm font-medium text-primary">
                   Show savings insights on dashboard
                 </p>
                 <p className={sectionDescription}>Recommended to keep enabled for budgeting tips.</p>
               </div>
-              <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 px-3">
+              <label className="inline-flex items-center gap-2 text-sm font-medium text-secondary px-3">
                 <input
                   type="checkbox"
                   className={checkboxBase}
@@ -257,12 +255,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             </div>
             <div className={preferenceRow}>
               <div className="px-3">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                <p className="text-sm font-medium text-primary">
                   Auto-refresh FX rates at launch
                 </p>
                 <p className={sectionDescription}>Disable if working offline to avoid API warnings.</p>
               </div>
-              <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 px-3">
+              <label className="inline-flex items-center gap-2 text-sm font-medium text-secondary px-3">
                 <input
                   type="checkbox"
                   className={checkboxBase}
@@ -276,7 +274,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         </section>
 
         {error && (
-          <div className="flex items-center gap-2 text-xs text-red-500 dark:text-red-400 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/60 rounded-lg px-3 py-2">
+          <div className="flex items-center gap-2 text-xs border rounded-lg px-3 py-2 text-[color:var(--color-error)] border-[color:var(--color-error)] bg-[var(--color-error-bg)]">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{error}</span>
           </div>
