@@ -263,10 +263,56 @@
 
 ---
 
+## Phase 14: CSV Import/Export ✅
+
+**Goal:** Allow users to import and export data to/from CSV files for backup, migration, and bulk data entry.
+
+| Task | Status |
+| --- | --- |
+| Create CSV utility functions (parse/generate) | ✅ |
+| Expenses: Export/Import CSV | ✅ |
+| Income: Export/Import CSV | ✅ |
+| Net Worth (Accounts): Export/Import CSV | ✅ |
+| Chart of Accounts: Export/Import CSV | ✅ |
+
+**Implementation Notes:**
+- Created `src/utils/csv.ts` with generic CSV parsing and generation functions
+- Created `src/components/Shared/CSVActions.tsx` reusable component with Export/Import buttons
+- Import shows validation errors in a modal dialog
+- Export downloads file with date-stamped filename (e.g., `fintonico-expenses-2025-12-11.csv`)
+
+**CSV Formats:**
+
+**Expenses:**
+```
+date,description,amount,currency,category,recurring
+2025-01-15,Groceries,150.00,MXN,essential,false
+```
+
+**Income:**
+```
+date,source,amount,currency,frequency
+2025-01-01,Salary,50000.00,MXN,monthly
+```
+
+**Accounts (Net Worth):**
+```
+name,type,currency,balance,yield,due_date,excluded
+Savings,bank,MXN,100000,5.5,,false
+```
+
+**Chart of Accounts:**
+```
+name,account_number,clabe,normal_balance,active
+Bank Account,1234567890,012345678901234567,debit,true
+```
+
+---
+
 ## Future Phases
 
 See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvements.
 
 ---
 
-**Last Updated:** 2025-12-12
+**Last Updated:** 2025-12-11

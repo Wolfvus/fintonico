@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useLedgerAccountStore } from '../../stores/ledgerAccountStore';
 import { CreditCard, Plus, Trash2, ChevronDown, Copy, Check, X } from 'lucide-react';
 import type { LedgerAccount, LedgerAccountNormalBalance } from '../../types';
+import { CSVActions } from '../Shared/CSVActions';
+import { exportLedgerAccountsToCSV, parseLedgerAccountCSV, downloadCSV, readCSVFile } from '../../utils/csv';
 
 // Copyable Cell Component - shows copy button on hover
 interface CopyableCellProps {
@@ -565,18 +567,106 @@ export const ChartOfAccountsPage: React.FC = () => {
 
   const activeCount = accounts.filter(a => a.isActive).length;
 
+  // CSV Export handler
+  const handleExportCSV = () => {
+    const csvContent = exportLedgerAccountsToCSV(accounts);
+    const dateStr = new Date().toISOString().split('T')[0];
+    downloadCSV(csvContent, `fintonico-chart-of-accounts-${dateStr}.csv`);
+  };
+
+  // CSV Import handler
+  const handleImportCSV = async (file: File): Promise<{ success: boolean; message: string; count?: number }> => {
+    try {
+      const csvContent = await readCSVFile(file);
+      const { data, errors } = parseLedgerAccountCSV(csvContent);
+
+      if (errors.length > 0) {
+        return {
+          success: false,
+          message: errors.join('\n'),
+        };
+      }
+
+      if (data.length === 0) {
+        return {
+          success: false,
+          message: 'No valid accounts found in the CSV file',
+        };
+      }
+
+      // Validate and import each row
+      let importedCount = 0;
+      const importErrors: string[] = [];
+
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        const rowNum = i + 2; // +2 because row 1 is header, and array is 0-indexed
+
+        // Validate required fields
+        if (!row.name || !row.normal_balance) {
+          importErrors.push(`Row ${rowNum}: Missing required fields (name, normal_balance)`);
+          continue;
+        }
+
+        // Validate normal_balance
+        const normalBalance = row.normal_balance.toLowerCase();
+        if (normalBalance !== 'debit' && normalBalance !== 'credit') {
+          importErrors.push(`Row ${rowNum}: Invalid normal_balance (use debit or credit)`);
+          continue;
+        }
+
+        // Add the account
+        addAccount({
+          name: row.name,
+          accountNumber: row.account_number || undefined,
+          clabe: row.clabe || undefined,
+          normalBalance: normalBalance as LedgerAccountNormalBalance,
+          isActive: row.active?.toLowerCase() !== 'false', // Default to true
+        });
+        importedCount++;
+      }
+
+      if (importErrors.length > 0 && importedCount === 0) {
+        return {
+          success: false,
+          message: importErrors.slice(0, 5).join('\n') + (importErrors.length > 5 ? `\n...and ${importErrors.length - 5} more errors` : ''),
+        };
+      }
+
+      return {
+        success: true,
+        message: importErrors.length > 0
+          ? `Imported with ${importErrors.length} skipped rows`
+          : 'All accounts imported successfully',
+        count: importedCount,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to parse CSV file',
+      };
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Card */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-3">
-          <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Account References</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Quick reference for your bank accounts, CLABEs and card numbers. {activeCount} active of {accounts.length} total.
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Account References</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Quick reference for your bank accounts, CLABEs and card numbers. {activeCount} active of {accounts.length} total.
+              </p>
+            </div>
           </div>
+          <CSVActions
+            onExport={handleExportCSV}
+            onImport={handleImportCSV}
+            entityName="accounts"
+          />
         </div>
       </div>
 

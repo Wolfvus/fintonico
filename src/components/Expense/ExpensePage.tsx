@@ -4,6 +4,8 @@ import { useExpenseStore } from '../../stores/expenseStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calendar, RefreshCw, Home, ShoppingBag, Sparkles, Filter, X } from 'lucide-react';
 import type { Expense, ExpenseRating } from '../../types';
+import { CSVActions } from '../Shared/CSVActions';
+import { exportExpensesToCSV, parseExpenseCSV, downloadCSV, readCSVFile } from '../../utils/csv';
 
 // Format date for display (compact format: Dec 11)
 const formatDateCompact = (dateStr: string): string => {
@@ -1163,6 +1165,102 @@ export const ExpensePage: React.FC = () => {
     });
   };
 
+  // CSV Export handler
+  const handleExportCSV = () => {
+    const csvContent = exportExpensesToCSV(expenses);
+    const dateStr = new Date().toISOString().split('T')[0];
+    downloadCSV(csvContent, `fintonico-expenses-${dateStr}.csv`);
+  };
+
+  // CSV Import handler
+  const handleImportCSV = async (file: File): Promise<{ success: boolean; message: string; count?: number }> => {
+    try {
+      const csvContent = await readCSVFile(file);
+      const { data, errors } = parseExpenseCSV(csvContent);
+
+      if (errors.length > 0) {
+        return {
+          success: false,
+          message: errors.join('\n'),
+        };
+      }
+
+      if (data.length === 0) {
+        return {
+          success: false,
+          message: 'No valid expenses found in the CSV file',
+        };
+      }
+
+      // Validate and import each row
+      const validRatings = ['essential', 'discretionary', 'luxury'];
+      let importedCount = 0;
+      const importErrors: string[] = [];
+
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        const rowNum = i + 2; // +2 because row 1 is header, and array is 0-indexed
+
+        // Validate required fields
+        if (!row.date || !row.description || !row.amount) {
+          importErrors.push(`Row ${rowNum}: Missing required fields`);
+          continue;
+        }
+
+        // Validate date format (YYYY-MM-DD)
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(row.date)) {
+          importErrors.push(`Row ${rowNum}: Invalid date format (use YYYY-MM-DD)`);
+          continue;
+        }
+
+        // Validate amount
+        const amount = parseFloat(row.amount);
+        if (isNaN(amount) || amount <= 0) {
+          importErrors.push(`Row ${rowNum}: Invalid amount`);
+          continue;
+        }
+
+        // Validate category
+        const category = row.category?.toLowerCase() || 'discretionary';
+        if (!validRatings.includes(category)) {
+          importErrors.push(`Row ${rowNum}: Invalid category (use essential, discretionary, or luxury)`);
+          continue;
+        }
+
+        // Add the expense
+        await addExpense({
+          what: row.description,
+          amount,
+          currency: row.currency?.toUpperCase() || baseCurrency,
+          rating: category as ExpenseRating,
+          date: row.date,
+          recurring: row.recurring?.toLowerCase() === 'true',
+        });
+        importedCount++;
+      }
+
+      if (importErrors.length > 0 && importedCount === 0) {
+        return {
+          success: false,
+          message: importErrors.slice(0, 5).join('\n') + (importErrors.length > 5 ? `\n...and ${importErrors.length - 5} more errors` : ''),
+        };
+      }
+
+      return {
+        success: true,
+        message: importErrors.length > 0
+          ? `Imported with ${importErrors.length} skipped rows`
+          : 'All expenses imported successfully',
+        count: importedCount,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to parse CSV file',
+      };
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Section: Quick Add + Summary */}
@@ -1205,25 +1303,40 @@ export const ExpensePage: React.FC = () => {
       {/* Sticky Month Navigation */}
       <div className="sticky top-16 z-20 -mx-4 px-4 py-2 bg-gray-100 dark:bg-gray-900">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3">
-          <div className="flex items-center justify-center gap-4">
-            <button
-              onClick={() => navigateMonth('prev')}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </button>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <span className="text-lg font-semibold text-gray-900 dark:text-white min-w-[180px] text-center">
-                {getMonthLabel()}
-              </span>
+          <div className="flex items-center justify-between">
+            {/* CSV Actions - Left */}
+            <div className="flex-1">
+              <CSVActions
+                onExport={handleExportCSV}
+                onImport={handleImportCSV}
+                entityName="expenses"
+              />
             </div>
-            <button
-              onClick={() => navigateMonth('next')}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </button>
+
+            {/* Month Navigation - Center */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigateMonth('prev')}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </button>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <span className="text-lg font-semibold text-gray-900 dark:text-white min-w-[180px] text-center">
+                  {getMonthLabel()}
+                </span>
+              </div>
+              <button
+                onClick={() => navigateMonth('next')}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+
+            {/* Spacer - Right (for balance) */}
+            <div className="flex-1" />
           </div>
         </div>
       </div>

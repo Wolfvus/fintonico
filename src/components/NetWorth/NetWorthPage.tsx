@@ -4,6 +4,8 @@ import { useAccountStore } from '../../stores/accountStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, ChevronRight, Check, EyeOff, X, Filter } from 'lucide-react';
 import type { AccountType, Account } from '../../types';
+import { CSVActions } from '../Shared/CSVActions';
+import { exportAccountsToCSV, parseAccountCSV, downloadCSV, readCSVFile } from '../../utils/csv';
 
 // Format number with thousand separators
 const formatNumberWithCommas = (value: number | string): string => {
@@ -1260,8 +1262,114 @@ export const NetWorthPage: React.FC = () => {
     (a) => a.recurringDueDate && !a.isPaidThisMonth && !a.excludeFromTotal
   ).length;
 
+  // CSV Export handler
+  const handleExportCSV = () => {
+    const csvContent = exportAccountsToCSV(accounts);
+    const dateStr = new Date().toISOString().split('T')[0];
+    downloadCSV(csvContent, `fintonico-accounts-${dateStr}.csv`);
+  };
+
+  // CSV Import handler
+  const handleImportCSV = async (file: File): Promise<{ success: boolean; message: string; count?: number }> => {
+    try {
+      const csvContent = await readCSVFile(file);
+      const { data, errors } = parseAccountCSV(csvContent);
+
+      if (errors.length > 0) {
+        return {
+          success: false,
+          message: errors.join('\n'),
+        };
+      }
+
+      if (data.length === 0) {
+        return {
+          success: false,
+          message: 'No valid accounts found in the CSV file',
+        };
+      }
+
+      // Validate and import each row
+      const validTypes = ['cash', 'bank', 'exchange', 'investment', 'property', 'loan', 'credit-card', 'mortgage', 'other'];
+      let importedCount = 0;
+      const importErrors: string[] = [];
+
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        const rowNum = i + 2; // +2 because row 1 is header, and array is 0-indexed
+
+        // Validate required fields
+        if (!row.name || !row.type || !row.balance) {
+          importErrors.push(`Row ${rowNum}: Missing required fields (name, type, balance)`);
+          continue;
+        }
+
+        // Validate type
+        const accountType = row.type.toLowerCase();
+        if (!validTypes.includes(accountType)) {
+          importErrors.push(`Row ${rowNum}: Invalid type (${row.type})`);
+          continue;
+        }
+
+        // Validate balance
+        const balance = parseFloat(row.balance);
+        if (isNaN(balance)) {
+          importErrors.push(`Row ${rowNum}: Invalid balance`);
+          continue;
+        }
+
+        // Parse optional fields
+        const estimatedYield = row.yield ? parseFloat(row.yield) : undefined;
+        const recurringDueDate = row.due_date ? parseInt(row.due_date, 10) : undefined;
+        const excludeFromTotal = row.excluded?.toLowerCase() === 'true';
+
+        // Add the account (balance is negative for liabilities)
+        const isLiability = ['loan', 'credit-card', 'mortgage'].includes(accountType);
+        addAccount({
+          name: row.name,
+          type: accountType as AccountType,
+          currency: row.currency?.toUpperCase() || baseCurrency,
+          balance: isLiability ? -Math.abs(balance) : balance,
+          estimatedYield: estimatedYield && estimatedYield > 0 ? estimatedYield : undefined,
+          recurringDueDate: recurringDueDate && recurringDueDate >= 1 && recurringDueDate <= 31 ? recurringDueDate : undefined,
+          excludeFromTotal,
+        });
+        importedCount++;
+      }
+
+      if (importErrors.length > 0 && importedCount === 0) {
+        return {
+          success: false,
+          message: importErrors.slice(0, 5).join('\n') + (importErrors.length > 5 ? `\n...and ${importErrors.length - 5} more errors` : ''),
+        };
+      }
+
+      return {
+        success: true,
+        message: importErrors.length > 0
+          ? `Imported with ${importErrors.length} skipped rows`
+          : 'All accounts imported successfully',
+        count: importedCount,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to parse CSV file',
+      };
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* CSV Actions Bar */}
+      <div className="flex justify-end">
+        <CSVActions
+          onExport={handleExportCSV}
+          onImport={handleImportCSV}
+          entityName="accounts"
+        />
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
