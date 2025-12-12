@@ -89,10 +89,13 @@ export const useIncomeStore = create<IncomeState>()(
             const dateResult = validateDate(income.date || '');
             return sourceResult && amountResult.isValid && dateResult.isValid;
           }).map((income: any) => {
-            // Migrate 'yearly' frequency to 'monthly' (yearly was removed)
+            // Migrate and validate frequency
             let frequency = String(income.frequency || 'one-time');
             if (frequency === 'yearly') {
-              frequency = 'monthly';
+              frequency = 'monthly'; // yearly was removed
+            }
+            if (!['one-time', 'weekly', 'bi-weekly', 'monthly'].includes(frequency)) {
+              frequency = 'one-time'; // fallback for invalid values
             }
             return {
               id: String(income.id || crypto.randomUUID()),

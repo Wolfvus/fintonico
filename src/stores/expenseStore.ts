@@ -94,7 +94,7 @@ export const useExpenseStore = create<ExpenseState>()(
             what: sanitizeDescription(expense.what),
             amount: validateAmount(String(expense.amount)).sanitizedValue,
             currency: String(expense.currency || 'MXN'),
-            rating: String(expense.rating || 'non_essential') as ExpenseRating,
+            rating: (['essential', 'discretionary', 'luxury'].includes(expense.rating) ? expense.rating : 'discretionary') as ExpenseRating,
             date: expense.date,
             created_at: String(expense.created_at || new Date().toISOString()),
             recurring: Boolean(expense.recurring),

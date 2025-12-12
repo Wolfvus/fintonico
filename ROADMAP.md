@@ -424,13 +424,93 @@ Bank Account,1234567890,012345678901234567,debit,true
 - Fixed Dashboard.tsx onNavigate type (removed unused 'assets'/'liabilities')
 - Fixed csv.ts type casting issues
 
-### Step 4: Data Integrity
+### Step 4: Data Integrity ✅
 
 | Task | Status |
 | --- | --- |
-| Validate localStorage data structure | Planned |
-| Check for data inconsistencies | Planned |
-| Document current data schema | Planned |
+| Validate localStorage data structure | ✅ |
+| Check for data inconsistencies | ✅ |
+| Document current data schema | ✅ |
+
+**Data Inconsistencies Fixed:**
+- `expenseStore.ts`: Fixed rating default from 'non_essential' to validated 'discretionary'
+- `incomeStore.ts`: Added validation for invalid frequency values (fallback to 'one-time')
+
+**Current Data Schema (localStorage keys):**
+
+| Key | Store | Description |
+| --- | --- | --- |
+| `fintonico-expenses` | expenseStore | Expense records |
+| `fintonico-incomes` | incomeStore | Income records |
+| `fintonico-accounts` | accountStore | Net Worth accounts |
+| `fintonico-ledger-accounts` | ledgerAccountStore | Chart of Accounts |
+| `fintonico-currency` | currencyStore | Currency settings & rates |
+| `fintonico-snapshots` | snapshotStore | Net worth snapshots |
+| `fintonico-theme` | themeStore | Theme preference (dark/light) |
+| `fintonico-dev-session` | authStore | Dev authentication flag |
+| `fintonico-active-tab` | App.tsx | Current active navigation tab |
+| `fintonico-last-recurring-check` | recurringUtils | Last recurring generation date |
+
+**Data Structures:**
+
+```typescript
+// Expense
+{
+  id: string;
+  what: string;
+  amount: number;
+  currency: string;
+  rating: 'essential' | 'discretionary' | 'luxury';
+  date: string; // YYYY-MM-DD
+  created_at: string; // ISO timestamp
+  recurring?: boolean;
+}
+
+// Income
+{
+  id: string;
+  source: string;
+  amount: number;
+  currency: string;
+  frequency: 'one-time' | 'weekly' | 'bi-weekly' | 'monthly';
+  date: string; // YYYY-MM-DD
+  created_at: string; // ISO timestamp
+}
+
+// Account (Net Worth)
+{
+  id: string;
+  name: string;
+  type: 'cash' | 'bank' | 'exchange' | 'investment' | 'property' | 'loan' | 'credit-card' | 'mortgage' | 'other';
+  currency: string;
+  balance: number;
+  excludeFromTotal?: boolean;
+  dueDate?: string;
+  recurringDueDate?: number; // day of month
+  isPaidThisMonth?: boolean;
+  lastPaidDate?: string;
+  estimatedYield?: number;
+  lastUpdated?: string;
+}
+
+// LedgerAccount (Chart of Accounts)
+{
+  id: string;
+  name: string;
+  accountNumber?: string;
+  clabe?: string;
+  normalBalance: 'debit' | 'credit';
+  isActive: boolean;
+}
+
+// Currency Settings
+{
+  baseCurrency: string;
+  exchangeRates: Record<string, number>;
+  lastUpdated: number;
+  enabledCurrencies: string[];
+}
+```
 
 ---
 
@@ -503,4 +583,4 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-12-12 (Phase 15 Steps 1-3 completed)
+**Last Updated:** 2025-12-12 (Phase 15 completed)
