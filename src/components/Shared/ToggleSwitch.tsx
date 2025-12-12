@@ -4,6 +4,7 @@ interface ToggleSwitchProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
   label?: string;
+  ariaLabel?: string;
   size?: 'sm' | 'md';
   disabled?: boolean;
 }
@@ -12,6 +13,7 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   checked,
   onChange,
   label,
+  ariaLabel,
   size = 'md',
   disabled = false
 }) => {
@@ -38,13 +40,14 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
           checked={checked}
           onChange={(e) => onChange(e.target.checked)}
           disabled={disabled}
+          aria-label={ariaLabel ?? label}
           className="sr-only"
         />
         <div
           className={`${classes.track} ${
             checked
-              ? 'bg-green-600 dark:bg-green-500'
-              : 'bg-gray-200 dark:bg-gray-700'
+              ? 'bg-[var(--color-primary)]'
+              : 'bg-[var(--color-border-light)]'
           } rounded-full transition-all duration-200 ${
             disabled ? 'opacity-50' : ''
           }`}
@@ -56,11 +59,7 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
         />
       </div>
       {label && (
-        <span className={`text-sm font-medium ${
-          disabled 
-            ? 'text-gray-400 dark:text-gray-500' 
-            : 'text-gray-900 dark:text-gray-100'
-        }`}>
+        <span className={`text-sm font-medium ${disabled ? 'text-muted' : 'text-primary'}`}>
           {label}
         </span>
       )}

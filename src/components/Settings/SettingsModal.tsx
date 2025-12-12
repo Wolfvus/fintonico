@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Settings, RefreshCcw, AlertCircle } from 'lucide-react';
+import { Settings, RefreshCcw, AlertCircle, ChevronDown } from 'lucide-react';
 import { useCurrencyStore, SUPPORTED_CURRENCIES } from '../../stores/currencyStore';
 import { clearMockData, seedMockData } from '../../utils/resetData';
 import { Modal, modalButtonStyles } from '../common';
+import { ToggleSwitch } from '../Shared/ToggleSwitch';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -13,7 +14,7 @@ const sectionTitle = 'text-sm font-semibold text-primary';
 const sectionDescription = 'text-xs text-muted';
 
 const preferenceRow =
-  'flex items-center justify-between gap-3 py-2.5 border-b last:border-none transition-colors hover:bg-[var(--color-surface-elevated)] border-[color:var(--color-border)]';
+  'flex items-center justify-between gap-4 px-4 py-3 border-b last:border-none transition-colors hover:bg-[var(--color-surface-elevated)] border-[color:var(--color-border)]';
 
 const checkboxBase =
   'h-4 w-4 rounded border-[color:var(--color-border)] text-[color:var(--color-primary)]';
@@ -32,6 +33,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const [draftEnabled, setDraftEnabled] = useState<string[]>(enabledCurrencies);
   const [autoFetchFx, setAutoFetchFx] = useState(true);
   const [showSavingsInsights, setShowSavingsInsights] = useState(true);
+  const [isCurrencyListOpen, setIsCurrencyListOpen] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isClearingData, setIsClearingData] = useState(false);
   const [isSeedingData, setIsSeedingData] = useState(false);
@@ -40,6 +42,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     if (isOpen) {
       setDraftEnabled(enabledCurrencies);
       setDraftBaseCurrency(baseCurrency);
+      setIsCurrencyListOpen(true);
     }
   }, [enabledCurrencies, baseCurrency, isOpen]);
 
@@ -77,6 +80,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   };
 
   const handleClearData = async () => {
+    const confirmed = window.confirm(
+      'Clear all local data? This will remove your incomes, expenses, accounts, and settings from this browser. This cannot be undone.'
+    );
+    if (!confirmed) return;
+
     try {
       setIsClearingData(true);
       await clearMockData();
@@ -115,20 +123,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       >
         Reset defaults
       </button>
-      <button
-        onClick={handleSeedData}
-        disabled={isSeedingData}
-        className="px-3 py-2 text-sm font-medium border rounded-lg transition-colors border-[color:var(--color-info)] text-[color:var(--color-info)] hover:bg-[var(--color-info-bg)] disabled:opacity-60 disabled:cursor-not-allowed"
-      >
-        {isSeedingData ? 'Seeding...' : 'Seed mock data'}
-      </button>
-      <button
-        onClick={handleClearData}
-        disabled={isClearingData}
-        className={`${modalButtonStyles.danger} ${isClearingData ? 'opacity-60 cursor-not-allowed' : ''}`}
-      >
-        {isClearingData ? 'Clearing...' : 'Clear local data'}
-      </button>
       <button onClick={onClose} className={modalButtonStyles.secondary}>
         Cancel
       </button>
@@ -152,71 +146,106 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       size="xl"
       footer={footerContent}
     >
-      <div className="space-y-6">
+      <div className="space-y-8">
         <section>
           <h3 className={sectionTitle}>Base Currency</h3>
           <p className={`${sectionDescription} mb-3`}>
-            Set your default reporting currency. Exchange rates will refresh when this changes.
+            Used for totals and financial reports.
           </p>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <label htmlFor="base-currency-select" className="text-sm font-medium text-secondary">
+          <div className="rounded-xl border bg-[var(--color-surface-card)] border-[color:var(--color-border)] px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <label htmlFor="base-currency-select" className="text-sm font-medium text-primary">
               Base currency
             </label>
-            <select
-              id="base-currency-select"
-              value={draftBaseCurrency}
-              onChange={(event) => setDraftBaseCurrency(event.target.value)}
-              className="select w-full sm:w-56"
-            >
-              {SUPPORTED_CURRENCIES.map((currency) => (
-                <option key={currency.code} value={currency.code}>
-                  {currency.code} - {currency.name}
-                </option>
-              ))}
-            </select>
+            <div className="relative w-full sm:w-56">
+              <select
+                id="base-currency-select"
+                value={draftBaseCurrency}
+                onChange={(event) => setDraftBaseCurrency(event.target.value)}
+                className="select w-full pr-9"
+              >
+                {SUPPORTED_CURRENCIES.map((currency) => (
+                  <option key={currency.code} value={currency.code}>
+                    {currency.code} — {currency.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted"
+                aria-hidden="true"
+              />
+            </div>
           </div>
         </section>
 
         <section>
-          <h3 className={sectionTitle}>Currency Visibility</h3>
-          <p className={`${sectionDescription} mb-3`}>
-            Toggle which currencies appear in selectors and summaries. Your base currency ({draftBaseCurrency}) is always enabled.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {SUPPORTED_CURRENCIES.map((currency) => {
-              const isBase = currency.code === draftBaseCurrency;
-              const isChecked = visibleCurrencyList.includes(currency.code);
-              const disabled = isBase;
-              return (
-                <label
-                  key={currency.code}
-                  className={`flex items-start gap-3 rounded-lg border p-3 transition-colors border-[color:var(--color-border)] ${
-                    disabled
-                      ? 'bg-[var(--color-surface-elevated)] opacity-70 cursor-not-allowed'
-                      : 'bg-[var(--color-surface-card)] cursor-pointer hover:border-[color:var(--color-border-focus)] hover:bg-[var(--color-surface-elevated)]'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    className={checkboxBase}
-                    checked={isChecked}
-                    disabled={disabled}
-                    onChange={() => handleToggleCurrency(currency.code)}
-                    aria-label={`${currency.code} visibility toggle`}
-                  />
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-primary">
-                      {currency.code} - {currency.name}
-                    </p>
-                    <p className={sectionDescription}>
-                      {disabled ? 'Base currency (always on)' : 'Include in currency switcher and dashboards.'}
-                    </p>
-                  </div>
-                </label>
-              );
-            })}
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <div>
+              <h3 className={sectionTitle}>Currency Visibility</h3>
+              <p className={sectionDescription}>
+                Choose which currencies show up in pickers and dashboards. Base stays on.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsCurrencyListOpen((prev) => !prev)}
+              className="inline-flex items-center gap-1 text-xs font-medium text-secondary px-2 py-1 rounded-lg hover:bg-[var(--color-surface-elevated)] transition-colors"
+              aria-expanded={isCurrencyListOpen}
+              aria-controls="currency-visibility-list"
+            >
+              {isCurrencyListOpen ? 'Hide list' : 'Show list'}
+              <ChevronDown
+                className={`w-4 h-4 transition-transform ${isCurrencyListOpen ? 'rotate-180' : ''}`}
+                aria-hidden="true"
+              />
+            </button>
           </div>
+
+          {isCurrencyListOpen && (
+            <div
+              id="currency-visibility-list"
+              className="rounded-xl border divide-y bg-[var(--color-surface-card)] border-[color:var(--color-border)] divide-[color:var(--color-border)]"
+            >
+              {SUPPORTED_CURRENCIES.map((currency) => {
+                const isBase = currency.code === draftBaseCurrency;
+                const isChecked = visibleCurrencyList.includes(currency.code);
+                const disabled = isBase;
+                return (
+                  <label
+                    key={currency.code}
+                    className={`flex items-center justify-between gap-3 px-3 sm:px-4 py-2 transition-colors ${
+                      disabled
+                        ? 'opacity-70 cursor-not-allowed'
+                        : 'cursor-pointer hover:bg-[var(--color-surface-elevated)]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <input
+                        type="checkbox"
+                        className={`${checkboxBase} shrink-0`}
+                        checked={isChecked}
+                        disabled={disabled}
+                        onChange={() => handleToggleCurrency(currency.code)}
+                        aria-label={`${currency.code} visibility toggle`}
+                      />
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm font-medium text-primary whitespace-nowrap">
+                          {currency.code}
+                        </span>
+                        <span className="text-xs text-muted truncate">
+                          {currency.name}
+                        </span>
+                      </div>
+                    </div>
+                    {disabled && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-surface-elevated)] text-secondary border border-[color:var(--color-border)]">
+                        Base
+                      </span>
+                    )}
+                  </label>
+                );
+              })}
+            </div>
+          )}
 
           <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted">
             <span className="font-medium">Preview:</span>
@@ -237,38 +266,67 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           </p>
           <div className="rounded-xl border divide-y bg-[var(--color-surface-card)] border-[color:var(--color-border)] divide-[color:var(--color-border)]">
             <div className={preferenceRow}>
-              <div className="px-3">
+              <div className="space-y-1">
                 <p className="text-sm font-medium text-primary">
                   Show savings insights on dashboard
                 </p>
                 <p className={sectionDescription}>Recommended to keep enabled for budgeting tips.</p>
               </div>
-              <label className="inline-flex items-center gap-2 text-sm font-medium text-secondary px-3">
-                <input
-                  type="checkbox"
-                  className={checkboxBase}
-                  checked={showSavingsInsights}
-                  onChange={(event) => setShowSavingsInsights(event.target.checked)}
-                />
-                {showSavingsInsights ? 'On' : 'Off'}
-              </label>
+              <ToggleSwitch
+                checked={showSavingsInsights}
+                onChange={setShowSavingsInsights}
+                size="sm"
+                ariaLabel="Show savings insights on dashboard"
+              />
             </div>
             <div className={preferenceRow}>
-              <div className="px-3">
+              <div className="space-y-1">
                 <p className="text-sm font-medium text-primary">
                   Auto-refresh FX rates at launch
                 </p>
                 <p className={sectionDescription}>Disable if working offline to avoid API warnings.</p>
               </div>
-              <label className="inline-flex items-center gap-2 text-sm font-medium text-secondary px-3">
-                <input
-                  type="checkbox"
-                  className={checkboxBase}
-                  checked={autoFetchFx}
-                  onChange={(event) => setAutoFetchFx(event.target.checked)}
-                />
-                {autoFetchFx ? 'On' : 'Off'}
-              </label>
+              <ToggleSwitch
+                checked={autoFetchFx}
+                onChange={setAutoFetchFx}
+                size="sm"
+                ariaLabel="Auto-refresh FX rates at launch"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h3 className={sectionTitle}>Data Management</h3>
+          <p className={`${sectionDescription} mb-3`}>
+            These actions only affect data stored in this browser.
+          </p>
+          <div className="rounded-xl border divide-y bg-[var(--color-surface-card)] border-[color:var(--color-border)] divide-[color:var(--color-border)]">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-primary">Seed mock data</p>
+                <p className={sectionDescription}>Populate the app with a small demo dataset.</p>
+              </div>
+              <button
+                onClick={handleSeedData}
+                disabled={isSeedingData}
+                className="px-3 py-2 text-sm font-medium border rounded-lg transition-colors border-[color:var(--color-info)] text-[color:var(--color-info)] hover:bg-[var(--color-info-bg)] disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isSeedingData ? 'Seeding...' : 'Seed mock data'}
+              </button>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-primary">Clear local data</p>
+                <p className={sectionDescription}>Removes all local entries. You cannot undo this.</p>
+              </div>
+              <button
+                onClick={handleClearData}
+                disabled={isClearingData}
+                className={`${modalButtonStyles.danger} ${isClearingData ? 'opacity-60 cursor-not-allowed' : ''}`}
+              >
+                {isClearingData ? 'Clearing...' : 'Clear local data'}
+              </button>
             </div>
           </div>
         </section>

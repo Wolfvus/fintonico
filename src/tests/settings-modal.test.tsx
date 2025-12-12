@@ -133,6 +133,7 @@ describe('SettingsModal', () => {
 
   it('clears local data when the clear button is pressed', async () => {
     const user = userEvent.setup();
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<SettingsModal isOpen onClose={() => {}} />);
 
@@ -142,6 +143,8 @@ describe('SettingsModal', () => {
     await waitFor(() => {
       expect(vi.mocked(clearMockData)).toHaveBeenCalledTimes(1);
     });
+
+    confirmSpy.mockRestore();
   });
 
   it('seeds mock data when the seed button is pressed', async () => {
