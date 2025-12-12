@@ -154,14 +154,64 @@
 | Each section has independent filters | ✅ |
 | Quick add form adds to appropriate section | ✅ |
 | Summary shows totals for each section | ✅ |
+| Recurring expenses expanded by default | ✅ |
+| Added "Due Date" column to recurring expenses | ✅ |
+| Category totals include recurring expenses | ✅ |
 
 **Layout:**
-- **Recurring Expenses** - Template expenses that repeat monthly (collapsed by default)
+- **Recurring Expenses** - Template expenses that repeat monthly (expanded by default, with due date)
 - **Monthly Expenses** - One-time expenses for the selected month
 
 ---
 
+## Phase 11: Dashboard & Navigation Simplification ✅
+
+### Step 1: Remove Pending Recurring Feature ✅
+
+**Goal:** Simplify Dashboard by removing the confusing "Pending Recurring" section.
+
+| Task | Status |
+| --- | --- |
+| Remove pendingRecurringEntries logic | ✅ |
+| Remove Add/Skip handlers | ✅ |
+| Remove Pending Recurring UI section | ✅ |
+| Clean up unused state variables | ✅ |
+| Clean up unused icon imports | ✅ |
+
+**Rationale:** The pending recurring feature caused confusion - users expected deleted recurring items to disappear immediately. Recurring expenses/income are now managed directly in their respective pages.
+
+### Step 2: Page Persistence on Refresh ✅
+
+**Goal:** Stay on the current page when refreshing instead of returning to Dashboard.
+
+| Task | Status |
+| --- | --- |
+| Persist activeTab to localStorage | ✅ |
+| Restore activeTab on app load | ✅ |
+
+---
+
 ## Future Phases
+
+### Phase 12: Income Page Restructure (Planned)
+
+**Goal:** Mirror the expense page structure for income - separate recurring and one-time income.
+
+| Task | Status |
+| --- | --- |
+| Create "Recurring Income" collapsible section | Planned |
+| Create "Monthly Income" section (one-time) | Planned |
+| Add "bi-weekly" frequency option | Planned |
+| Each section has independent filters | Planned |
+| Summary shows totals for each section | Planned |
+
+**Layout:**
+- **Recurring Income** - Income sources that repeat (weekly/bi-weekly/monthly/yearly)
+- **Monthly Income** - One-time income for the selected month
+
+---
+
+## Other Future Phases
 
 See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvements.
 

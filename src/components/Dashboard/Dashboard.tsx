@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { useLedgerStore } from '../../stores/ledgerStore';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useIncomeStore } from '../../stores/incomeStore';
-import { TrendingUp, TrendingDown, Wallet, DollarSign, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Landmark, PiggyBank, ArrowUpDown, Scissors, LayoutGrid, Plus, Clock, X } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, DollarSign, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Landmark, PiggyBank, ArrowUpDown, Scissors, LayoutGrid } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormat';
 import { useDateRange } from '../../hooks/finance/useDateRange';
 import { Card, SectionHeader, Tabs, Pagination } from '../ui';
@@ -20,8 +21,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const { formatAmount, baseCurrency, convertAmount } = useCurrencyStore();
   const ledgerStore = useLedgerStore();
   const snapshotStore = useSnapshotStore();
-  const { expenses, addExpense } = useExpenseStore();
-  const { incomes, addIncome } = useIncomeStore();
+  const { expenses } = useExpenseStore(
+    useShallow((state) => ({ expenses: state.expenses }))
+  );
+  const { incomes } = useIncomeStore(
+    useShallow((state) => ({ incomes: state.incomes }))
+  );
   
   
   const [entryFilter, setEntryFilter] = useState<'all' | 'income' | 'expense'>('all');
@@ -31,8 +36,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const [customEndDate, setCustomEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isTransactionsCollapsed, setIsTransactionsCollapsed] = useState(false);
-  const [isPendingCollapsed, setIsPendingCollapsed] = useState(true);
-  const [skippedPendingIds, setSkippedPendingIds] = useState<Set<string>>(new Set());
   const itemsPerPage = 10;
   
   // Generate investment yields on dashboard load
@@ -107,117 +110,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     });
   }, [expenses, startDate, endDate]);
 
-  // Get pending recurring entries (recurring items that exist but haven't been added to current period)
-  const pendingRecurringEntries = useMemo(() => {
-    const pending: Array<{
-      id: string;
-      type: 'income' | 'expense';
-      description: string;
-      amount: number;
-      currency: string;
-      sourceId: string;
-      rating?: string;
-      frequency?: string;
-    }> = [];
-
-    // Get the month/year of the selected period
-    const selectedMonth = startDate.getMonth();
-    const selectedYear = startDate.getFullYear();
-    const monthPrefix = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
-
-    // Find recurring expenses that don't have an entry in the selected month
-    const recurringExpenses = expenses.filter(e => e.recurring);
-    recurringExpenses.forEach((expense) => {
-      const pendingId = `pending-expense-${expense.id}-${monthPrefix}`;
-
-      // Skip if user dismissed this pending item for this month
-      if (skippedPendingIds.has(pendingId)) {
-        return;
-      }
-
-      // Check if there's already a non-recurring expense with same description in the selected month
-      const hasEntryThisMonth = expenses.some(e =>
-        !e.recurring &&
-        e.date.startsWith(monthPrefix) &&
-        e.what.toLowerCase() === expense.what.toLowerCase()
-      );
-
-      if (!hasEntryThisMonth) {
-        pending.push({
-          id: pendingId,
-          type: 'expense',
-          description: expense.what,
-          amount: expense.amount,
-          currency: expense.currency,
-          sourceId: expense.id,
-          rating: expense.rating,
-        });
-      }
-    });
-
-    // Find recurring incomes (monthly frequency) that don't have an entry in the selected month
-    const recurringIncomes = incomes.filter(i => i.frequency === 'monthly');
-    recurringIncomes.forEach((income) => {
-      const pendingId = `pending-income-${income.id}-${monthPrefix}`;
-
-      // Skip if user dismissed this pending item for this month
-      if (skippedPendingIds.has(pendingId)) {
-        return;
-      }
-
-      // Check if there's already a one-time income with same source in the selected month
-      const hasEntryThisMonth = incomes.some(i =>
-        i.frequency === 'one-time' &&
-        i.date.startsWith(monthPrefix) &&
-        i.source.toLowerCase() === income.source.toLowerCase()
-      );
-
-      if (!hasEntryThisMonth) {
-        pending.push({
-          id: pendingId,
-          type: 'income',
-          description: income.source,
-          amount: income.amount,
-          currency: income.currency,
-          sourceId: income.id,
-          frequency: income.frequency,
-        });
-      }
-    });
-
-    return pending;
-  }, [expenses, incomes, startDate, skippedPendingIds]);
-
-  // Handler to confirm a pending recurring entry
-  const handleConfirmRecurring = async (entry: typeof pendingRecurringEntries[0]) => {
-    const selectedMonth = startDate.getMonth();
-    const selectedYear = startDate.getFullYear();
-    const firstDayOfMonth = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
-
-    if (entry.type === 'expense') {
-      await addExpense({
-        what: entry.description,
-        amount: entry.amount,
-        currency: entry.currency,
-        rating: (entry.rating as 'essential' | 'discretionary' | 'luxury') || 'discretionary',
-        date: firstDayOfMonth,
-        recurring: false,
-      });
-    } else {
-      await addIncome({
-        source: entry.description,
-        amount: entry.amount,
-        currency: entry.currency,
-        frequency: 'one-time',
-        date: firstDayOfMonth,
-      });
-    }
-  };
-
-  // Handler to skip/dismiss a pending recurring entry for this month
-  const handleSkipRecurring = (entry: typeof pendingRecurringEntries[0]) => {
-    setSkippedPendingIds(prev => new Set([...prev, entry.id]));
-  };
 
   // Calculate period income total (converted to base currency)
   const periodIncome = useMemo(() => {
@@ -818,121 +710,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             )}
           </Card>
 
-          {/* Pending Recurring Section - Independent collapsible */}
-          {pendingRecurringEntries.length > 0 && (entryFilter === 'all' || pendingRecurringEntries.some(e =>
-            (entryFilter === 'income' && e.type === 'income') ||
-            (entryFilter === 'expense' && e.type === 'expense')
-          )) && (
-            <Card className="mt-4">
-              <div
-                className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                onClick={() => setIsPendingCollapsed(!isPendingCollapsed)}
-              >
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Pending Recurring</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
-                    {pendingRecurringEntries.filter(entry => entryFilter === 'all' || entry.type === entryFilter).length}
-                  </span>
-                </div>
-                <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors">
-                  {isPendingCollapsed ? (
-                    <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  ) : (
-                    <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  )}
-                </button>
-              </div>
-
-              {!isPendingCollapsed && (
-                <div className="overflow-x-auto border-t border-gray-200 dark:border-gray-700">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30">
-                        <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Type</th>
-                        <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Description</th>
-                        <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Amount</th>
-                        <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Currency</th>
-                        <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Status</th>
-                        <th className="w-32"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pendingRecurringEntries
-                        .filter(entry => entryFilter === 'all' || entry.type === entryFilter)
-                        .map((entry) => (
-                        <tr
-                          key={entry.id}
-                          className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-800/20 hover:bg-gray-100/50 dark:hover:bg-gray-700/30 transition-colors"
-                        >
-                          <td className="py-2 px-4">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium opacity-60 ${
-                              entry.type === 'income'
-                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                            }`}>
-                              {entry.type === 'income' ? 'Income' : 'Expense'}
-                            </span>
-                          </td>
-                          <td className="py-2 px-4">
-                            <span className="text-sm text-gray-500 dark:text-gray-400 italic">
-                              {entry.description}
-                            </span>
-                          </td>
-                          <td className="py-2 px-4 text-right">
-                            <span className={`text-sm font-medium opacity-60 ${
-                              entry.type === 'income'
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-red-600 dark:text-red-400'
-                            }`}>
-                              {entry.type === 'income' ? '+' : '-'}{formatAmount(convertAmount(entry.amount, entry.currency, baseCurrency))}
-                            </span>
-                          </td>
-                          <td className="py-2 px-4">
-                            <CurrencyBadge
-                              currency={entry.currency}
-                              baseCurrency={baseCurrency}
-                            />
-                          </td>
-                          <td className="py-2 px-4">
-                            <span className="text-xs text-gray-400 dark:text-gray-500">
-                              Pending
-                            </span>
-                          </td>
-                          <td className="py-2 px-4">
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleConfirmRecurring(entry);
-                                }}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
-                                title="Add to this month"
-                              >
-                                <Plus className="w-3 h-3" />
-                                Add
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSkipRecurring(entry);
-                                }}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                                title="Skip this month"
-                              >
-                                <X className="w-3 h-3" />
-                                Skip
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </Card>
-          )}
         </div>
 
         {/* Right Column: Insights Panel (1/3 width) */}

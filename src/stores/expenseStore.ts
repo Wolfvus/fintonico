@@ -60,9 +60,10 @@ export const useExpenseStore = create<ExpenseState>()(
       },
 
       deleteExpense: async (id: string) => {
-        set((state) => ({
-          expenses: state.expenses.filter((expense) => expense.id !== id),
-        }));
+        set((state) => {
+          const newExpenses = state.expenses.filter((expense) => expense.id !== id);
+          return { expenses: newExpenses };
+        });
       },
 
       getMonthlyTotal: () => {
