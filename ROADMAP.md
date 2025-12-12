@@ -309,35 +309,120 @@ Bank Account,1234567890,012345678901234567,debit,true
 
 ---
 
-## Phase 15: Code & Data Cleanup (Planned)
+## Phase 15: Code & Data Cleanup ✅
 
 **Goal:** Review and clean up unused code, deprecated stores, and technical debt before adding new features.
 
-### Step 1: Store Audit
+### Step 1: Store Audit ✅
 
 | Task | Status |
 | --- | --- |
-| Audit all Zustand stores for unused state/actions | Planned |
-| Remove deprecated/legacy migration code if no longer needed | Planned |
-| Check for orphaned data in localStorage | Planned |
-| Consolidate duplicate functionality across stores | Planned |
+| Audit all Zustand stores for unused state/actions | ✅ |
+| Remove unused functions from stores | ✅ |
+| Remove unused useMoney hook | ✅ |
 
-### Step 2: Component Cleanup
+**Stores Audited & Cleaned:**
+- `authStore.ts` - Removed: `resetPassword`, `updatePassword`, `clearError`, `getAccessToken`
+- `currencyStore.ts` - Removed: `formatMoney`, `createMoney`, `convertMoney`
+- `expenseStore.ts` - Removed: `getExpensesByRating`, `clearError`
+- `incomeStore.ts` - Removed: `clearError`
+- `accountStore.ts` - Removed: `updateAccountBalance`
+- `ledgerStore.ts` - Removed: `createAccount`, `updateAccount`, `deleteAccount`, `updateTransaction`, `deleteTransaction`, `getTransaction`, `getAllAccountBalances`, `getTrialBalance`, `getBalanceSheet`, `addTransferTransaction`, `syncExternalAccount`, `reset`
+- `ledgerAccountStore.ts` - All functions in use
+- `snapshotStore.ts` - Removed: `deleteSnapshot`, `getAllSnapshots`
+- `themeStore.ts` - All functions in use
+
+**Also Removed:**
+- `src/hooks/finance/useMoney.ts` - Unused hook file
+
+### Step 2: Component Cleanup ✅
 
 | Task | Status |
 | --- | --- |
-| Identify unused components | Planned |
-| Remove dead code paths | Planned |
-| Clean up unused imports | Planned |
-| Remove commented-out code | Planned |
+| Identify unused components | ✅ |
+| Remove dead code paths | ✅ |
+| Clean up unused imports | ✅ |
+| Remove commented-out code | ✅ |
 
-### Step 3: Type & Utility Review
+**Deleted Files:**
+
+*Unused Components:*
+- `src/components/Shared/DataList.tsx`
+- `src/components/Shared/TransactionItem.tsx`
+- `src/components/ui/` (entire folder: Card, Pagination, SectionHeader, Tabs)
+- `src/components/common/EditableTable.tsx`
+- `src/components/common/ListItem.tsx`
+
+*Unused Hooks:*
+- `src/hooks/finance/useAccountsSummary.ts`
+- `src/hooks/finance/useCombinedTransactions.ts`
+- `src/hooks/finance/useFilteredTransactions.ts`
+
+*Unused Services & Lib (test-only code):*
+- `src/services/` (entire folder: entries.ts, imports.ts, reconcile.ts, rules.ts)
+- `src/lib/balance.ts`
+- `src/lib/fx.ts`
+- `src/lib/cn.ts`
+- `src/store/` (entire folder)
+
+*Unused API Layer:*
+- `src/api/` (entire folder)
+
+*Unused Domain Code:*
+- `src/domain/ports/` (entire folder)
+- `src/domain/services/` (entire folder)
+
+*Unused Utils & Config:*
+- `src/utils/migration.ts`
+- `src/utils/accountClassifications.ts`
+- `src/config/accountRegistry.ts`
+- `src/selectors/monthEnd.ts`
+
+*Deleted Tests (for deleted code):*
+- `src/tests/balance.test.ts`
+- `src/tests/entries.create.test.ts`
+- `src/tests/fx.test.ts`
+- `src/tests/imports.test.ts`
+- `src/tests/reconcile.test.ts`
+- `src/tests/rules.test.ts`
+- `src/tests/types.test.ts`
+
+**Fixed Issues:**
+- Replaced Card, SectionHeader, Tabs, Pagination in Dashboard with inline equivalents
+- Removed unused `cashflowNet` variable
+- Removed unused `FilterBarProps` interface
+- Removed commented-out investment yields code block
+
+### Step 3: Type & Utility Review ✅
 
 | Task | Status |
 | --- | --- |
-| Review types/index.ts for unused types | Planned |
-| Check utils folder for unused utilities | Planned |
-| Remove backwards-compatibility code that's no longer needed | Planned |
+| Review types/index.ts for unused types | ✅ |
+| Check utils folder for unused utilities | ✅ |
+| Remove backwards-compatibility code that's no longer needed | ✅ |
+
+**Deleted Files:**
+- `src/utils/testData.ts` - Unused test data generator
+- `src/utils/validation.ts` - Unused validation wrapper (sanitization.ts used directly)
+- `src/domain/types.ts` - Completely unused domain types
+- `src/domain/errors.ts` - Completely unused domain errors
+
+**Types Cleaned Up:**
+- Removed `BaseFinancialRecord` interface (unused)
+- Removed `AccountBalance` interface (unused backwards-compatibility)
+- Added `IncomeFrequency` type to consolidate frequency definitions
+- Simplified `Expense` and `Income` interfaces (removed unused fields)
+
+**Backwards-Compatibility Code Removed:**
+- `_deriveIncomesFromLedger()` from incomeStore.ts
+- `_deriveExpensesFromLedger()` from expenseStore.ts
+- `formatCreditCardDueDate()` from dateFormat.ts (unused)
+
+**Type Fixes:**
+- Fixed IncomeForm.tsx frequency type (removed 'yearly', added 'bi-weekly')
+- Fixed resetData.ts expense ratings ('non_essential' → 'discretionary')
+- Fixed Dashboard.tsx onNavigate type (removed unused 'assets'/'liabilities')
+- Fixed csv.ts type casting issues
 
 ### Step 4: Data Integrity
 
@@ -346,17 +431,6 @@ Bank Account,1234567890,012345678901234567,debit,true
 | Validate localStorage data structure | Planned |
 | Check for data inconsistencies | Planned |
 | Document current data schema | Planned |
-
-**Stores to Review:**
-- `authStore.ts`
-- `currencyStore.ts`
-- `expenseStore.ts`
-- `incomeStore.ts`
-- `accountStore.ts`
-- `ledgerStore.ts`
-- `ledgerAccountStore.ts`
-- `snapshotStore.ts`
-- `themeStore.ts`
 
 ---
 
@@ -429,4 +503,4 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-12-12
+**Last Updated:** 2025-12-12 (Phase 15 Steps 1-3 completed)

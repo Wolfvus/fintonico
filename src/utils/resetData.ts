@@ -204,7 +204,7 @@ export const seedMockData = async (): Promise<void> => {
       what: 'Restaurant Dinner',
       amount: 1200,
       currency: 'MXN',
-      rating: 'non_essential' as const,
+      rating: 'discretionary' as const,
       date: '2025-12-07',
     },
     {
@@ -218,7 +218,7 @@ export const seedMockData = async (): Promise<void> => {
       what: 'Uber Rides',
       amount: 650,
       currency: 'MXN',
-      rating: 'non_essential' as const,
+      rating: 'discretionary' as const,
       date: '2025-12-06',
     },
   ];

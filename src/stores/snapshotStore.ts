@@ -15,8 +15,6 @@ interface SnapshotState {
   getSnapshot: (monthEnd: string) => NetWorthSnapshot | undefined;
   createSnapshot: (monthEnd?: string) => Promise<NetWorthSnapshot>;
   ensureCurrentMonthSnapshot: () => Promise<NetWorthSnapshot>;
-  deleteSnapshot: (monthEnd: string) => void;
-  getAllSnapshots: () => NetWorthSnapshot[];
 }
 
 // Utility to get month end date string in YYYY-MM format
@@ -79,25 +77,13 @@ export const useSnapshotStore = create<SnapshotState>()(
       ensureCurrentMonthSnapshot: async () => {
         const currentMonthEnd = getMonthEndString();
         const existing = get().getSnapshot(currentMonthEnd);
-        
+
         if (existing) {
           return existing;
         }
-        
+
         return get().createSnapshot(currentMonthEnd);
       },
-
-      deleteSnapshot: (monthEnd: string) => {
-        set({
-          snapshots: get().snapshots.filter(s => s.monthEndLocal !== monthEnd)
-        });
-      },
-
-      getAllSnapshots: () => {
-        return get().snapshots.sort((a, b) => 
-          a.monthEndLocal.localeCompare(b.monthEndLocal)
-        );
-      }
     }),
     {
       name: 'fintonico-snapshots',

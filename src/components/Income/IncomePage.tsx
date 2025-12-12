@@ -762,21 +762,6 @@ const IncomeRow: React.FC<IncomeRowProps> = ({
   );
 };
 
-// Filter Bar Component
-interface FilterBarProps {
-  sourceFilter: string;
-  setSourceFilter: (v: string) => void;
-  currencyFilter: string;
-  setCurrencyFilter: (v: string) => void;
-  frequencyFilter: string;
-  setFrequencyFilter: (v: string) => void;
-  enabledCurrencies: string[];
-  hasActiveFilters: boolean;
-  onClearFilters: () => void;
-  isOpen: boolean;
-  onToggle: () => void;
-}
-
 // Table Header with integrated Filter
 interface TableHeaderWithFilterProps {
   sourceFilter: string;

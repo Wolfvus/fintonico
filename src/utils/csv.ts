@@ -213,7 +213,7 @@ export const parseExpenseCSV = (
 ): { data: ExpenseCSVRow[]; errors: string[] } => {
   const result = parseCSV(csvString, EXPENSE_CSV_HEADERS);
   return {
-    data: result.data as ExpenseCSVRow[],
+    data: result.data as unknown as ExpenseCSVRow[],
     errors: result.errors,
   };
 };
@@ -264,7 +264,7 @@ export const parseIncomeCSV = (
 ): { data: IncomeCSVRow[]; errors: string[] } => {
   const result = parseCSV(csvString, INCOME_CSV_HEADERS);
   return {
-    data: result.data as IncomeCSVRow[],
+    data: result.data as unknown as IncomeCSVRow[],
     errors: result.errors,
   };
 };
@@ -323,7 +323,7 @@ export const parseAccountCSV = (
 ): { data: AccountCSVRow[]; errors: string[] } => {
   const result = parseCSV(csvString, ['name', 'type', 'currency', 'balance']);
   return {
-    data: result.data as AccountCSVRow[],
+    data: result.data as unknown as AccountCSVRow[],
     errors: result.errors,
   };
 };

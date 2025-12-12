@@ -34,14 +34,10 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updatePassword: (newPassword: string) => Promise<void>;
   checkUser: () => Promise<void>;
-  clearError: () => void;
-  getAccessToken: () => string | null;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   session: null,
   loading: true,
@@ -180,62 +176,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  resetPassword: async (email: string) => {
-    set({ loading: true, error: null });
-
-    // Dev mode: no-op
-    if (DEV_MODE) {
-      console.log('[DEV MODE] Password reset requested for:', email);
-      set({ loading: false, error: null });
-      return;
-    }
-
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) {
-        set({ error: error.message, loading: false });
-        throw error;
-      }
-
-      set({ loading: false, error: null });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Password reset failed';
-      set({ error: message, loading: false });
-      throw err;
-    }
-  },
-
-  updatePassword: async (newPassword: string) => {
-    set({ loading: true, error: null });
-
-    // Dev mode: no-op
-    if (DEV_MODE) {
-      console.log('[DEV MODE] Password update requested');
-      set({ loading: false, error: null });
-      return;
-    }
-
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-
-      if (error) {
-        set({ error: error.message, loading: false });
-        throw error;
-      }
-
-      set({ loading: false, error: null });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Password update failed';
-      set({ error: message, loading: false });
-      throw err;
-    }
-  },
-
   checkUser: async () => {
     set({ loading: true });
 
@@ -284,14 +224,5 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch {
       set({ user: null, session: null, loading: false });
     }
-  },
-
-  clearError: () => {
-    set({ error: null });
-  },
-
-  getAccessToken: () => {
-    const state = get();
-    return state.session?.access_token ?? null;
   },
 }));

@@ -20,10 +20,6 @@ interface ExpenseState {
   addExpense: (expense: NewExpense) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
   getMonthlyTotal: () => number;
-  getExpensesByRating: () => Record<ExpenseRating, number>;
-  clearError: () => void;
-  // For backwards compatibility
-  _deriveExpensesFromLedger: () => Expense[];
 }
 
 export const useExpenseStore = create<ExpenseState>()(
@@ -32,8 +28,6 @@ export const useExpenseStore = create<ExpenseState>()(
       expenses: [],
       loading: false,
       error: null,
-
-      clearError: () => set({ error: null }),
 
       addExpense: async (data: NewExpense) => {
         const sanitizedWhat = sanitizeDescription(data.what);
@@ -82,28 +76,6 @@ export const useExpenseStore = create<ExpenseState>()(
             return total + convertAmount(expense.amount, expense.currency, baseCurrency);
           }, 0);
       },
-
-      getExpensesByRating: () => {
-        const { baseCurrency, convertAmount } = useCurrencyStore.getState();
-        const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
-
-        return get().expenses
-          .filter((expense) => {
-            const expenseDate = new Date(expense.date);
-            return expenseDate.getMonth() === currentMonth &&
-                   expenseDate.getFullYear() === currentYear;
-          })
-          .reduce((acc, expense) => {
-            const convertedAmount = convertAmount(expense.amount, expense.currency, baseCurrency);
-            acc[expense.rating] = (acc[expense.rating] || 0) + convertedAmount;
-            return acc;
-          }, {} as Record<ExpenseRating, number>);
-      },
-
-      // For backwards compatibility - just return the stored expenses
-      _deriveExpensesFromLedger: () => get().expenses,
     }),
     {
       name: 'fintonico-expenses',

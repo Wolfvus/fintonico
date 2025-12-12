@@ -32,9 +32,6 @@ interface CurrencyActions {
   forceRefreshRates: () => Promise<void>;
   convertAmount: (amount: number, fromCurrency: string, toCurrency: string) => number;
   formatAmount: (amount: number, currency?: string) => string;
-  formatMoney: (money: Money, options?: { showSymbol?: boolean; showCode?: boolean; precision?: number }) => string;
-  createMoney: (amount: number, currency: string) => Money;
-  convertMoney: (money: Money, toCurrency: string) => Money;
   getCurrencySymbol: (currency: string) => string;
   getVisibleCurrencies: () => string[];
 }
@@ -260,24 +257,10 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
       formatAmount: (amount: number, currency?: string) => {
         const { baseCurrency } = get();
         const currencyCode = currency || baseCurrency;
-        
+
         // Use Money class for proper formatting
         const money = Money.fromMajorUnits(amount, currencyCode);
         return money.format();
-      },
-
-      formatMoney: (money: Money, options?: { showSymbol?: boolean; showCode?: boolean; precision?: number }) => {
-        return money.format(options);
-      },
-
-      createMoney: (amount: number, currency: string) => {
-        return Money.fromMajorUnits(amount, currency);
-      },
-
-      convertMoney: (money: Money, toCurrency: string) => {
-        const { convertAmount } = get();
-        const convertedAmount = convertAmount(money.getAmountMajor(), money.getCurrency(), toCurrency);
-        return Money.fromMajorUnits(convertedAmount, toCurrency);
       },
 
       getCurrencySymbol: (currency: string) => {

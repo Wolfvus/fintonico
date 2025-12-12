@@ -68,7 +68,7 @@ describe('month-end summary', () => {
       what: 'Conference travel',
       amount: 200,
       currency: 'MXN',
-      rating: 'non_essential',
+      rating: 'discretionary',
       date: '2025-10-05',
     });
 
@@ -87,11 +87,11 @@ describe('month-end summary', () => {
     expect(property?.balance).toBe(500000);
 
     // Verify income and expenses are tracked separately
-    const incomes = useIncomeStore.getState()._deriveIncomesFromLedger();
+    const incomes = useIncomeStore.getState().incomes;
     expect(incomes).toHaveLength(1);
     expect(incomes[0].source).toBe('Consulting');
 
-    const expenses = useExpenseStore.getState()._deriveExpensesFromLedger();
+    const expenses = useExpenseStore.getState().expenses;
     expect(expenses).toHaveLength(1);
     expect(expenses[0].what).toBe('Conference travel');
   });

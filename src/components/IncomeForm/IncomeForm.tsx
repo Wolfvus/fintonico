@@ -10,7 +10,7 @@ import { formStyles } from '../../styles/formStyles';
 
 export const IncomeForm: React.FC = () => {
   const [source, setSource] = useState('');
-  const [frequency, setFrequency] = useState<'one-time' | 'weekly' | 'monthly' | 'yearly'>('one-time');
+  const [frequency, setFrequency] = useState<'one-time' | 'weekly' | 'bi-weekly' | 'monthly'>('one-time');
   const [showFrequencyDropdown, setShowFrequencyDropdown] = useState(false);
   const [date, setDate] = useState(getTodayLocalString());
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -47,8 +47,8 @@ export const IncomeForm: React.FC = () => {
   const FREQUENCY_OPTIONS = [
     { value: 'one-time', label: 'One-Time', icon: DollarSign },
     { value: 'weekly', label: 'Weekly', icon: Clock },
+    { value: 'bi-weekly', label: 'Bi-Weekly', icon: Clock },
     { value: 'monthly', label: 'Monthly', icon: Clock },
-    { value: 'yearly', label: 'Yearly', icon: Clock },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {

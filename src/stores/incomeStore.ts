@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useCurrencyStore } from './currencyStore';
-import type { Income } from '../types';
+import type { Income, IncomeFrequency } from '../types';
 import { sanitizeDescription, validateAmount, validateDate } from '../utils/sanitization';
 
-export type IncomeFrequency = 'one-time' | 'weekly' | 'bi-weekly' | 'monthly';
+export type { IncomeFrequency } from '../types';
 
 export interface NewIncome {
   source: string;
@@ -21,9 +21,6 @@ interface IncomeState {
   addIncome: (income: NewIncome) => Promise<void>;
   deleteIncome: (id: string) => Promise<void>;
   getMonthlyTotal: () => number;
-  clearError: () => void;
-  // For backwards compatibility
-  _deriveIncomesFromLedger: () => Income[];
 }
 
 export const useIncomeStore = create<IncomeState>()(
@@ -32,8 +29,6 @@ export const useIncomeStore = create<IncomeState>()(
       incomes: [],
       loading: false,
       error: null,
-
-      clearError: () => set({ error: null }),
 
       addIncome: async (data: NewIncome) => {
         const sanitizedSource = sanitizeDescription(data.source);
@@ -80,9 +75,6 @@ export const useIncomeStore = create<IncomeState>()(
             return total + convertAmount(income.amount, income.currency, baseCurrency);
           }, 0);
       },
-
-      // For backwards compatibility - just return the stored incomes
-      _deriveIncomesFromLedger: () => get().incomes,
     }),
     {
       name: 'fintonico-incomes',

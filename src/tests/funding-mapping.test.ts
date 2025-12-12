@@ -71,16 +71,16 @@ describe('income and expense tracking', () => {
       what: 'Conference travel',
       amount: 250,
       currency: 'MXN',
-      rating: 'non_essential',
+      rating: 'discretionary',
       date: '2025-10-05',
     });
 
-    const expenses = expenseStore._deriveExpensesFromLedger();
+    const expenses = useExpenseStoreRef.getState().expenses;
     expect(expenses).toHaveLength(1);
     expect(expenses[0].what).toBe('Conference travel');
     expect(expenses[0].amount).toBe(250);
     expect(expenses[0].currency).toBe('MXN');
-    expect(expenses[0].rating).toBe('non_essential');
+    expect(expenses[0].rating).toBe('discretionary');
   });
 
   it('records income without requiring a deposit account', async () => {
@@ -94,7 +94,7 @@ describe('income and expense tracking', () => {
       date: '2025-10-10',
     });
 
-    const incomes = incomeStore._deriveIncomesFromLedger();
+    const incomes = useIncomeStoreRef.getState().incomes;
     expect(incomes).toHaveLength(1);
     expect(incomes[0].source).toBe('Consulting invoice');
     expect(incomes[0].amount).toBe(500);

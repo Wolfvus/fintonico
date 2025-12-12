@@ -42,7 +42,6 @@ interface AccountState {
   addAccount: (account: Omit<Account, 'id'>) => Account;
   deleteAccount: (accountId: string) => void;
   updateAccount: (accountId: string, updates: Partial<Omit<Account, 'id'>>) => void;
-  updateAccountBalance: (accountId: string, newBalance: number) => void;
   toggleExcludeFromTotal: (accountId: string) => void;
 }
 
@@ -82,18 +81,6 @@ export const useAccountStore = create<AccountState>()(
           accounts: state.accounts.map(account =>
             account.id === accountId
               ? { ...account, ...updates, lastUpdated: today }
-              : account
-          )
-        }));
-      },
-
-      // updateAccountBalance function - simplified for single balance
-      updateAccountBalance: (accountId, newBalance) => {
-        const today = new Date().toISOString().split('T')[0];
-        set((state) => ({
-          accounts: state.accounts.map(account =>
-            account.id === accountId
-              ? { ...account, balance: newBalance, lastUpdated: today }
               : account
           )
         }));

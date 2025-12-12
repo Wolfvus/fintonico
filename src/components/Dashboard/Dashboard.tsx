@@ -7,14 +7,13 @@ import { useIncomeStore } from '../../stores/incomeStore';
 import { TrendingUp, TrendingDown, Wallet, DollarSign, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Landmark, PiggyBank, ArrowUpDown, Scissors, LayoutGrid } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormat';
 import { useDateRange } from '../../hooks/finance/useDateRange';
-import { Card, SectionHeader, Tabs, Pagination } from '../ui';
 import { CurrencyBadge } from '../Shared/CurrencyBadge';
 import { getNetWorthAt, getMoMChange } from '../../selectors/finance';
 import { useSnapshotStore } from '../../stores/snapshotStore';
 import { Money } from '../../domain/money';
 
 interface DashboardProps {
-  onNavigate?: (tab: 'income' | 'expenses' | 'assets' | 'liabilities' | 'networth') => void;
+  onNavigate?: (tab: 'income' | 'expenses' | 'networth') => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
@@ -37,11 +36,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isTransactionsCollapsed, setIsTransactionsCollapsed] = useState(false);
   const itemsPerPage = 10;
-  
-  // Generate investment yields on dashboard load
-  // React.useEffect(() => {
-  //   generateInvestmentYields();
-  // }, [generateInvestmentYields]);
 
   // Calculate date range using hook - converts view mode and dates into start/end range
   const { startDate, endDate } = useDateRange({
@@ -133,9 +127,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       return total + convertAmount(expense.amount, expense.currency, baseCurrency);
     }, 0);
   }, [filteredExpenses, convertAmount, baseCurrency]);
-
-  // Calculate cashflow (income - expenses)
-  const cashflowNet = periodIncome - periodExpenses;
 
   // Calculate expense breakdown by rating
   const expensesByRating = useMemo(() => {
@@ -439,7 +430,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       </div>
 
       {/* Time Period Controls */}
-      <Card className="p-4 sm:p-5">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center justify-center sm:justify-start gap-2">
             <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -514,12 +505,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             </div>
           )}
         </div>
-      </Card>
+      </div>
 
       {/* KPI Cards Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 items-stretch">
         {/* Monthly Cash Flow */}
-        <Card className="p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 h-full">
           <div className="flex items-center gap-2 mb-2">
             <ArrowUpDown className={styles.kpiIcon} />
             <p className={styles.kpiLabel}>Cash Flow</p>
@@ -534,17 +525,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {monthlyCashFlow >= 0 ? 'Surplus' : 'Deficit'}
           </p>
-        </Card>
+        </div>
 
         {/* Savings Rate */}
-        <Card className="p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 h-full">
           <div className="flex items-center gap-2 mb-2">
             <PiggyBank className={styles.kpiIcon} />
             <p className={styles.kpiLabel}>Savings Rate</p>
           </div>
           <p className={`text-lg font-bold ${
-            savingsRate >= 20 
-              ? 'text-green-600 dark:text-green-400' 
+            savingsRate >= 20
+              ? 'text-green-600 dark:text-green-400'
               : savingsRate >= 10
               ? 'text-yellow-600 dark:text-yellow-400'
               : 'text-red-600 dark:text-red-400'
@@ -554,14 +545,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           <p className="text-xs text-gray-500 dark:text-gray-400">
             of income
           </p>
-        </Card>
+        </div>
 
         {/* Monthly Income */}
-        <button 
-          className="w-full text-left"
+        <button
+          className="w-full text-left h-full"
           onClick={() => onNavigate?.('income')}
         >
-          <Card className={styles.clickableCard}>
+          <div className={`bg-white dark:bg-gray-800 rounded-lg shadow h-full ${styles.clickableCard}`}>
             <div className="flex items-center gap-2 mb-2">
               <DollarSign className={styles.kpiIcon} />
               <p className={styles.kpiLabel}>Income</p>
@@ -570,17 +561,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               {formatAmount(periodIncome)}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {filteredIncomes.length} transactions
+              {filteredIncomes.length} sources
             </p>
-          </Card>
+          </div>
         </button>
 
         {/* Monthly Expenses */}
         <button
-          className="w-full text-left"
+          className="w-full text-left h-full"
           onClick={() => onNavigate?.('expenses')}
         >
-          <Card className={styles.clickableCard}>
+          <div className={`bg-white dark:bg-gray-800 rounded-lg shadow h-full ${styles.clickableCard}`}>
             <div className="flex items-center gap-2 mb-2">
               <Wallet className={styles.kpiIcon} />
               <p className={styles.kpiLabel}>Expenses</p>
@@ -598,7 +589,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <span>{formatAmount(recurringExpensesTotal)}</span>
               </div>
             </div>
-          </Card>
+          </div>
         </button>
       </div>
       </div>{/* End Summary Section */}
@@ -607,24 +598,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left Column: Recent Transactions (2/3 width) */}
         <div className="lg:col-span-2">
-          <Card>
-            {/* SectionHeader primitive - provides consistent header with collapse toggle */}
-            <SectionHeader 
-              title="Recent Transactions"
-              right={
-                <button
-                  onClick={() => setIsTransactionsCollapsed(!isTransactionsCollapsed)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  {isTransactionsCollapsed ? (
-                    <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  ) : (
-                    <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  )}
-                </button>
-              }
-              className="p-4 sm:p-5"
-            />
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+            {/* Section header with collapse toggle */}
+            <div className="p-4 sm:p-5 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Transactions</h3>
+              <button
+                onClick={() => setIsTransactionsCollapsed(!isTransactionsCollapsed)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                {isTransactionsCollapsed ? (
+                  <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                ) : (
+                  <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                )}
+              </button>
+            </div>
           
             {!isTransactionsCollapsed && (
               <div>
@@ -704,38 +692,65 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                         </tbody>
                       </table>
 
-                      {/* Pagination primitive - handles navigation with status label */}
+                      {/* Pagination */}
                       {totalPages > 1 && (
-                        <Pagination
-                          page={currentPage}
-                          totalPages={totalPages}
-                          onPrev={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                          onNext={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                          label={`Page ${currentPage} of ${totalPages} (${allTransactions.length} total)`}
-                          className="mt-4 pt-4 mx-4 border-t border-gray-200 dark:border-gray-700"
-                        />
+                        <div className="mt-4 pt-4 mx-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                          <button
+                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                            disabled={currentPage === 1}
+                            className="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50"
+                          >
+                            Previous
+                          </button>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            Page {currentPage} of {totalPages} ({allTransactions.length} total)
+                          </span>
+                          <button
+                            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50"
+                          >
+                            Next
+                          </button>
+                        </div>
                       )}
                     </>
                   )}
                 </div>
               </div>
             )}
-          </Card>
+          </div>
 
         </div>
 
         {/* Right Column: Insights Panel (1/3 width) */}
         <div className="lg:col-span-1">
-          <Card>
-            {/* Tabs primitive - navigation with icons and responsive labels */}
-            <Tabs 
-              value={activeInsightTab}
-              onChange={(value) => setActiveInsightTab(value as typeof activeInsightTab)}
-              items={[
-                { value: 'overview', label: 'Overview', icon: LayoutGrid },
-                { value: 'optimize', label: 'Optimize', icon: Scissors }
-              ]}
-            />
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setActiveInsightTab('overview')}
+                className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 ${
+                  activeInsightTab === 'overview'
+                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                <LayoutGrid className="w-4 h-4" />
+                <span className="hidden sm:inline">Overview</span>
+              </button>
+              <button
+                onClick={() => setActiveInsightTab('optimize')}
+                className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 ${
+                  activeInsightTab === 'optimize'
+                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                <Scissors className="w-4 h-4" />
+                <span className="hidden sm:inline">Optimize</span>
+              </button>
+            </div>
 
             {/* Tab Content */}
             <div className="p-4">
@@ -755,7 +770,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                           ];
 
                           let cumulativePercent = 0;
-                          const slices: JSX.Element[] = [];
+                          const slices: React.ReactElement[] = [];
 
                           categories.forEach(({ key, color }) => {
                             const value = expensesByRating[key] || 0;
@@ -893,7 +908,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 </div>
               )}
             </div>
-          </Card>
+          </div>
         </div>
       </div>
 

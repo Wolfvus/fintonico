@@ -6,55 +6,38 @@ import { useCurrencyStore } from './currencyStore';
 import type {
   Account,
   Transaction,
-  AccountBalance,
-  TrialBalance,
-  BalanceSheet,
   IncomeStatement,
   AccountNature,
 } from '../domain/ledger';
 import { Money } from '../domain/money';
-import type { Account as UserAccount } from '../types';
-import { accountTypeToNature } from '../utils/accountClassifications';
 
 interface LedgerState {
   // Core data
   accounts: Account[];
   transactions: Transaction[];
-  
+
   // Account operations
-  createAccount: (account: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateAccount: (id: string, updates: Partial<Account>) => void;
-  deleteAccount: (id: string) => void;
   getAccount: (id: string) => Account | undefined;
   getAccountsByNature: (nature: AccountNature) => Account[];
-  
+
   // Transaction operations
   addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateTransaction: (id: string, updates: Partial<Transaction>) => void;
-  deleteTransaction: (id: string) => void;
-  getTransaction: (id: string) => Transaction | undefined;
   getTransactions: (filters?: TransactionFilters) => Transaction[];
-  
+
   // Balance calculations
   getAccountBalance: (accountId: string, asOfDate?: Date) => Money;
-  getAllAccountBalances: (asOfDate?: Date) => AccountBalance[];
-  
+
   // Financial statements
-  getTrialBalance: (asOfDate: Date) => TrialBalance;
-  getBalanceSheet: (asOfDate: Date, baseCurrency: string) => BalanceSheet;
   getIncomeStatement: (fromDate: Date, toDate: Date, baseCurrency: string) => IncomeStatement;
-  
+
   // Common transaction helpers
   addIncomeTransaction: (description: string, amount: Money, cashAccountId: string, incomeAccountId: string, date: Date) => void;
   addExpenseTransaction: (description: string, amount: Money, expenseAccountId: string, cashAccountId: string, date: Date) => void;
-  addTransferTransaction: (description: string, amount: Money, fromAccountId: string, toAccountId: string, date: Date) => void;
-  
+
   // Default accounts setup
   initializeDefaultAccounts: () => void;
-  syncExternalAccount: (account: UserAccount) => Account;
-  
+
   // Utility
-  reset: () => void;
   clearAllData: () => void;
 }
 
@@ -110,30 +93,6 @@ export const useLedgerStore = create<LedgerState>()(
       transactions: [],
 
       // Account operations
-      createAccount: (accountData) => {
-        const account: Account = {
-          ...accountData,
-          id: crypto.randomUUID(),
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        set(state => ({ accounts: [...state.accounts, account] }));
-      },
-
-      updateAccount: (id, updates) => {
-        set(state => ({
-          accounts: state.accounts.map(account =>
-            account.id === id
-              ? { ...account, ...updates, updatedAt: new Date() }
-              : account
-          )
-        }));
-      },
-
-      deleteAccount: (id) => {
-        set(state => ({ accounts: state.accounts.filter(account => account.id !== id) }));
-      },
-
       getAccount: (id) => {
         return get().accounts.find(account => account.id === id);
       },
@@ -155,24 +114,6 @@ export const useLedgerStore = create<LedgerState>()(
           }))
         };
         set(state => ({ transactions: [...state.transactions, transaction] }));
-      },
-
-      updateTransaction: (id, updates) => {
-        set(state => ({
-          transactions: state.transactions.map(transaction =>
-            transaction.id === id
-              ? { ...transaction, ...updates, updatedAt: new Date() }
-              : transaction
-          )
-        }));
-      },
-
-      deleteTransaction: (id) => {
-        set(state => ({ transactions: state.transactions.filter(transaction => transaction.id !== id) }));
-      },
-
-      getTransaction: (id) => {
-        return get().transactions.find(transaction => transaction.id === id);
       },
 
       getTransactions: (filters = {}) => {
@@ -267,84 +208,7 @@ export const useLedgerStore = create<LedgerState>()(
         return balance;
       },
 
-      getAllAccountBalances: (asOfDate = new Date()) => {
-        const accounts = get().accounts;
-        return accounts.map(account => ({
-          accountId: account.id,
-          balance: get().getAccountBalance(account.id, asOfDate),
-          asOfDate
-        }));
-      },
-
       // Financial statements
-      getTrialBalance: (asOfDate) => {
-        const accounts = get().accounts;
-        const balances = accounts.map(account => {
-          const balance = get().getAccountBalance(account.id, asOfDate);
-          const isNormalDebit = ['asset', 'expense'].includes(account.nature);
-          
-          return {
-            account,
-            debitBalance: isNormalDebit && !balance.isNegative() ? balance : 
-                         !isNormalDebit && balance.isNegative() ? balance.abs() : null,
-            creditBalance: !isNormalDebit && !balance.isNegative() ? balance :
-                          isNormalDebit && balance.isNegative() ? balance.abs() : null
-          };
-        });
-
-        const totalDebits = balances.reduce((sum, item) => 
-          item.debitBalance ? sum.add(item.debitBalance) : sum, 
-          Money.fromMinorUnits(0, 'USD')
-        );
-        
-        const totalCredits = balances.reduce((sum, item) => 
-          item.creditBalance ? sum.add(item.creditBalance) : sum, 
-          Money.fromMinorUnits(0, 'USD')
-        );
-
-        return {
-          asOfDate,
-          accounts: balances,
-          totalDebits,
-          totalCredits,
-          isBalanced: totalDebits.equals(totalCredits)
-        };
-      },
-
-      getBalanceSheet: (asOfDate, baseCurrency) => {
-        const accounts = get().accounts;
-        const assets = accounts.filter(acc => acc.nature === 'asset').map(account => ({
-          account,
-          balance: get().getAccountBalance(account.id, asOfDate)
-        }));
-        
-        const liabilities = accounts.filter(acc => acc.nature === 'liability').map(account => ({
-          account,
-          balance: get().getAccountBalance(account.id, asOfDate)
-        }));
-        
-        const equity = accounts.filter(acc => acc.nature === 'equity').map(account => ({
-          account,
-          balance: get().getAccountBalance(account.id, asOfDate)
-        }));
-
-        const totalAssets = assets.reduce((sum, item) => sum.add(item.balance), Money.fromMinorUnits(0, baseCurrency));
-        const totalLiabilities = liabilities.reduce((sum, item) => sum.add(item.balance), Money.fromMinorUnits(0, baseCurrency));
-        const totalEquity = equity.reduce((sum, item) => sum.add(item.balance), Money.fromMinorUnits(0, baseCurrency));
-
-        return {
-          asOfDate,
-          currency: baseCurrency,
-          assets,
-          liabilities,
-          equity,
-          totalAssets,
-          totalLiabilities,
-          totalEquity,
-          isBalanced: totalAssets.equals(totalLiabilities.add(totalEquity))
-        };
-      },
-
       getIncomeStatement: (fromDate, toDate, baseCurrency) => {
         const accounts = get().accounts;
         const { convertAmount } = useCurrencyStore.getState();
@@ -466,56 +330,6 @@ export const useLedgerStore = create<LedgerState>()(
         get().addTransaction(transaction);
       },
 
-      addTransferTransaction: (description, amount, fromAccountId, toAccountId, date) => {
-        const baseCurrency = amount.getCurrency();
-        const transaction = CommonTransactions.transfer(fromAccountId, toAccountId, amount, baseCurrency, description, date);
-        get().addTransaction(transaction);
-      },
-
-      syncExternalAccount: (externalAccount) => {
-        const existing = get().getAccount(externalAccount.id);
-        const now = new Date();
-        const nature = accountTypeToNature(externalAccount.type);
-
-        if (existing) {
-          if (existing.name !== externalAccount.name || existing.nature !== nature) {
-            set((state) => ({
-              accounts: state.accounts.map((account) =>
-                account.id === existing.id
-                  ? {
-                      ...account,
-                      name: externalAccount.name,
-                      nature,
-                      updatedAt: now,
-                    }
-                  : account,
-              ),
-            }));
-          }
-          return get().getAccount(externalAccount.id)!;
-        }
-
-        const codePrefix = nature === 'asset' ? '1' : '2';
-        const rawSuffix = externalAccount.id.replace(/-/g, '').slice(0, 4).toUpperCase();
-        const code = `EXT-${codePrefix}${rawSuffix.padEnd(4, '0')}`;
-
-        const ledgerAccount: Account = {
-          id: externalAccount.id,
-          code,
-          name: externalAccount.name,
-          nature,
-          isActive: true,
-          createdAt: now,
-          updatedAt: now,
-        };
-
-        set((state) => ({
-          accounts: [...state.accounts, ledgerAccount],
-        }));
-
-        return ledgerAccount;
-      },
-
       // Default accounts setup
       initializeDefaultAccounts: () => {
         const state = get();
@@ -523,11 +337,6 @@ export const useLedgerStore = create<LedgerState>()(
           set({ accounts: createDefaultAccounts() });
         }
       },
-
-      // Utility
-      reset: () => {
-        set({ accounts: [], transactions: [] });
-      }
     }),
     {
       name: 'ledger-store',

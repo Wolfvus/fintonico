@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { Calendar, PenTool, Plus, Home, ShoppingBag, Sparkles } from 'lucide-react';
 import { useCurrencyInput } from '../../hooks/useCurrencyInput';
-import { validateRequired, validateAmount, validateDate } from '../../utils/validation';
-import { sanitizeDescription } from '../../utils/sanitization';
-import type { ValidationError } from '../../utils/validation';
+import { sanitizeDescription, validateAmount as sanitizeValidateAmount, validateDate as sanitizeValidateDate } from '../../utils/sanitization';
+
+interface ValidationError {
+  [key: string]: string;
+}
 import { formStyles } from '../../styles/formStyles';
 import { getTodayLocalString } from '../../utils/dateFormat';
 import { AmountCurrencyInput } from '../Shared/AmountCurrencyInput';
@@ -60,14 +62,14 @@ export const ExpenseForm: React.FC = () => {
     setErrors({});
 
     const newErrors: ValidationError = {};
-    const whatError = validateRequired(form.what, 'Description');
-    if (whatError) newErrors.what = whatError;
+    const sanitizedWhat = sanitizeDescription(form.what);
+    if (!sanitizedWhat) newErrors.what = 'Description required';
 
-    const amountError = validateAmount(amount);
-    if (amountError) newErrors.amount = amountError;
+    const amountResult = sanitizeValidateAmount(amount);
+    if (!amountResult.isValid) newErrors.amount = amountResult.error || 'Valid amount required';
 
-    const dateError = validateDate(form.date);
-    if (dateError) newErrors.date = dateError;
+    const dateResult = sanitizeValidateDate(form.date);
+    if (!dateResult.isValid) newErrors.date = dateResult.error || 'Date required';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
