@@ -307,8 +307,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      {/* Hero Net Worth Section */}
-      <div className={`${styles.heroGradient} rounded-xl shadow-lg p-3 sm:p-4 border border-blue-200 dark:border-gray-700`}>
+      {/* Summary Section */}
+      <div className="space-y-3 sm:space-y-4">
+        {/* Hero Net Worth Section */}
+        <div className={`${styles.heroGradient} rounded-xl shadow-lg p-3 sm:p-4 border border-blue-200 dark:border-gray-700`}>
         {/* Mobile Layout - Centered */}
         <div className="block lg:hidden">
           <button 
@@ -599,6 +601,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           </Card>
         </button>
       </div>
+      </div>{/* End Summary Section */}
 
       {/* Two Column Layout: Transactions and Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">

@@ -246,29 +246,24 @@
 
 ---
 
-## Future Phases
+## Phase 13: Sticky Month Navigation ✅
 
-### Phase 13: Sticky Headers & Summary Cards (Planned)
-
-**Goal:** Make summary cards and KPIs sticky at the top of each section so users can see totals while scrolling through long lists.
+**Goal:** Make the month navigation/date selector sticky on Income and Expenses pages so users can always change the month while scrolling through long lists. The navigation header remains the highest priority sticky element.
 
 | Task | Status |
 | --- | --- |
-| Dashboard: Sticky KPI cards (Net Worth, Cash Flow, etc.) | Planned |
-| Expenses: Sticky summary cards (Essential, Discretionary, Luxury totals) | Planned |
-| Income: Sticky summary totals | Planned |
-| Net Worth: Sticky total display | Planned |
-| Ensure sticky elements work with collapsible sections | Planned |
-| Mobile responsive sticky behavior | Planned |
+| Expenses: Sticky month navigation | ✅ |
+| Income: Sticky month navigation | ✅ |
 
 **Implementation Notes:**
-- Use `position: sticky` with appropriate `top` values
-- Consider z-index layering for dropdowns/modals
-- Test scroll performance with many items
+- Navigation header takes priority - sticky elements positioned below it with `top-16`
+- Month selector uses `position: sticky` with `z-20` (below header's z-30)
+- Applied background color matching page background (`bg-gray-100 dark:bg-gray-900`)
+- Summary cards are NOT sticky - only the month navigation
 
 ---
 
-## Other Future Phases
+## Future Phases
 
 See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvements.
 

@@ -1264,53 +1264,53 @@ export const NetWorthPage: React.FC = () => {
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
-          <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Assets</h3>
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-            {formatAmount(totalAssets)}
-          </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            {allAssetAccounts.filter(a => !a.excludeFromTotal).length} of {allAssetAccounts.length} accounts
-          </p>
-        </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Assets</h3>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+              {formatAmount(totalAssets)}
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              {allAssetAccounts.filter(a => !a.excludeFromTotal).length} of {allAssetAccounts.length} accounts
+            </p>
+          </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
-          <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Liabilities</h3>
-          <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-            {formatAmount(totalLiabilities)}
-          </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            {allLiabilityAccounts.filter(a => !a.excludeFromTotal).length} of {allLiabilityAccounts.length} accounts
-            {unpaidCount > 0 && (
-              <span className="ml-2 text-amber-600 dark:text-amber-400">
-                ({unpaidCount} unpaid)
-              </span>
-            )}
-          </p>
-        </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Liabilities</h3>
+            <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+              {formatAmount(totalLiabilities)}
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              {allLiabilityAccounts.filter(a => !a.excludeFromTotal).length} of {allLiabilityAccounts.length} accounts
+              {unpaidCount > 0 && (
+                <span className="ml-2 text-amber-600 dark:text-amber-400">
+                  ({unpaidCount} unpaid)
+                </span>
+              )}
+            </p>
+          </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
-          <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Net Worth</h3>
-          <p className={`text-2xl font-bold ${
-            netWorth >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-          }`}>
-            {formatAmount(netWorth)}
-          </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            {excludedCount > 0 && `${excludedCount} excluded`}
-          </p>
-        </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Net Worth</h3>
+            <p className={`text-2xl font-bold ${
+              netWorth >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+            }`}>
+              {formatAmount(netWorth)}
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              {excludedCount > 0 && `${excludedCount} excluded`}
+            </p>
+          </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
-          <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Est. Investment Returns</h3>
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-            {formatAmount(totalYearlyReturn)}
-            <span className="text-sm font-normal text-gray-400 dark:text-gray-500">/yr</span>
-          </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            {formatAmount(totalMonthlyReturn)}/mo
-          </p>
-        </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Est. Investment Returns</h3>
+            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              {formatAmount(totalYearlyReturn)}
+              <span className="text-sm font-normal text-gray-400 dark:text-gray-500">/yr</span>
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              {formatAmount(totalMonthlyReturn)}/mo
+            </p>
+          </div>
       </div>
 
       {/* Assets Table */}

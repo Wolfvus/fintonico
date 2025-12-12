@@ -1202,27 +1202,29 @@ export const ExpensePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Month Navigation */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3">
-        <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={() => navigateMonth('prev')}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          </button>
-          <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            <span className="text-lg font-semibold text-gray-900 dark:text-white min-w-[180px] text-center">
-              {getMonthLabel()}
-            </span>
+      {/* Sticky Month Navigation */}
+      <div className="sticky top-16 z-20 -mx-4 px-4 py-2 bg-gray-100 dark:bg-gray-900">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3">
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={() => navigateMonth('prev')}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            </button>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <span className="text-lg font-semibold text-gray-900 dark:text-white min-w-[180px] text-center">
+                {getMonthLabel()}
+              </span>
+            </div>
+            <button
+              onClick={() => navigateMonth('next')}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            </button>
           </div>
-          <button
-            onClick={() => navigateMonth('next')}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          </button>
         </div>
       </div>
 
