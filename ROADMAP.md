@@ -211,6 +211,26 @@
 
 ---
 
+### Phase 13: Sticky Headers & Summary Cards (Planned)
+
+**Goal:** Make summary cards and KPIs sticky at the top of each section so users can see totals while scrolling through long lists.
+
+| Task | Status |
+| --- | --- |
+| Dashboard: Sticky KPI cards (Net Worth, Cash Flow, etc.) | Planned |
+| Expenses: Sticky summary cards (Essential, Discretionary, Luxury totals) | Planned |
+| Income: Sticky summary totals | Planned |
+| Net Worth: Sticky total display | Planned |
+| Ensure sticky elements work with collapsible sections | Planned |
+| Mobile responsive sticky behavior | Planned |
+
+**Implementation Notes:**
+- Use `position: sticky` with appropriate `top` values
+- Consider z-index layering for dropdowns/modals
+- Test scroll performance with many items
+
+---
+
 ## Other Future Phases
 
 See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvements.

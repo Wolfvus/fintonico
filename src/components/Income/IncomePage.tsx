@@ -285,13 +285,18 @@ interface FrequencyDropdownProps {
 
 const FrequencyDropdown: React.FC<FrequencyDropdownProps> = ({ value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0, openUp: false });
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = FREQUENCY_OPTIONS.find((opt) => opt.value === value);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        buttonRef.current && !buttonRef.current.contains(event.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -299,35 +304,67 @@ const FrequencyDropdown: React.FC<FrequencyDropdownProps> = ({ value, onChange }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const dropdownHeight = FREQUENCY_OPTIONS.length * 36 + 8; // Approximate height
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUp = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+
+      setDropdownPosition({
+        top: openUp ? rect.top - dropdownHeight - 4 : rect.bottom + 4,
+        left: rect.left,
+        width: Math.max(rect.width, 90),
+        openUp,
+      });
+    }
+  }, [isOpen]);
+
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md transition-colors w-full"
+        ref={buttonRef}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className="flex items-center gap-1 px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md transition-colors w-full"
       >
-        <span className="flex-1 text-left text-gray-700 dark:text-gray-300">
+        <span className="flex-1 text-left text-gray-700 dark:text-gray-300 whitespace-nowrap text-xs">
           {selectedOption?.label || 'Select...'}
         </span>
-        <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-full min-w-[100px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 py-1">
+      {isOpen && createPortal(
+        <div
+          ref={dropdownRef}
+          className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1"
+          style={{
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            minWidth: dropdownPosition.width,
+            zIndex: 9999,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
           {FREQUENCY_OPTIONS.map((option) => (
             <button
               key={option.value}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`flex items-center px-3 py-2 text-sm w-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+              className={`flex items-center px-3 py-2 text-sm w-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors whitespace-nowrap ${
                 option.value === value ? 'bg-green-50 dark:bg-green-900/20' : ''
               }`}
             >
               <span className="text-gray-700 dark:text-gray-300">{option.label}</span>
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -342,11 +379,16 @@ interface CurrencyDropdownProps {
 
 const CurrencyDropdown: React.FC<CurrencyDropdownProps> = ({ value, onChange, options }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        buttonRef.current && !buttonRef.current.contains(event.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -354,22 +396,52 @@ const CurrencyDropdown: React.FC<CurrencyDropdownProps> = ({ value, onChange, op
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const dropdownHeight = options.length * 36 + 8;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUp = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+
+      setDropdownPosition({
+        top: openUp ? rect.top - dropdownHeight - 4 : rect.bottom + 4,
+        left: rect.left,
+        width: Math.max(rect.width, 70),
+      });
+    }
+  }, [isOpen, options.length]);
+
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        ref={buttonRef}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
         className="flex items-center gap-1 px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md transition-colors w-full"
       >
         <span className="flex-1 text-left text-gray-700 dark:text-gray-300">{value}</span>
         <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-full min-w-[70px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 py-1">
+      {isOpen && createPortal(
+        <div
+          ref={dropdownRef}
+          className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1"
+          style={{
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            minWidth: dropdownPosition.width,
+            zIndex: 9999,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
           {options.map((opt) => (
             <button
               key={opt}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 onChange(opt);
                 setIsOpen(false);
               }}
@@ -380,7 +452,8 @@ const CurrencyDropdown: React.FC<CurrencyDropdownProps> = ({ value, onChange, op
               <span className="text-gray-700 dark:text-gray-300">{opt}</span>
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -416,27 +489,33 @@ const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
     if (isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       const dropdownWidth = 240;
-      const dropdownHeight = 280;
+      const dropdownHeight = 300;
 
       let top = rect.bottom + 4;
       let left = rect.right - dropdownWidth;
 
+      // Ensure dropdown stays within viewport horizontally
       if (left + dropdownWidth > window.innerWidth) {
         left = window.innerWidth - dropdownWidth - 8;
       }
       if (left < 8) {
         left = 8;
       }
+
+      // Open upward if not enough space below
       if (top + dropdownHeight > window.innerHeight) {
         top = rect.top - dropdownHeight - 4;
       }
+
+      // Ensure it doesn't go above viewport
       if (top < 8) {
         top = 8;
       }
 
+      // For fixed positioning, don't add scroll offset
       setDropdownPosition({
-        top: top + window.scrollY,
-        left: left + window.scrollX,
+        top,
+        left,
       });
     }
   }, [isOpen]);
@@ -487,7 +566,10 @@ const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
     <div className="relative">
       <button
         ref={buttonRef}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
         className="flex items-center gap-1 px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md transition-colors w-full"
       >
         <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
@@ -505,11 +587,15 @@ const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
             left: dropdownPosition.left,
             zIndex: 9999,
           }}
+          onClick={(e) => e.stopPropagation()}
         >
           {/* Month Navigation */}
           <div className="flex items-center justify-between mb-3">
             <button
-              onClick={handlePrevMonth}
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrevMonth();
+              }}
               className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
             >
               <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -518,7 +604,10 @@ const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
               {viewDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
             </span>
             <button
-              onClick={handleNextMonth}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNextMonth();
+              }}
               className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
             >
               <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -544,7 +633,10 @@ const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => (
               <button
                 key={day}
-                onClick={() => handleSelectDay(day)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelectDay(day);
+                }}
                 className={`w-7 h-7 text-xs rounded flex items-center justify-center transition-colors ${
                   isSelectedDay(day)
                     ? 'bg-green-500 text-white'
@@ -560,7 +652,8 @@ const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
 
           {/* Today button */}
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               const today = new Date();
               const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
               onChange(todayStr);
@@ -686,10 +779,10 @@ const FilterBar: React.FC<FilterBarProps> = ({
   onToggle,
 }) => {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+    <div className="px-3 py-2">
       <button
         onClick={onToggle}
-        className="w-full px-3 py-2 flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors rounded-xl"
+        className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
       >
         <Filter className="w-4 h-4" />
         <span className="text-sm font-medium">Filters</span>
@@ -701,7 +794,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
       </button>
 
       {isOpen && (
-        <div className="px-3 pb-3 flex items-center gap-3 flex-wrap border-t border-gray-100 dark:border-gray-700 pt-3">
+        <div className="mt-3 flex items-center gap-3 flex-wrap">
           {/* Source Filter */}
           <input
             type="text"
