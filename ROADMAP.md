@@ -309,10 +309,124 @@ Bank Account,1234567890,012345678901234567,debit,true
 
 ---
 
+## Phase 15: Code & Data Cleanup (Planned)
+
+**Goal:** Review and clean up unused code, deprecated stores, and technical debt before adding new features.
+
+### Step 1: Store Audit
+
+| Task | Status |
+| --- | --- |
+| Audit all Zustand stores for unused state/actions | Planned |
+| Remove deprecated/legacy migration code if no longer needed | Planned |
+| Check for orphaned data in localStorage | Planned |
+| Consolidate duplicate functionality across stores | Planned |
+
+### Step 2: Component Cleanup
+
+| Task | Status |
+| --- | --- |
+| Identify unused components | Planned |
+| Remove dead code paths | Planned |
+| Clean up unused imports | Planned |
+| Remove commented-out code | Planned |
+
+### Step 3: Type & Utility Review
+
+| Task | Status |
+| --- | --- |
+| Review types/index.ts for unused types | Planned |
+| Check utils folder for unused utilities | Planned |
+| Remove backwards-compatibility code that's no longer needed | Planned |
+
+### Step 4: Data Integrity
+
+| Task | Status |
+| --- | --- |
+| Validate localStorage data structure | Planned |
+| Check for data inconsistencies | Planned |
+| Document current data schema | Planned |
+
+**Stores to Review:**
+- `authStore.ts`
+- `currencyStore.ts`
+- `expenseStore.ts`
+- `incomeStore.ts`
+- `accountStore.ts`
+- `ledgerStore.ts`
+- `ledgerAccountStore.ts`
+- `snapshotStore.ts`
+- `themeStore.ts`
+
+---
+
+## Phase 16: Net Worth History & Tracking (Planned)
+
+**Goal:** Track net worth changes over time so users can see how their financial position evolves month-to-month.
+
+### Design Considerations
+
+**What to Track:**
+- Monthly snapshots of total net worth (assets - liabilities)
+- Optionally: breakdown by account for detailed analysis
+
+**When to Snapshot:**
+- Option A: Automatic monthly snapshot (e.g., on 1st of each month)
+- Option B: Manual snapshot button ("Save current snapshot")
+- Option C: Track every account change with timestamp (more data, more complexity)
+
+**Storage Approach:**
+- New Zustand store: `netWorthHistoryStore`
+- Persist snapshots: `{ date: string, netWorth: number, assets: number, liabilities: number }`
+
+### Step 1: Net Worth Snapshot Store
+
+| Task | Status |
+| --- | --- |
+| Create `netWorthHistoryStore` with snapshot data structure | Planned |
+| Add `takeSnapshot()` function | Planned |
+| Add `getHistory(startDate, endDate)` function | Planned |
+| Auto-snapshot on first visit of each month | Planned |
+
+### Step 2: Dashboard Net Worth Change Display
+
+| Task | Status |
+| --- | --- |
+| Show month-over-month change ($ and %) | Planned |
+| Show trend indicator (up/down arrow, color) | Planned |
+| Handle case when no previous snapshot exists | Planned |
+
+### Step 3: Net Worth History View (Optional)
+
+| Task | Status |
+| --- | --- |
+| Simple line chart showing net worth over time | Planned |
+| Table view of historical snapshots | Planned |
+| Filter by date range | Planned |
+
+**Data Structure:**
+```typescript
+interface NetWorthSnapshot {
+  id: string;
+  date: string;           // YYYY-MM-DD
+  netWorth: number;       // In base currency
+  totalAssets: number;
+  totalLiabilities: number;
+  baseCurrency: string;   // Currency at time of snapshot
+}
+```
+
+**Questions to Resolve:**
+1. Should snapshots be automatic or manual?
+2. Should we store account-level breakdown for each snapshot?
+3. How far back should history go? (Storage limits)
+
+---
+
 ## Future Phases
 
 See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvements.
 
 ---
 
-**Last Updated:** 2025-12-11
+**Last Updated:** 2025-12-12
