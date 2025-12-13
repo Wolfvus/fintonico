@@ -620,36 +620,48 @@ paymentToAvoidInterest?: number;   // Amount to pay to avoid interest charges
 - CSV import parses these fields with validation (must be > 0)
 - Store migration preserves existing liability-specific fields
 
-### Step 2: Income Table Sorting
+### Step 2: Income Table Sorting ✅
 
 **Goal:** Add sortable columns to Income tables.
 
 | Task | Status |
 | --- | --- |
-| Add sort state (column, direction) to IncomePage | Planned |
-| Implement sort by Amount (asc/desc) | Planned |
-| Implement sort by Date (asc/desc) | Planned |
-| Add sort indicators to column headers | Planned |
-| Persist sort preference (optional) | Planned |
+| Add sort state (column, direction) to IncomePage | ✅ |
+| Implement sort by Amount (asc/desc) | ✅ |
+| Implement sort by Date (asc/desc) | ✅ |
+| Add sort indicators to column headers | ✅ |
 
 **Sortable Columns:**
 - Amount (numeric sort, converted to base currency)
 - Date (date sort)
 
-### Step 3: Expense Table Sorting
+**Implementation Notes:**
+- Created `SortableHeader` component with arrow icons (ArrowUpDown, ArrowUp, ArrowDown)
+- Click toggles between ascending/descending; clicking a different column resets to descending
+- Sort by Amount converts to base currency for consistent comparison across currencies
+- Default sort (no column selected) groups recurring first, then sorts by date descending
+- Sort state is local to the component (not persisted)
+
+### Step 3: Expense Table Sorting ✅
 
 **Goal:** Add sortable columns to Expense tables (both recurring and one-time).
 
 | Task | Status |
 | --- | --- |
-| Add sort state to ExpensePage (for both tables) | Planned |
-| Implement sort by Amount (asc/desc) | Planned |
-| Implement sort by Date (asc/desc) | Planned |
-| Add sort indicators to column headers | Planned |
+| Add sort state to ExpensePage (for both tables) | ✅ |
+| Implement sort by Amount (asc/desc) | ✅ |
+| Implement sort by Date (asc/desc) | ✅ |
+| Add sort indicators to column headers | ✅ |
 
 **Sortable Columns:**
 - Amount (numeric sort, converted to base currency)
 - Date (date sort)
+
+**Implementation Notes:**
+- Both Recurring and Monthly expense tables have independent sort state
+- Reused SortableHeader component pattern from IncomePage (red accent color)
+- Sort by Amount converts to base currency for accurate comparison
+- Default sort: Recurring = alphabetical by description, Monthly = date descending
 
 ### Step 4: Assets Table Sorting
 
@@ -689,4 +701,4 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-12-12 (Phase 17 Step 1 completed)
+**Last Updated:** 2025-12-12 (Phase 17 Step 3 completed)

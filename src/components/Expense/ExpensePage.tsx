@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calendar, RefreshCw, Home, ShoppingBag, Sparkles, Filter, X } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calendar, RefreshCw, Home, ShoppingBag, Sparkles, Filter, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import type { Expense, ExpenseRating } from '../../types';
 import { CSVActions } from '../Shared/CSVActions';
 import { exportExpensesToCSV, parseExpenseCSV, downloadCSV, readCSVFile } from '../../utils/csv';
@@ -788,6 +788,44 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
   );
 };
 
+// Sort types
+type SortColumn = 'amount' | 'date' | null;
+type SortDirection = 'asc' | 'desc';
+
+// Sortable Column Header Component
+interface SortableHeaderProps {
+  label: string;
+  column: 'amount' | 'date';
+  currentSort: SortColumn;
+  direction: SortDirection;
+  onSort: (column: 'amount' | 'date') => void;
+  align?: 'left' | 'right';
+}
+
+const SortableHeader: React.FC<SortableHeaderProps> = ({ label, column, currentSort, direction, onSort, align = 'left' }) => {
+  const isActive = currentSort === column;
+
+  return (
+    <button
+      onClick={() => onSort(column)}
+      className={`flex items-center gap-1 text-xs font-medium transition-colors w-full ${
+        align === 'right' ? 'justify-end' : 'justify-start'
+      } ${isActive ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+    >
+      <span>{label}</span>
+      {isActive ? (
+        direction === 'asc' ? (
+          <ArrowUp className="w-3 h-3" />
+        ) : (
+          <ArrowDown className="w-3 h-3" />
+        )
+      ) : (
+        <ArrowUpDown className="w-3 h-3 opacity-50" />
+      )}
+    </button>
+  );
+};
+
 // Monthly Expenses Table Header with Filter (includes Date, Recurring columns)
 interface MonthlyTableHeaderProps {
   descriptionFilter: string;
@@ -801,6 +839,9 @@ interface MonthlyTableHeaderProps {
   onClearFilters: () => void;
   isOpen: boolean;
   onToggle: () => void;
+  sortColumn: SortColumn;
+  sortDirection: SortDirection;
+  onSort: (column: 'amount' | 'date') => void;
 }
 
 const MonthlyTableHeader: React.FC<MonthlyTableHeaderProps> = ({
@@ -815,6 +856,9 @@ const MonthlyTableHeader: React.FC<MonthlyTableHeaderProps> = ({
   onClearFilters,
   isOpen,
   onToggle,
+  sortColumn,
+  sortDirection,
+  onSort,
 }) => {
   return (
     <thead>
@@ -822,8 +866,15 @@ const MonthlyTableHeader: React.FC<MonthlyTableHeaderProps> = ({
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
           Description
         </th>
-        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-28">
-          Amount
+        <th className="px-2 py-2 border-l border-gray-300 dark:border-gray-600 w-28">
+          <SortableHeader
+            label="Amount"
+            column="amount"
+            currentSort={sortColumn}
+            direction={sortDirection}
+            onSort={onSort}
+            align="right"
+          />
         </th>
         <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
           Currency
@@ -831,8 +882,15 @@ const MonthlyTableHeader: React.FC<MonthlyTableHeaderProps> = ({
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
           Category
         </th>
-        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
-          Date
+        <th className="px-2 py-2 border-l border-gray-200 dark:border-gray-700 w-24">
+          <SortableHeader
+            label="Date"
+            column="date"
+            currentSort={sortColumn}
+            direction={sortDirection}
+            onSort={onSort}
+            align="left"
+          />
         </th>
         <th className="w-10 border-l border-gray-200 dark:border-gray-700">
           <button
@@ -916,6 +974,9 @@ interface RecurringTableHeaderProps {
   onClearFilters: () => void;
   isOpen: boolean;
   onToggle: () => void;
+  sortColumn: SortColumn;
+  sortDirection: SortDirection;
+  onSort: (column: 'amount' | 'date') => void;
 }
 
 const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
@@ -930,6 +991,9 @@ const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
   onClearFilters,
   isOpen,
   onToggle,
+  sortColumn,
+  sortDirection,
+  onSort,
 }) => {
   return (
     <thead>
@@ -937,8 +1001,15 @@ const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
           Description
         </th>
-        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-28">
-          Amount
+        <th className="px-2 py-2 border-l border-gray-300 dark:border-gray-600 w-28">
+          <SortableHeader
+            label="Amount"
+            column="amount"
+            currentSort={sortColumn}
+            direction={sortDirection}
+            onSort={onSort}
+            align="right"
+          />
         </th>
         <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
           Currency
@@ -946,8 +1017,15 @@ const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
           Category
         </th>
-        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
-          Due Date
+        <th className="px-2 py-2 border-l border-gray-200 dark:border-gray-700 w-24">
+          <SortableHeader
+            label="Due Date"
+            column="date"
+            currentSort={sortColumn}
+            direction={sortDirection}
+            onSort={onSort}
+            align="left"
+          />
         </th>
         <th className="w-10 border-l border-gray-200 dark:border-gray-700">
           <button
@@ -1040,8 +1118,36 @@ export const ExpensePage: React.FC = () => {
   const [recurringCategoryFilter, setRecurringCategoryFilter] = useState('');
   const [isRecurringFilterOpen, setIsRecurringFilterOpen] = useState(false);
 
+  // Sort states for monthly expenses
+  const [monthlySortColumn, setMonthlySortColumn] = useState<SortColumn>(null);
+  const [monthlySortDirection, setMonthlySortDirection] = useState<SortDirection>('desc');
+
+  // Sort states for recurring expenses
+  const [recurringSortColumn, setRecurringSortColumn] = useState<SortColumn>(null);
+  const [recurringSortDirection, setRecurringSortDirection] = useState<SortDirection>('desc');
+
   const hasMonthlyFilters = monthlyDescFilter !== '' || monthlyCurrencyFilter !== '' || monthlyCategoryFilter !== '';
   const hasRecurringFilters = recurringDescFilter !== '' || recurringCurrencyFilter !== '' || recurringCategoryFilter !== '';
+
+  // Handle sort toggle for monthly expenses
+  const handleMonthlySort = (column: 'amount' | 'date') => {
+    if (monthlySortColumn === column) {
+      setMonthlySortDirection(monthlySortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setMonthlySortColumn(column);
+      setMonthlySortDirection('desc');
+    }
+  };
+
+  // Handle sort toggle for recurring expenses
+  const handleRecurringSort = (column: 'amount' | 'date') => {
+    if (recurringSortColumn === column) {
+      setRecurringSortDirection(recurringSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setRecurringSortColumn(column);
+      setRecurringSortDirection('desc');
+    }
+  };
 
   const clearMonthlyFilters = () => {
     setMonthlyDescFilter('');
@@ -1092,8 +1198,22 @@ export const ExpensePage: React.FC = () => {
         return false;
       }
       return true;
-    }).sort((a, b) => a.what.localeCompare(b.what));
-  }, [allRecurringExpenses, recurringDescFilter, recurringCurrencyFilter, recurringCategoryFilter]);
+    }).sort((a, b) => {
+      // Apply custom sort if selected
+      if (recurringSortColumn === 'amount') {
+        const amountA = convertAmount(a.amount, a.currency, baseCurrency);
+        const amountB = convertAmount(b.amount, b.currency, baseCurrency);
+        return recurringSortDirection === 'asc' ? amountA - amountB : amountB - amountA;
+      }
+      if (recurringSortColumn === 'date') {
+        const dateA = parseLocalDate(a.date).getTime();
+        const dateB = parseLocalDate(b.date).getTime();
+        return recurringSortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+      // Default sort: alphabetically by description
+      return a.what.localeCompare(b.what);
+    });
+  }, [allRecurringExpenses, recurringDescFilter, recurringCurrencyFilter, recurringCategoryFilter, recurringSortColumn, recurringSortDirection, convertAmount, baseCurrency]);
 
   // Apply filters to monthly expenses
   const filteredMonthlyExpenses = useMemo(() => {
@@ -1108,8 +1228,22 @@ export const ExpensePage: React.FC = () => {
         return false;
       }
       return true;
-    }).sort((a, b) => parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime());
-  }, [allMonthlyExpenses, monthlyDescFilter, monthlyCurrencyFilter, monthlyCategoryFilter]);
+    }).sort((a, b) => {
+      // Apply custom sort if selected
+      if (monthlySortColumn === 'amount') {
+        const amountA = convertAmount(a.amount, a.currency, baseCurrency);
+        const amountB = convertAmount(b.amount, b.currency, baseCurrency);
+        return monthlySortDirection === 'asc' ? amountA - amountB : amountB - amountA;
+      }
+      if (monthlySortColumn === 'date') {
+        const dateA = parseLocalDate(a.date).getTime();
+        const dateB = parseLocalDate(b.date).getTime();
+        return monthlySortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+      // Default sort: by date descending
+      return parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime();
+    });
+  }, [allMonthlyExpenses, monthlyDescFilter, monthlyCurrencyFilter, monthlyCategoryFilter, monthlySortColumn, monthlySortDirection, convertAmount, baseCurrency]);
 
   // Calculate totals
   const recurringTotal = useMemo(() => {
@@ -1418,6 +1552,9 @@ export const ExpensePage: React.FC = () => {
                 onClearFilters={clearRecurringFilters}
                 isOpen={isRecurringFilterOpen}
                 onToggle={() => setIsRecurringFilterOpen(!isRecurringFilterOpen)}
+                sortColumn={recurringSortColumn}
+                sortDirection={recurringSortDirection}
+                onSort={handleRecurringSort}
               />
               <tbody>
                 {filteredRecurringExpenses.map((expense, index) => (
@@ -1480,6 +1617,9 @@ export const ExpensePage: React.FC = () => {
                 onClearFilters={clearMonthlyFilters}
                 isOpen={isMonthlyFilterOpen}
                 onToggle={() => setIsMonthlyFilterOpen(!isMonthlyFilterOpen)}
+                sortColumn={monthlySortColumn}
+                sortDirection={monthlySortDirection}
+                onSort={handleMonthlySort}
               />
               <tbody>
                 {filteredMonthlyExpenses.map((expense, index) => (

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useIncomeStore } from '../../stores/incomeStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { DollarSign, Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calendar, Filter, X } from 'lucide-react';
+import { DollarSign, Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calendar, Filter, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import type { Income } from '../../types';
 import type { IncomeFrequency } from '../../stores/incomeStore';
 import { CSVActions } from '../Shared/CSVActions';
@@ -762,6 +762,44 @@ const IncomeRow: React.FC<IncomeRowProps> = ({
   );
 };
 
+// Sort types
+type SortColumn = 'amount' | 'date' | null;
+type SortDirection = 'asc' | 'desc';
+
+// Sortable Column Header Component
+interface SortableHeaderProps {
+  label: string;
+  column: 'amount' | 'date';
+  currentSort: SortColumn;
+  direction: SortDirection;
+  onSort: (column: 'amount' | 'date') => void;
+  align?: 'left' | 'right';
+}
+
+const SortableHeader: React.FC<SortableHeaderProps> = ({ label, column, currentSort, direction, onSort, align = 'left' }) => {
+  const isActive = currentSort === column;
+
+  return (
+    <button
+      onClick={() => onSort(column)}
+      className={`flex items-center gap-1 text-xs font-medium transition-colors w-full ${
+        align === 'right' ? 'justify-end' : 'justify-start'
+      } ${isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+    >
+      <span>{label}</span>
+      {isActive ? (
+        direction === 'asc' ? (
+          <ArrowUp className="w-3 h-3" />
+        ) : (
+          <ArrowDown className="w-3 h-3" />
+        )
+      ) : (
+        <ArrowUpDown className="w-3 h-3 opacity-50" />
+      )}
+    </button>
+  );
+};
+
 // Table Header with integrated Filter
 interface TableHeaderWithFilterProps {
   sourceFilter: string;
@@ -775,6 +813,9 @@ interface TableHeaderWithFilterProps {
   onClearFilters: () => void;
   isOpen: boolean;
   onToggle: () => void;
+  sortColumn: SortColumn;
+  sortDirection: SortDirection;
+  onSort: (column: 'amount' | 'date') => void;
 }
 
 const TableHeaderWithFilter: React.FC<TableHeaderWithFilterProps> = ({
@@ -789,6 +830,9 @@ const TableHeaderWithFilter: React.FC<TableHeaderWithFilterProps> = ({
   onClearFilters,
   isOpen,
   onToggle,
+  sortColumn,
+  sortDirection,
+  onSort,
 }) => {
   return (
     <thead>
@@ -796,8 +840,15 @@ const TableHeaderWithFilter: React.FC<TableHeaderWithFilterProps> = ({
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
           Source
         </th>
-        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-28">
-          Amount
+        <th className="px-2 py-2 border-l border-gray-300 dark:border-gray-600 w-28">
+          <SortableHeader
+            label="Amount"
+            column="amount"
+            currentSort={sortColumn}
+            direction={sortDirection}
+            onSort={onSort}
+            align="right"
+          />
         </th>
         <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
           Currency
@@ -805,8 +856,15 @@ const TableHeaderWithFilter: React.FC<TableHeaderWithFilterProps> = ({
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
           Frequency
         </th>
-        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
-          Date
+        <th className="px-2 py-2 border-l border-gray-200 dark:border-gray-700 w-24">
+          <SortableHeader
+            label="Date"
+            column="date"
+            currentSort={sortColumn}
+            direction={sortDirection}
+            onSort={onSort}
+            align="left"
+          />
         </th>
         <th className="w-10 border-l border-gray-200 dark:border-gray-700">
           <button
@@ -889,12 +947,28 @@ export const IncomePage: React.FC = () => {
   const [frequencyFilter, setFrequencyFilter] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
+  // Sort states
+  const [sortColumn, setSortColumn] = useState<SortColumn>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
   const hasActiveFilters = sourceFilter !== '' || currencyFilter !== '' || frequencyFilter !== '';
 
   const clearFilters = () => {
     setSourceFilter('');
     setCurrencyFilter('');
     setFrequencyFilter('');
+  };
+
+  // Handle sort toggle
+  const handleSort = (column: 'amount' | 'date') => {
+    if (sortColumn === column) {
+      // Toggle direction if same column
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New column, default to descending
+      setSortColumn(column);
+      setSortDirection('desc');
+    }
   };
 
   // Filter incomes by selected month and filters
@@ -928,13 +1002,24 @@ export const IncomePage: React.FC = () => {
 
       return true;
     }).sort((a, b) => {
-      // Sort recurring first, then by date
+      // Apply custom sort if selected
+      if (sortColumn === 'amount') {
+        const amountA = convertAmount(a.amount, a.currency, baseCurrency);
+        const amountB = convertAmount(b.amount, b.currency, baseCurrency);
+        return sortDirection === 'asc' ? amountA - amountB : amountB - amountA;
+      }
+      if (sortColumn === 'date') {
+        const dateA = parseLocalDate(a.date).getTime();
+        const dateB = parseLocalDate(b.date).getTime();
+        return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+      // Default sort: recurring first, then by date descending
       if ((a.frequency === 'one-time') !== (b.frequency === 'one-time')) {
         return a.frequency === 'one-time' ? 1 : -1;
       }
       return parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime();
     });
-  }, [incomes, selectedDate, sourceFilter, currencyFilter, frequencyFilter]);
+  }, [incomes, selectedDate, sourceFilter, currencyFilter, frequencyFilter, sortColumn, sortDirection, convertAmount, baseCurrency]);
 
   // Calculate monthly total (actual for selected month)
   const monthlyTotal = useMemo(() => {
@@ -1218,6 +1303,9 @@ export const IncomePage: React.FC = () => {
               onClearFilters={clearFilters}
               isOpen={isFilterOpen}
               onToggle={() => setIsFilterOpen(!isFilterOpen)}
+              sortColumn={sortColumn}
+              sortDirection={sortDirection}
+              onSort={handleSort}
             />
             <tbody>
               {filteredIncomes.map((income, index) => (

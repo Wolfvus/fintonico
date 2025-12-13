@@ -387,16 +387,20 @@ const DayOfMonthSelector: React.FC<DayOfMonthSelectorProps> = ({ value, onChange
   }, [isOpen]);
 
   return (
-    <div className="relative">
+    <div className="relative flex justify-center">
       <button
         ref={buttonRef}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`flex items-center gap-1 px-2 py-1.5 text-sm ${disabled ? 'cursor-default opacity-60' : 'hover:bg-gray-100 dark:hover:bg-gray-700/50'} rounded-md transition-colors`}
+        className={`flex items-center gap-1 ${disabled ? 'cursor-default opacity-60' : ''} transition-colors`}
       >
-        <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
-          {value ? value : '-'}
-        </span>
+        {value ? (
+          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-md">
+            {value}
+          </span>
+        ) : (
+          <span className="text-gray-400 dark:text-gray-500 text-sm">-</span>
+        )}
         {!disabled && <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />}
       </button>
 
