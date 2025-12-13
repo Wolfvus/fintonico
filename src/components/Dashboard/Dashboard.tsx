@@ -312,30 +312,36 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               <Landmark className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Total Net Worth</h2>
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex flex-col items-center gap-1">
               <p className={`text-3xl sm:text-4xl font-bold ${
-                netWorth >= 0 
-                  ? 'text-blue-600 dark:text-blue-400' 
+                netWorth >= 0
+                  ? 'text-blue-600 dark:text-blue-400'
                   : 'text-red-600 dark:text-red-400'
               }`}>
                 {formatAmount(netWorth)}
               </p>
-              <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-medium ${
+              <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm font-medium ${
                 !netWorthChange.hasPreviousData
                   ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-                  : netWorthChange.change >= 0 
-                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' 
+                  : netWorthChange.change >= 0
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                     : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
               }`}>
-                {!netWorthChange.hasPreviousData 
-                  ? '—' 
-                  : netWorthChange.change >= 0 ? '↑' : '↓'
-                }
-                {!netWorthChange.hasPreviousData 
-                  ? 'No data' 
-                  : `${Math.abs(netWorthChange.changePercent).toFixed(1)}%`
-                }
+                {!netWorthChange.hasPreviousData ? (
+                  <span>— No previous data</span>
+                ) : (
+                  <>
+                    {netWorthChange.change >= 0 ? (
+                      <TrendingUp className="w-4 h-4" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4" />
+                    )}
+                    <span>{netWorthChange.change >= 0 ? '+' : ''}{formatAmount(netWorthChange.change)}</span>
+                    <span className="opacity-75">({Math.abs(netWorthChange.changePercent).toFixed(1)}%)</span>
+                  </>
+                )}
               </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">vs last month</p>
             </div>
           </button>
           
@@ -376,27 +382,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1 text-left">Total Net Worth</h2>
               <div className="flex items-center gap-3">
                 <p className={`text-3xl font-bold ${
-                  netWorth >= 0 
-                    ? 'text-blue-600 dark:text-blue-400' 
+                  netWorth >= 0
+                    ? 'text-blue-600 dark:text-blue-400'
                     : 'text-red-600 dark:text-red-400'
                 }`}>
                   {formatAmount(netWorth)}
                 </p>
-                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-medium ${
-                  !netWorthChange.hasPreviousData
-                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-                    : netWorthChange.change >= 0 
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' 
-                      : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                }`}>
-                  {!netWorthChange.hasPreviousData 
-                    ? '—' 
-                    : netWorthChange.change >= 0 ? '↑' : '↓'
-                  }
-                  {!netWorthChange.hasPreviousData 
-                    ? 'No data' 
-                    : `${Math.abs(netWorthChange.changePercent).toFixed(1)}%`
-                  }
+                <div className="flex flex-col items-start gap-0.5">
+                  <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm font-medium ${
+                    !netWorthChange.hasPreviousData
+                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                      : netWorthChange.change >= 0
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                        : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                  }`}>
+                    {!netWorthChange.hasPreviousData ? (
+                      <span>— No previous data</span>
+                    ) : (
+                      <>
+                        {netWorthChange.change >= 0 ? (
+                          <TrendingUp className="w-4 h-4" />
+                        ) : (
+                          <TrendingDown className="w-4 h-4" />
+                        )}
+                        <span>{netWorthChange.change >= 0 ? '+' : ''}{formatAmount(netWorthChange.change)}</span>
+                        <span className="opacity-75">({Math.abs(netWorthChange.changePercent).toFixed(1)}%)</span>
+                      </>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 ml-2">vs last month</p>
                 </div>
               </div>
             </div>

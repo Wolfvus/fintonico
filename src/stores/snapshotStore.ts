@@ -13,6 +13,7 @@ export interface NetWorthSnapshot {
 interface SnapshotState {
   snapshots: NetWorthSnapshot[];
   getSnapshot: (monthEnd: string) => NetWorthSnapshot | undefined;
+  getHistory: (startMonth?: string, endMonth?: string) => NetWorthSnapshot[];
   createSnapshot: (monthEnd?: string) => Promise<NetWorthSnapshot>;
   ensureCurrentMonthSnapshot: () => Promise<NetWorthSnapshot>;
 }
@@ -35,6 +36,21 @@ export const useSnapshotStore = create<SnapshotState>()(
 
       getSnapshot: (monthEnd: string) => {
         return get().snapshots.find(s => s.monthEndLocal === monthEnd);
+      },
+
+      getHistory: (startMonth?: string, endMonth?: string) => {
+        const snapshots = get().snapshots;
+
+        // If no filters, return all snapshots sorted by date
+        if (!startMonth && !endMonth) {
+          return [...snapshots].sort((a, b) => a.monthEndLocal.localeCompare(b.monthEndLocal));
+        }
+
+        return snapshots.filter(s => {
+          if (startMonth && s.monthEndLocal < startMonth) return false;
+          if (endMonth && s.monthEndLocal > endMonth) return false;
+          return true;
+        }).sort((a, b) => a.monthEndLocal.localeCompare(b.monthEndLocal));
       },
 
       createSnapshot: async (monthEnd?: string) => {

@@ -6,6 +6,7 @@ import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, ChevronRight, Chec
 import type { AccountType, Account } from '../../types';
 import { CSVActions } from '../Shared/CSVActions';
 import { exportAccountsToCSV, parseAccountCSV, downloadCSV, readCSVFile } from '../../utils/csv';
+import { NetWorthHistory } from './NetWorthHistory';
 
 // Format number with thousand separators
 const formatNumberWithCommas = (value: number | string): string => {
@@ -1583,6 +1584,9 @@ export const NetWorthPage: React.FC = () => {
             </div>
         )}
       </div>
+
+      {/* Net Worth History */}
+      <NetWorthHistory />
 
       {/* Empty State */}
       {accounts.length === 0 && (

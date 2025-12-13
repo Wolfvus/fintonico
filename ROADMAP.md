@@ -533,47 +533,59 @@ Bank Account,1234567890,012345678901234567,debit,true
 - New Zustand store: `netWorthHistoryStore`
 - Persist snapshots: `{ date: string, netWorth: number, assets: number, liabilities: number }`
 
-### Step 1: Net Worth Snapshot Store
+### Step 1: Net Worth Snapshot Store ✅
 
 | Task | Status |
 | --- | --- |
-| Create `netWorthHistoryStore` with snapshot data structure | Planned |
-| Add `takeSnapshot()` function | Planned |
-| Add `getHistory(startDate, endDate)` function | Planned |
-| Auto-snapshot on first visit of each month | Planned |
+| Create `netWorthHistoryStore` with snapshot data structure | ✅ (already existed as `snapshotStore`) |
+| Add `takeSnapshot()` function | ✅ (already existed as `createSnapshot`) |
+| Add `getHistory(startDate, endDate)` function | ✅ |
+| Auto-snapshot on first visit of each month | ✅ |
 
-### Step 2: Dashboard Net Worth Change Display
+**Implementation Notes:**
+- The snapshot store already existed at `src/stores/snapshotStore.ts` with most functionality
+- Added `getHistory(startMonth?, endMonth?)` to filter snapshots by date range
+- Wired up `ensureCurrentMonthSnapshot()` in App.tsx to auto-create snapshot on first visit each month
+- Existing `getMoMChange()` selector in `finance.ts` calculates month-over-month changes
 
-| Task | Status |
-| --- | --- |
-| Show month-over-month change ($ and %) | Planned |
-| Show trend indicator (up/down arrow, color) | Planned |
-| Handle case when no previous snapshot exists | Planned |
-
-### Step 3: Net Worth History View (Optional)
+### Step 2: Dashboard Net Worth Change Display ✅
 
 | Task | Status |
 | --- | --- |
-| Simple line chart showing net worth over time | Planned |
-| Table view of historical snapshots | Planned |
-| Filter by date range | Planned |
+| Show month-over-month change ($ and %) | ✅ |
+| Show trend indicator (up/down arrow, color) | ✅ |
+| Handle case when no previous snapshot exists | ✅ |
 
-**Data Structure:**
-```typescript
-interface NetWorthSnapshot {
-  id: string;
-  date: string;           // YYYY-MM-DD
-  netWorth: number;       // In base currency
-  totalAssets: number;
-  totalLiabilities: number;
-  baseCurrency: string;   // Currency at time of snapshot
-}
-```
+**Implementation Notes:**
+- Enhanced existing net worth display to show both absolute change ($) and percentage change (%)
+- Uses `TrendingUp`/`TrendingDown` icons with green/red color coding
+- Shows "— No previous data" when no snapshot exists for comparison
+- Added "vs last month" label for clarity
+- Works on both mobile and desktop layouts
 
-**Questions to Resolve:**
-1. Should snapshots be automatic or manual?
-2. Should we store account-level breakdown for each snapshot?
-3. How far back should history go? (Storage limits)
+### Step 3: Net Worth History View ✅
+
+| Task | Status |
+| --- | --- |
+| Simple line chart showing net worth over time | ✅ |
+| Table view of historical snapshots | ✅ |
+| Filter by date range | ✅ |
+
+**Implementation Notes:**
+- Created `NetWorthHistory.tsx` component with:
+  - SVG line chart with area fill showing net worth trend over time
+  - Interactive hover tooltips on data points
+  - Color-coded based on trend direction (green for growth, red for decline)
+- Table view showing month, net worth, assets, liabilities, and month-over-month change
+- Filter buttons: 6 months, 12 months, 24 months, All time
+- Period summary banner showing total change ($) and percentage
+- Collapsible section (collapsed by default) added to NetWorthPage
+- Empty state with helpful message when no history exists
+
+**Design Decisions Made:**
+1. Snapshots are automatic (created on first visit each month) - no manual button needed
+2. Store asset/liability breakdown per snapshot (via `totalsByNature`)
+3. No hard limit on history - localStorage will naturally limit storage
 
 ---
 
@@ -583,4 +595,4 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-12-12 (Phase 15 completed)
+**Last Updated:** 2025-12-12 (Phase 16 completed)

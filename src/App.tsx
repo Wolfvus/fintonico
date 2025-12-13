@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuthStore } from './stores/authStore';
 import { useLedgerStore } from './stores/ledgerStore';
 import { useThemeStore } from './stores/themeStore';
+import { useSnapshotStore } from './stores/snapshotStore';
 import { checkAndGenerateRecurring } from './utils/recurringUtils';
 import { AuthForm } from './components/Auth/AuthForm';
 import { Dashboard } from './components/Dashboard/Dashboard';
@@ -19,6 +20,7 @@ function App() {
   const { user, loading, checkUser } = useAuthStore();
   const { initializeDefaultAccounts } = useLedgerStore();
   const { isDark, toggleTheme, initializeTheme } = useThemeStore();
+  const { ensureCurrentMonthSnapshot } = useSnapshotStore();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'expenses' | 'income' | 'networth' | 'accounts'>(() => {
     const saved = localStorage.getItem('fintonico-active-tab');
     if (saved && ['dashboard', 'expenses', 'income', 'networth', 'accounts'].includes(saved)) {
@@ -42,7 +44,9 @@ function App() {
     checkAndGenerateRecurring();
     // Initialize theme from localStorage or system preference
     initializeTheme();
-  }, [checkUser, initializeDefaultAccounts, initializeTheme]);
+    // Ensure a snapshot exists for the current month (auto-snapshot on first visit)
+    ensureCurrentMonthSnapshot();
+  }, [checkUser, initializeDefaultAccounts, initializeTheme, ensureCurrentMonthSnapshot]);
 
   if (loading) {
     return (
