@@ -48,6 +48,9 @@ export interface Account {
   lastPaidDate?: string;
   estimatedYield?: number;
   lastUpdated?: string;
+  // Liability-specific fields
+  minMonthlyPayment?: number;        // Minimum required monthly payment
+  paymentToAvoidInterest?: number;   // Amount to pay to avoid interest charges
 }
 
 // Ledger Account - for reference/lookup of bank accounts

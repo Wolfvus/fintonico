@@ -280,10 +280,12 @@ export interface AccountCSVRow {
   balance: string;
   yield: string;
   due_date: string;
+  min_payment: string;
+  no_interest_payment: string;
   excluded: string;
 }
 
-export const ACCOUNT_CSV_HEADERS = ['name', 'type', 'currency', 'balance', 'yield', 'due_date', 'excluded'];
+export const ACCOUNT_CSV_HEADERS = ['name', 'type', 'currency', 'balance', 'yield', 'due_date', 'min_payment', 'no_interest_payment', 'excluded'];
 
 export const exportAccountsToCSV = (
   accounts: Array<{
@@ -293,6 +295,8 @@ export const exportAccountsToCSV = (
     balance: number;
     estimatedYield?: number;
     recurringDueDate?: number;
+    minMonthlyPayment?: number;
+    paymentToAvoidInterest?: number;
     excludeFromTotal?: boolean;
   }>
 ): string => {
@@ -304,6 +308,8 @@ export const exportAccountsToCSV = (
       balance: a.balance,
       yield: a.estimatedYield ?? '',
       due_date: a.recurringDueDate ?? '',
+      min_payment: a.minMonthlyPayment ?? '',
+      no_interest_payment: a.paymentToAvoidInterest ?? '',
       excluded: a.excludeFromTotal ? 'true' : 'false',
     })),
     [
@@ -313,6 +319,8 @@ export const exportAccountsToCSV = (
       { key: 'balance', header: 'balance' },
       { key: 'yield', header: 'yield' },
       { key: 'due_date', header: 'due_date' },
+      { key: 'min_payment', header: 'min_payment' },
+      { key: 'no_interest_payment', header: 'no_interest_payment' },
       { key: 'excluded', header: 'excluded' },
     ]
   );

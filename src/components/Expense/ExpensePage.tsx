@@ -1056,9 +1056,17 @@ export const ExpensePage: React.FC = () => {
   };
 
   // Separate recurring and monthly expenses
+  // Recurring expenses only show from their creation date onwards (not for previous months)
   const allRecurringExpenses = useMemo(() => {
-    return expenses.filter((expense) => expense.recurring);
-  }, [expenses]);
+    const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59);
+
+    return expenses.filter((expense) => {
+      if (!expense.recurring) return false;
+      const expenseDate = parseLocalDate(expense.date);
+      // Only show if created on or before the selected month
+      return expenseDate <= endOfMonth;
+    });
+  }, [expenses, selectedDate]);
 
   const allMonthlyExpenses = useMemo(() => {
     const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);

@@ -2,17 +2,21 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Account } from '../types';
 
-// Migration function to convert old multi-currency accounts to new single-currency format
+// Liability account types
+const LIABILITY_TYPES = ['loan', 'credit-card', 'mortgage'];
+
+// Migration function to convert old formats and ensure all fields exist
 function migrateAccount(account: any): Account {
+  let migrated: Account;
+
   // If account already has the new format (currency + balance fields)
   if (typeof account.currency === 'string' && typeof account.balance === 'number') {
-    return account as Account;
+    migrated = account as Account;
   }
-
   // Migrate from old format (balances array)
-  if (account.balances && Array.isArray(account.balances) && account.balances.length > 0) {
+  else if (account.balances && Array.isArray(account.balances) && account.balances.length > 0) {
     const primaryBalance = account.balances[0];
-    return {
+    migrated = {
       id: account.id,
       name: account.name,
       type: account.type,
@@ -23,17 +27,31 @@ function migrateAccount(account: any): Account {
       recurringDueDate: account.recurringDueDate,
       isPaidThisMonth: account.isPaidThisMonth,
       lastPaidDate: account.lastPaidDate,
+      estimatedYield: account.estimatedYield,
+      lastUpdated: account.lastUpdated,
+      minMonthlyPayment: account.minMonthlyPayment,
+      paymentToAvoidInterest: account.paymentToAvoidInterest,
+    };
+  }
+  // Fallback for malformed data
+  else {
+    migrated = {
+      id: account.id || crypto.randomUUID(),
+      name: account.name || 'Unknown Account',
+      type: account.type || 'other',
+      currency: 'MXN',
+      balance: 0,
     };
   }
 
-  // Fallback for malformed data
-  return {
-    id: account.id || crypto.randomUUID(),
-    name: account.name || 'Unknown Account',
-    type: account.type || 'other',
-    currency: 'MXN',
-    balance: 0,
-  };
+  // Ensure liability-specific fields exist for liability accounts
+  if (LIABILITY_TYPES.includes(migrated.type)) {
+    // Preserve existing values or default to undefined
+    migrated.minMonthlyPayment = migrated.minMonthlyPayment;
+    migrated.paymentToAvoidInterest = migrated.paymentToAvoidInterest;
+  }
+
+  return migrated;
 }
 
 // Define the Store's State and Actions

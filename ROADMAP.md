@@ -589,10 +589,104 @@ Bank Account,1234567890,012345678901234567,debit,true
 
 ---
 
+## Phase 17: Table Sorting & Liability Enhancements (Planned)
+
+**Goal:** Add column sorting to all data tables and enhance liability tracking with minimum payment and payment-to-avoid-interest fields.
+
+### Step 1: Liability Data Model Enhancement ✅
+
+**Goal:** Add new fields to liabilities for better debt tracking.
+
+| Task | Status |
+| --- | --- |
+| Add `minMonthlyPayment` field to Account type | ✅ |
+| Add `paymentToAvoidInterest` field to Account type | ✅ |
+| Update accountStore with migration for existing data | ✅ |
+| Update NetWorthPage UI to show/edit new fields | ✅ |
+| Update CSV import/export for new fields | ✅ |
+
+**New Fields:**
+```typescript
+// Added to Account interface (for liability types only)
+minMonthlyPayment?: number;        // Minimum required payment
+paymentToAvoidInterest?: number;   // Amount to pay to avoid interest charges
+```
+
+**Implementation Notes:**
+- Added new columns to liabilities table: "Min Pay" and "No Interest"
+- Fields are editable inline using the same EditableCell component as other currency fields
+- Colors: Min Pay in orange, No Interest in yellow for visual distinction
+- CSV export includes `min_payment` and `no_interest_payment` columns
+- CSV import parses these fields with validation (must be > 0)
+- Store migration preserves existing liability-specific fields
+
+### Step 2: Income Table Sorting
+
+**Goal:** Add sortable columns to Income tables.
+
+| Task | Status |
+| --- | --- |
+| Add sort state (column, direction) to IncomePage | Planned |
+| Implement sort by Amount (asc/desc) | Planned |
+| Implement sort by Date (asc/desc) | Planned |
+| Add sort indicators to column headers | Planned |
+| Persist sort preference (optional) | Planned |
+
+**Sortable Columns:**
+- Amount (numeric sort, converted to base currency)
+- Date (date sort)
+
+### Step 3: Expense Table Sorting
+
+**Goal:** Add sortable columns to Expense tables (both recurring and one-time).
+
+| Task | Status |
+| --- | --- |
+| Add sort state to ExpensePage (for both tables) | Planned |
+| Implement sort by Amount (asc/desc) | Planned |
+| Implement sort by Date (asc/desc) | Planned |
+| Add sort indicators to column headers | Planned |
+
+**Sortable Columns:**
+- Amount (numeric sort, converted to base currency)
+- Date (date sort)
+
+### Step 4: Assets Table Sorting
+
+**Goal:** Add sortable columns to Assets table in NetWorthPage.
+
+| Task | Status |
+| --- | --- |
+| Add sort state for assets table | Planned |
+| Implement sort by Value/Balance (asc/desc) | Planned |
+| Implement sort by Yield (asc/desc) | Planned |
+| Add sort indicators to column headers | Planned |
+
+**Sortable Columns:**
+- Value/Balance (numeric sort, converted to base currency)
+- Yield % (numeric sort)
+
+### Step 5: Liabilities Table Sorting
+
+**Goal:** Add sortable columns to Liabilities table in NetWorthPage.
+
+| Task | Status |
+| --- | --- |
+| Add sort state for liabilities table | Planned |
+| Implement sort by Value/Balance (asc/desc) | Planned |
+| Implement sort by Due Date (asc/desc) | Planned |
+| Add sort indicators to column headers | Planned |
+
+**Sortable Columns:**
+- Value/Balance (numeric sort, converted to base currency)
+- Due Date (date/day-of-month sort)
+
+---
+
 ## Future Phases
 
 See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvements.
 
 ---
 
-**Last Updated:** 2025-12-12 (Phase 16 completed)
+**Last Updated:** 2025-12-12 (Phase 17 Step 1 completed)

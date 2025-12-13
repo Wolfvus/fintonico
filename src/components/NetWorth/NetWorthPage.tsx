@@ -563,8 +563,8 @@ const AccountRow: React.FC<AccountRowProps> = ({
         />
       </td>
 
-      {/* Value */}
-      <td className="py-1 px-1 w-32 border-l border-gray-300 dark:border-gray-600">
+      {/* Value/Balance */}
+      <td className="py-1 px-1 w-28 border-l border-gray-300 dark:border-gray-600">
         <EditableCell
           value={String(Math.abs(account.balance))}
           onChange={(val) => {
@@ -578,6 +578,42 @@ const AccountRow: React.FC<AccountRowProps> = ({
           className={isLiability ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}
         />
       </td>
+
+      {/* Min Monthly Payment (liabilities only) */}
+      {isLiability && (
+        <td className="py-1 px-1 w-24 border-l border-gray-200 dark:border-gray-700">
+          <EditableCell
+            value={account.minMonthlyPayment ? String(account.minMonthlyPayment) : ''}
+            onChange={(val) => {
+              const numVal = parseFloat(val) || 0;
+              onUpdate({ minMonthlyPayment: numVal > 0 ? numVal : undefined });
+            }}
+            type="currency"
+            placeholder="-"
+            align="right"
+            disabled={isExcluded}
+            className="text-orange-600 dark:text-orange-400"
+          />
+        </td>
+      )}
+
+      {/* Payment to Avoid Interest (liabilities only) */}
+      {isLiability && (
+        <td className="py-1 px-1 w-24 border-l border-gray-200 dark:border-gray-700">
+          <EditableCell
+            value={account.paymentToAvoidInterest ? String(account.paymentToAvoidInterest) : ''}
+            onChange={(val) => {
+              const numVal = parseFloat(val) || 0;
+              onUpdate({ paymentToAvoidInterest: numVal > 0 ? numVal : undefined });
+            }}
+            type="currency"
+            placeholder="-"
+            align="right"
+            disabled={isExcluded}
+            className="text-yellow-600 dark:text-yellow-400"
+          />
+        </td>
+      )}
 
       {/* Yield % (assets only, editable for all types) */}
       {!isLiability && (
@@ -798,7 +834,9 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({
       {!isLiability && <td className="py-1 px-1 w-20"></td>}
       {!isLiability && <td className="py-1 px-1 w-24"></td>}
       {!isLiability && <td className="py-1 px-1 w-28"></td>}
-      {isLiability && <td className="py-1 px-1 w-20"></td>}
+      {isLiability && <td className="py-1 px-1 w-24"></td>}
+      {isLiability && <td className="py-1 px-1 w-24"></td>}
+      {isLiability && <td className="py-1 px-1 w-16"></td>}
       {isLiability && <td className="py-1 px-1 w-12"></td>}
       <td className="py-1 px-1 w-16"></td>
       <td className="py-1 px-1 w-10"></td>
@@ -1006,10 +1044,16 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
           Currency
         </th>
-        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-32">
-          Value
+        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-28">
+          Balance
         </th>
-        <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-20">
+        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
+          Min Pay
+        </th>
+        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24" title="Payment to avoid interest">
+          No Interest
+        </th>
+        <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-16">
           Due
         </th>
         <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-12">
@@ -1037,7 +1081,7 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
       </tr>
       {isOpen && (
         <tr className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-          <td colSpan={9} className="px-3 py-2">
+          <td colSpan={11} className="px-3 py-2">
             <div className="flex items-center gap-3 flex-wrap">
               {/* Name Filter */}
               <input
@@ -1351,6 +1395,8 @@ export const NetWorthPage: React.FC = () => {
         // Parse optional fields
         const estimatedYield = row.yield ? parseFloat(row.yield) : undefined;
         const recurringDueDate = row.due_date ? parseInt(row.due_date, 10) : undefined;
+        const minMonthlyPayment = row.min_payment ? parseFloat(row.min_payment) : undefined;
+        const paymentToAvoidInterest = row.no_interest_payment ? parseFloat(row.no_interest_payment) : undefined;
         const excludeFromTotal = row.excluded?.toLowerCase() === 'true';
 
         // Add the account (balance is negative for liabilities)
@@ -1362,6 +1408,8 @@ export const NetWorthPage: React.FC = () => {
           balance: isLiability ? -Math.abs(balance) : balance,
           estimatedYield: estimatedYield && estimatedYield > 0 ? estimatedYield : undefined,
           recurringDueDate: recurringDueDate && recurringDueDate >= 1 && recurringDueDate <= 31 ? recurringDueDate : undefined,
+          minMonthlyPayment: minMonthlyPayment && minMonthlyPayment > 0 ? minMonthlyPayment : undefined,
+          paymentToAvoidInterest: paymentToAvoidInterest && paymentToAvoidInterest > 0 ? paymentToAvoidInterest : undefined,
           excludeFromTotal,
         });
         importedCount++;
@@ -1577,7 +1625,7 @@ export const NetWorthPage: React.FC = () => {
                     onAdd={addAccount}
                     baseCurrency={baseCurrency}
                     enabledCurrencies={enabledCurrencies}
-                    colSpan={9}
+                    colSpan={11}
                   />
                 </tbody>
               </table>

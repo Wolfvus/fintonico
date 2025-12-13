@@ -89,8 +89,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   };
 
   // Filter incomes by selected date range
-  // Recurring income shows in all periods from creation date onwards
-  // One-time income only shows in the period it was created
+  // Recurring income: shows in periods from creation date onwards (not before)
+  // One-time income: only shows in the period it was created
   const filteredIncomes = useMemo(() => {
     return incomes.filter((income) => {
       const incomeDate = parseLocalDate(income.date);
@@ -100,16 +100,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         return incomeDate >= startDate && incomeDate <= endDate;
       } else {
         // Recurring: show if created on or before the end of the period
+        // AND the period is on or after the creation month
         return incomeDate <= endDate;
       }
     });
   }, [incomes, startDate, endDate]);
 
   // Filter expenses by selected date range
+  // Recurring expenses: shows in periods from creation date onwards (not before)
+  // One-time expenses: only shows in the period it was created
   const filteredExpenses = useMemo(() => {
     return expenses.filter((expense) => {
       const expenseDate = parseLocalDate(expense.date);
-      return expenseDate >= startDate && expenseDate <= endDate;
+
+      if (expense.recurring) {
+        // Recurring: show if created on or before the end of the period
+        return expenseDate <= endDate;
+      } else {
+        // One-time: must be within the date range
+        return expenseDate >= startDate && expenseDate <= endDate;
+      }
     });
   }, [expenses, startDate, endDate]);
 
@@ -138,13 +148,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     return breakdown;
   }, [filteredExpenses, convertAmount, baseCurrency]);
 
-  // Calculate recurring expenses total (for analytics)
+  // Calculate recurring expenses total for the period (only those created on or before the period)
   const recurringExpensesTotal = useMemo(() => {
-    const recurringExpenses = expenses.filter(e => e.recurring);
-    return recurringExpenses.reduce((total, expense) => {
-      return total + convertAmount(expense.amount, expense.currency, baseCurrency);
-    }, 0);
-  }, [expenses, convertAmount, baseCurrency]);
+    return filteredExpenses
+      .filter(e => e.recurring)
+      .reduce((total, expense) => {
+        return total + convertAmount(expense.amount, expense.currency, baseCurrency);
+      }, 0);
+  }, [filteredExpenses, convertAmount, baseCurrency]);
 
   // Calculate one-time expenses for period
   const oneTimeExpensesTotal = useMemo(() => {
@@ -155,7 +166,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       }, 0);
   }, [filteredExpenses, convertAmount, baseCurrency]);
 
-  // Total monthly burden (one-time + recurring)
+  // Total monthly burden (one-time + recurring for the period)
   const totalMonthlyExpenses = oneTimeExpensesTotal + recurringExpensesTotal;
 
 
