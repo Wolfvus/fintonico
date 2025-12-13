@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useAccountStore } from '../../stores/accountStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, ChevronRight, Check, EyeOff, X, Filter } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, ChevronRight, Check, EyeOff, X, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import type { AccountType, Account } from '../../types';
 import { CSVActions } from '../Shared/CSVActions';
 import { exportAccountsToCSV, parseAccountCSV, downloadCSV, readCSVFile } from '../../utils/csv';
@@ -858,6 +858,45 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({
   );
 };
 
+// Sort types for account tables
+type AssetSortColumn = 'value' | 'yield' | null;
+type LiabilitySortColumn = 'value' | 'dueDate' | null;
+type SortDirection = 'asc' | 'desc';
+
+// Sortable Column Header Component for Assets
+interface AssetSortableHeaderProps {
+  label: string;
+  column: 'value' | 'yield';
+  currentSort: AssetSortColumn;
+  direction: SortDirection;
+  onSort: (column: 'value' | 'yield') => void;
+  align?: 'left' | 'right';
+}
+
+const AssetSortableHeader: React.FC<AssetSortableHeaderProps> = ({ label, column, currentSort, direction, onSort, align = 'left' }) => {
+  const isActive = currentSort === column;
+
+  return (
+    <button
+      onClick={() => onSort(column)}
+      className={`flex items-center gap-1 text-xs font-medium transition-colors w-full ${
+        align === 'right' ? 'justify-end' : 'justify-start'
+      } ${isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+    >
+      <span>{label}</span>
+      {isActive ? (
+        direction === 'asc' ? (
+          <ArrowUp className="w-3 h-3" />
+        ) : (
+          <ArrowDown className="w-3 h-3" />
+        )
+      ) : (
+        <ArrowUpDown className="w-3 h-3 opacity-50" />
+      )}
+    </button>
+  );
+};
+
 // Assets Table Header with Toggle Filter (same pattern as Income/Expense)
 interface AssetsTableHeaderProps {
   nameFilter: string;
@@ -874,6 +913,9 @@ interface AssetsTableHeaderProps {
   onClearFilters: () => void;
   isOpen: boolean;
   onToggle: () => void;
+  sortColumn: AssetSortColumn;
+  sortDirection: SortDirection;
+  onSort: (column: 'value' | 'yield') => void;
 }
 
 const AssetsTableHeader: React.FC<AssetsTableHeaderProps> = ({
@@ -891,6 +933,9 @@ const AssetsTableHeader: React.FC<AssetsTableHeaderProps> = ({
   onClearFilters,
   isOpen,
   onToggle,
+  sortColumn,
+  sortDirection,
+  onSort,
 }) => {
   return (
     <thead>
@@ -904,11 +949,25 @@ const AssetsTableHeader: React.FC<AssetsTableHeaderProps> = ({
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
           Currency
         </th>
-        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-32">
-          Value
+        <th className="px-2 py-2 border-l border-gray-300 dark:border-gray-600 w-32">
+          <AssetSortableHeader
+            label="Value"
+            column="value"
+            currentSort={sortColumn}
+            direction={sortDirection}
+            onSort={onSort}
+            align="right"
+          />
         </th>
-        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-20">
-          Yield
+        <th className="px-2 py-2 border-l border-gray-300 dark:border-gray-600 w-20">
+          <AssetSortableHeader
+            label="Yield"
+            column="yield"
+            currentSort={sortColumn}
+            direction={sortDirection}
+            onSort={onSort}
+            align="right"
+          />
         </th>
         <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
           /Month
@@ -1174,6 +1233,10 @@ export const NetWorthPage: React.FC = () => {
   const [assetCurrencyFilter, setAssetCurrencyFilter] = useState('');
   const [assetExcludedFilter, setAssetExcludedFilter] = useState('');
 
+  // Asset sort states
+  const [assetSortColumn, setAssetSortColumn] = useState<AssetSortColumn>(null);
+  const [assetSortDirection, setAssetSortDirection] = useState<SortDirection>('desc');
+
   // Liability filter states
   const [liabilityNameFilter, setLiabilityNameFilter] = useState('');
   const [liabilityTypeFilter, setLiabilityTypeFilter] = useState('');
@@ -1189,6 +1252,16 @@ export const NetWorthPage: React.FC = () => {
     setAssetTypeFilter('');
     setAssetCurrencyFilter('');
     setAssetExcludedFilter('');
+  };
+
+  // Handle sort toggle for assets
+  const handleAssetSort = (column: 'value' | 'yield') => {
+    if (assetSortColumn === column) {
+      setAssetSortDirection(assetSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setAssetSortColumn(column);
+      setAssetSortDirection('desc');
+    }
   };
 
   const clearLiabilityFilters = () => {
@@ -1227,7 +1300,7 @@ export const NetWorthPage: React.FC = () => {
     [accounts]
   );
 
-  // Apply filters to assets
+  // Apply filters and sorting to assets
   const assetAccounts = useMemo(() => {
     return allAssetAccounts.filter((account) => {
       if (assetNameFilter && !account.name.toLowerCase().includes(assetNameFilter.toLowerCase())) {
@@ -1246,8 +1319,22 @@ export const NetWorthPage: React.FC = () => {
         return false;
       }
       return true;
+    }).sort((a, b) => {
+      // Apply custom sort if selected
+      if (assetSortColumn === 'value') {
+        const valueA = convertAmount(a.balance, a.currency, baseCurrency);
+        const valueB = convertAmount(b.balance, b.currency, baseCurrency);
+        return assetSortDirection === 'asc' ? valueA - valueB : valueB - valueA;
+      }
+      if (assetSortColumn === 'yield') {
+        const yieldA = a.estimatedYield || 0;
+        const yieldB = b.estimatedYield || 0;
+        return assetSortDirection === 'asc' ? yieldA - yieldB : yieldB - yieldA;
+      }
+      // Default sort: alphabetically by name
+      return a.name.localeCompare(b.name);
     });
-  }, [allAssetAccounts, assetNameFilter, assetTypeFilter, assetCurrencyFilter, assetExcludedFilter]);
+  }, [allAssetAccounts, assetNameFilter, assetTypeFilter, assetCurrencyFilter, assetExcludedFilter, assetSortColumn, assetSortDirection, convertAmount, baseCurrency]);
 
   // Apply filters to liabilities
   const liabilityAccounts = useMemo(() => {
@@ -1543,6 +1630,9 @@ export const NetWorthPage: React.FC = () => {
                 onClearFilters={clearAssetFilters}
                 isOpen={isAssetFilterOpen}
                 onToggle={() => setIsAssetFilterOpen(!isAssetFilterOpen)}
+                sortColumn={assetSortColumn}
+                sortDirection={assetSortDirection}
+                onSort={handleAssetSort}
               />
               <tbody>
                 {assetAccounts.map((account, index) => (

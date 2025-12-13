@@ -663,20 +663,26 @@ paymentToAvoidInterest?: number;   // Amount to pay to avoid interest charges
 - Sort by Amount converts to base currency for accurate comparison
 - Default sort: Recurring = alphabetical by description, Monthly = date descending
 
-### Step 4: Assets Table Sorting
+### Step 4: Assets Table Sorting ✅
 
 **Goal:** Add sortable columns to Assets table in NetWorthPage.
 
 | Task | Status |
 | --- | --- |
-| Add sort state for assets table | Planned |
-| Implement sort by Value/Balance (asc/desc) | Planned |
-| Implement sort by Yield (asc/desc) | Planned |
-| Add sort indicators to column headers | Planned |
+| Add sort state for assets table | ✅ |
+| Implement sort by Value/Balance (asc/desc) | ✅ |
+| Implement sort by Yield (asc/desc) | ✅ |
+| Add sort indicators to column headers | ✅ |
 
 **Sortable Columns:**
 - Value/Balance (numeric sort, converted to base currency)
 - Yield % (numeric sort)
+
+**Implementation Notes:**
+- Created `AssetSortableHeader` component with green accent color
+- Sort by Value converts to base currency for accurate comparison across currencies
+- Sort by Yield compares percentage values (defaults to 0 if undefined)
+- Default sort: alphabetically by account name
 
 ### Step 5: Liabilities Table Sorting
 
@@ -701,4 +707,4 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-12-12 (Phase 17 Step 3 completed)
+**Last Updated:** 2025-12-12 (Phase 17 Step 4 completed)
