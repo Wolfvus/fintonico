@@ -105,7 +105,7 @@ const LineChart: React.FC<LineChartProps> = ({ data, formatAmount }) => {
 
 export const NetWorthHistory: React.FC = () => {
   const { getHistory } = useSnapshotStore();
-  const { formatAmount, baseCurrency } = useCurrencyStore();
+  const { formatAmount } = useCurrencyStore();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [filterMonths, setFilterMonths] = useState<6 | 12 | 24 | 0>(12); // 0 = all

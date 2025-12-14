@@ -297,8 +297,9 @@ date,source,amount,currency,frequency
 
 **Accounts (Net Worth):**
 ```
-name,type,currency,balance,yield,due_date,excluded
-Savings,bank,MXN,100000,5.5,,false
+name,type,nature,currency,balance,yield,due_date,min_payment,no_interest_payment,excluded
+Savings,bank,asset,MXN,100000,5.5,,,,false
+Credit Card,credit-card,liability,USD,-5000,,15,200,5000,false
 ```
 
 **Chart of Accounts:**
@@ -705,29 +706,25 @@ paymentToAvoidInterest?: number;   // Amount to pay to avoid interest charges
 - Sort by Due Date compares recurringDueDate (1-31), accounts without due date sort to end
 - Default sort: alphabetically by account name
 
-### Step 6: Separate Assets & Liabilities CSV Export/Import (Planned)
+### Step 6: Separate Assets & Liabilities CSV Export/Import ✅
 
 **Goal:** Fix CSV export/import to properly handle assets and liabilities as separate entities.
 
-**Current Problem:**
-- Assets and liabilities are exported together in a single CSV file
-- When importing, the type field determines asset vs liability but:
-  - Liability-specific fields (min_payment, no_interest_payment, due_date) may be lost or mishandled
-  - Balance sign (positive for assets, negative for liabilities) may not be preserved correctly
-  - User confusion when editing mixed CSV file
-
-**Proposed Solution:**
+**Problem Solved:**
+- Assets and liabilities were exported together without clear distinction
+- Import relied on type field which didn't handle 'other' type correctly
+- Liability-specific fields could be incorrectly applied to assets
 
 | Task | Status |
 | --- | --- |
-| Add "nature" column to CSV (asset/liability) | ⬜ |
-| Update `exportAccountsToCSV` to include nature field | ⬜ |
-| Update `parseAccountCSV` to read nature field | ⬜ |
-| Validate liability-specific fields only for liabilities | ⬜ |
-| Auto-detect nature from type if nature column missing (backwards compat) | ⬜ |
-| Ensure negative balances for liabilities on import | ⬜ |
+| Add "nature" column to CSV (asset/liability) | ✅ |
+| Update `exportAccountsToCSV` to include nature field | ✅ |
+| Update `parseAccountCSV` to read nature field | ✅ |
+| Validate liability-specific fields only for liabilities | ✅ |
+| Auto-detect nature from type if nature column missing (backwards compat) | ✅ |
+| Ensure negative balances for liabilities on import | ✅ |
 
-**CSV Format Update:**
+**CSV Format:**
 ```
 name,type,nature,currency,balance,yield,due_date,min_payment,no_interest_payment,excluded
 Savings,bank,asset,MXN,100000,5.5,,,,false
@@ -737,13 +734,129 @@ Credit Card,credit-card,liability,USD,-5000,,15,200,5000,false
 **Type-to-Nature Mapping (for backwards compatibility):**
 - Asset types: `cash`, `bank`, `exchange`, `investment`, `property`
 - Liability types: `loan`, `credit-card`, `mortgage`
-- Ambiguous: `other` (requires explicit nature column or defaults to asset if balance >= 0)
+- Ambiguous: `other` (inferred from balance sign if nature column missing)
 
 **Implementation Notes:**
-- Export: Always include nature column for clarity
-- Import: If nature column missing, infer from type; if type is 'other', infer from balance sign
-- Liability fields (due_date, min_payment, no_interest_payment) ignored for assets
-- Balances for liabilities are stored as negative values internally
+- Added `inferNatureFromType()` helper function in csv.ts
+- Export always includes nature column for clarity
+- Import validates nature or infers from type/balance if missing
+- Asset-specific field: `estimatedYield` (only applied for assets)
+- Liability-specific fields: `recurringDueDate`, `minMonthlyPayment`, `paymentToAvoidInterest`
+- Balances for liabilities automatically converted to negative on import
+
+---
+
+## Phase 18: Net Worth Monthly View & Chart Improvements (Planned)
+
+**Goal:** Add month selector to Net Worth page for viewing/editing historical account balances, while maintaining data integrity. Improve the net worth history chart.
+
+### Design Considerations
+
+**Current State:**
+- Net Worth page shows CURRENT account balances only
+- Snapshots store monthly totals (net worth, assets, liabilities) but NOT per-account breakdown
+- No way to view or edit "what was my bank balance in October?"
+
+**Key Design Decisions:**
+
+1. **Month Selector Behavior:**
+   - View mode: See historical snapshot totals for any month
+   - Edit mode: Only current month accounts are editable
+   - Past months are read-only (view snapshot data only)
+
+2. **Account Balance History:**
+   - Store monthly balance snapshots per account (not just totals)
+   - `lastUpdated` remains system-managed (not user-editable)
+   - When user edits an account, it updates current balance AND creates/updates current month snapshot
+
+3. **Snapshot Enhancement:**
+   - Extend snapshot store to include per-account balances
+   - Allows viewing "which accounts made up this month's net worth"
+
+### Step 1: Account Balance History Store (Planned)
+
+**Goal:** Track historical account balances by month.
+
+| Task | Status |
+| --- | --- |
+| Create `accountHistoryStore` or extend `snapshotStore` | ⬜ |
+| Store monthly account balances: `{ monthEnd, accountId, balance }` | ⬜ |
+| Auto-capture account balances when snapshot is created | ⬜ |
+| Migration: backfill from current accounts for current month | ⬜ |
+
+**Data Structure:**
+```typescript
+interface AccountSnapshot {
+  accountId: string;
+  balance: number;
+  // Reference data (in case account is deleted later)
+  accountName: string;
+  accountType: string;
+  currency: string;
+}
+
+interface EnhancedNetWorthSnapshot {
+  monthEndLocal: string;
+  netWorthBase: number;
+  totalsByNature: Record<AccountNature, number>;
+  accountSnapshots: AccountSnapshot[]; // NEW: per-account breakdown
+  createdAt: string;
+}
+```
+
+### Step 2: Month Selector UI (Planned)
+
+**Goal:** Add month navigation to Net Worth page.
+
+| Task | Status |
+| --- | --- |
+| Add sticky month selector (same style as Income/Expenses) | ⬜ |
+| Current month: Show live editable accounts | ⬜ |
+| Past months: Show read-only account snapshot | ⬜ |
+| Visual indicator for view-only mode (past months) | ⬜ |
+| Summary cards update based on selected month | ⬜ |
+
+**UI Behavior:**
+- **Current month selected:** Tables are editable, shows live data
+- **Past month selected:** Tables are read-only, shows snapshot data
+- **Future month selected:** Not allowed (disabled in selector)
+
+### Step 3: Net Worth Chart Improvements (Planned)
+
+**Goal:** Enhance the history chart with better visualization.
+
+| Task | Status |
+| --- | --- |
+| Add Y-axis labels with formatted amounts | ⬜ |
+| Add intermediate X-axis labels for longer ranges | ⬜ |
+| Show assets/liabilities as separate lines (toggle) | ⬜ |
+| Improve tooltip positioning (follow mouse) | ⬜ |
+| Add responsive breakpoints for chart height | ⬜ |
+| Optional: Bar chart toggle for monthly comparison | ⬜ |
+
+**Chart Enhancements:**
+- Green line for assets trend
+- Red line for liabilities trend
+- Gray/blue line for net worth (assets - liabilities)
+- Toggle to show/hide individual lines
+- Proper axis scaling and grid lines
+
+### Step 4: Data Integrity & Edge Cases (Planned)
+
+**Goal:** Handle edge cases gracefully.
+
+| Task | Status |
+| --- | --- |
+| Prevent manual `lastUpdated` edits (system-only field) | ⬜ |
+| Handle deleted accounts in historical snapshots | ⬜ |
+| Handle currency changes (store original currency in snapshot) | ⬜ |
+| "No data for this month" empty state | ⬜ |
+
+**Integrity Rules:**
+- `lastUpdated` is set automatically when balance changes
+- Historical snapshots are immutable (cannot edit past months)
+- If account was deleted, historical snapshot still shows its data
+- Currency conversion uses current rates (historical rates not tracked)
 
 ---
 
@@ -753,4 +866,4 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-12-14 (Phase 17 Step 6 planned)
+**Last Updated:** 2025-12-14 (Phase 18 planned)

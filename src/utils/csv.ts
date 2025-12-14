@@ -276,6 +276,7 @@ export const parseIncomeCSV = (
 export interface AccountCSVRow {
   name: string;
   type: string;
+  nature: string;
   currency: string;
   balance: string;
   yield: string;
@@ -285,7 +286,18 @@ export interface AccountCSVRow {
   excluded: string;
 }
 
-export const ACCOUNT_CSV_HEADERS = ['name', 'type', 'currency', 'balance', 'yield', 'due_date', 'min_payment', 'no_interest_payment', 'excluded'];
+export const ACCOUNT_CSV_HEADERS = ['name', 'type', 'nature', 'currency', 'balance', 'yield', 'due_date', 'min_payment', 'no_interest_payment', 'excluded'];
+
+// Type-to-nature mapping for backwards compatibility
+const ASSET_TYPES = ['cash', 'bank', 'exchange', 'investment', 'property'];
+const LIABILITY_TYPES = ['loan', 'credit-card', 'mortgage'];
+
+export const inferNatureFromType = (type: string, balance: number): 'asset' | 'liability' => {
+  if (ASSET_TYPES.includes(type)) return 'asset';
+  if (LIABILITY_TYPES.includes(type)) return 'liability';
+  // For 'other' type, infer from balance sign
+  return balance >= 0 ? 'asset' : 'liability';
+};
 
 export const exportAccountsToCSV = (
   accounts: Array<{
@@ -304,6 +316,7 @@ export const exportAccountsToCSV = (
     accounts.map((a) => ({
       name: a.name,
       type: a.type,
+      nature: inferNatureFromType(a.type, a.balance),
       currency: a.currency,
       balance: a.balance,
       yield: a.estimatedYield ?? '',
@@ -315,6 +328,7 @@ export const exportAccountsToCSV = (
     [
       { key: 'name', header: 'name' },
       { key: 'type', header: 'type' },
+      { key: 'nature', header: 'nature' },
       { key: 'currency', header: 'currency' },
       { key: 'balance', header: 'balance' },
       { key: 'yield', header: 'yield' },
@@ -329,9 +343,27 @@ export const exportAccountsToCSV = (
 export const parseAccountCSV = (
   csvString: string
 ): { data: AccountCSVRow[]; errors: string[] } => {
+  // Only require core fields - nature is optional for backwards compatibility
   const result = parseCSV(csvString, ['name', 'type', 'currency', 'balance']);
+
+  // Process each row to ensure nature field exists
+  const processedData = result.data.map((row) => {
+    const balance = parseFloat(row.balance) || 0;
+    let nature = row.nature?.toLowerCase().trim();
+
+    // Validate nature or infer from type/balance
+    if (nature !== 'asset' && nature !== 'liability') {
+      nature = inferNatureFromType(row.type, balance);
+    }
+
+    return {
+      ...row,
+      nature,
+    } as AccountCSVRow;
+  });
+
   return {
-    data: result.data as unknown as AccountCSVRow[],
+    data: processedData,
     errors: result.errors,
   };
 };

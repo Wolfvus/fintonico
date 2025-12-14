@@ -460,45 +460,43 @@ export const getCurrentMonthSavingsPotential = () => {
 };
 
 // Month-over-Month change selector
-export const getMoMChange = (monthEnd?: string) => {
+// Compares LIVE net worth vs previous month's snapshot for real-time updates
+export const getMoMChange = () => {
   const snapshotStore = useSnapshotStore.getState();
-  
-  // Get target month (default to current month)
-  const targetMonthEnd = monthEnd || (() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  })();
-  
+  const now = new Date();
+
   // Get previous month
-  const [year, month] = targetMonthEnd.split('-').map(Number);
-  const prevDate = new Date(year, month - 1, 1); // Go to previous month
+  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const prevMonthEnd = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
-  
-  // Get snapshots
-  const currentSnapshot = snapshotStore.getSnapshot(targetMonthEnd);
+
+  // Get previous month's snapshot
   const previousSnapshot = snapshotStore.getSnapshot(prevMonthEnd);
-  
-  // Fallback if no data available
-  if (!currentSnapshot || !previousSnapshot) {
+
+  // Get LIVE current net worth (not from snapshot)
+  const liveNetWorth = getNetWorthAt(now);
+  const currentValue = liveNetWorth.netWorth.toMajorUnits();
+
+  // Fallback if no previous data available
+  if (!previousSnapshot) {
     return {
       deltaAbs: null,
       deltaPct: null,
       hasPreviousData: false,
-      currentValue: currentSnapshot?.netWorthBase || null,
-      previousValue: previousSnapshot?.netWorthBase || null
+      currentValue,
+      previousValue: null
     };
   }
-  
-  const deltaAbs = currentSnapshot.netWorthBase - previousSnapshot.netWorthBase;
-  const deltaPct = previousSnapshot.netWorthBase !== 0 
-    ? (deltaAbs / Math.abs(previousSnapshot.netWorthBase)) * 100 
+
+  const deltaAbs = currentValue - previousSnapshot.netWorthBase;
+  const deltaPct = previousSnapshot.netWorthBase !== 0
+    ? (deltaAbs / Math.abs(previousSnapshot.netWorthBase)) * 100
     : 0;
-  
+
   return {
     deltaAbs,
     deltaPct,
     hasPreviousData: true,
-    currentValue: currentSnapshot.netWorthBase,
+    currentValue,
     previousValue: previousSnapshot.netWorthBase
   };
 };

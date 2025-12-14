@@ -4,6 +4,7 @@ import { useIncomeStore } from '../stores/incomeStore';
 import { useAccountStore } from '../stores/accountStore';
 import { useCurrencyStore } from '../stores/currencyStore';
 import { useLedgerAccountStore } from '../stores/ledgerAccountStore';
+import { useSnapshotStore } from '../stores/snapshotStore';
 
 const PERSIST_KEYS = [
   'fintonico-currency',
@@ -24,13 +25,14 @@ export const clearMockData = async (): Promise<void> => {
   useIncomeStore.setState({ incomes: [], loading: false });
   useAccountStore.setState({ accounts: [] });
   useLedgerAccountStore.setState({ accounts: [] });
+  useSnapshotStore.setState({ snapshots: [] });
 
   useCurrencyStore.setState((state) => ({
     ...state,
     baseCurrency: 'MXN',
     enabledCurrencies: ['MXN', 'USD', 'EUR', 'BTC', 'ETH'],
-    exchangeRates: { MXN: 1 },
-    lastUpdated: null,
+    exchangeRates: { MXN: 1, USD: 20.5, EUR: 22.0 },
+    lastUpdated: Date.now(),
     loading: false,
     error: null,
   }));
@@ -65,6 +67,7 @@ export const seedMockData = async (): Promise<void> => {
       type: 'bank' as const,
       currency: 'MXN',
       balance: 120000,
+      estimatedYield: 5.2,
     },
     {
       name: 'Brokerage Account',
@@ -92,6 +95,8 @@ export const seedMockData = async (): Promise<void> => {
       currency: 'MXN',
       balance: -8500,
       recurringDueDate: 15,
+      minMonthlyPayment: 850,
+      paymentToAvoidInterest: 8500,
     },
     {
       name: 'Visa Infinite',
@@ -99,6 +104,16 @@ export const seedMockData = async (): Promise<void> => {
       currency: 'MXN',
       balance: -3200,
       recurringDueDate: 20,
+      minMonthlyPayment: 320,
+      paymentToAvoidInterest: 3200,
+    },
+    {
+      name: 'Car Loan',
+      type: 'loan' as const,
+      currency: 'MXN',
+      balance: -85000,
+      recurringDueDate: 5,
+      minMonthlyPayment: 4500,
     },
   ];
 
@@ -226,4 +241,45 @@ export const seedMockData = async (): Promise<void> => {
   for (const expense of expenseFixtures) {
     await expenseStore.addExpense(expense);
   }
+
+  // Seed historical net worth snapshots for testing
+  // This shows net worth growing over time
+  const snapshotStore = useSnapshotStore.getState();
+  const historicalSnapshots = [
+    {
+      monthEndLocal: '2025-07',
+      netWorthBase: 320000,
+      totalsByNature: { asset: 380000, liability: -60000, income: 0, expense: 0, equity: 0 },
+      createdAt: '2025-07-31T23:59:59.000Z',
+    },
+    {
+      monthEndLocal: '2025-08',
+      netWorthBase: 335000,
+      totalsByNature: { asset: 400000, liability: -65000, income: 0, expense: 0, equity: 0 },
+      createdAt: '2025-08-31T23:59:59.000Z',
+    },
+    {
+      monthEndLocal: '2025-09',
+      netWorthBase: 348000,
+      totalsByNature: { asset: 420000, liability: -72000, income: 0, expense: 0, equity: 0 },
+      createdAt: '2025-09-30T23:59:59.000Z',
+    },
+    {
+      monthEndLocal: '2025-10',
+      netWorthBase: 362000,
+      totalsByNature: { asset: 445000, liability: -83000, income: 0, expense: 0, equity: 0 },
+      createdAt: '2025-10-31T23:59:59.000Z',
+    },
+    {
+      monthEndLocal: '2025-11',
+      netWorthBase: 378000,
+      totalsByNature: { asset: 470000, liability: -92000, income: 0, expense: 0, equity: 0 },
+      createdAt: '2025-11-30T23:59:59.000Z',
+    },
+  ];
+
+  useSnapshotStore.setState({ snapshots: historicalSnapshots });
+
+  // Create current month snapshot based on actual account data
+  await snapshotStore.createSnapshot();
 };

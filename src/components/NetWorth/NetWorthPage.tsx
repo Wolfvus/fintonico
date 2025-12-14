@@ -1574,16 +1574,19 @@ export const NetWorthPage: React.FC = () => {
         const excludeFromTotal = row.excluded?.toLowerCase() === 'true';
 
         // Add the account (balance is negative for liabilities)
-        const isLiability = ['loan', 'credit-card', 'mortgage'].includes(accountType);
+        // Use nature field from CSV (already validated/inferred by parseAccountCSV)
+        const isLiability = row.nature === 'liability';
         addAccount({
           name: row.name,
           type: accountType as AccountType,
           currency,
           balance: isLiability ? -Math.abs(balance) : balance,
-          estimatedYield: estimatedYield && estimatedYield > 0 ? estimatedYield : undefined,
-          recurringDueDate: recurringDueDate && recurringDueDate >= 1 && recurringDueDate <= 31 ? recurringDueDate : undefined,
-          minMonthlyPayment: minMonthlyPayment && minMonthlyPayment > 0 ? minMonthlyPayment : undefined,
-          paymentToAvoidInterest: paymentToAvoidInterest && paymentToAvoidInterest > 0 ? paymentToAvoidInterest : undefined,
+          // Asset-specific field
+          estimatedYield: !isLiability && estimatedYield && estimatedYield > 0 ? estimatedYield : undefined,
+          // Liability-specific fields
+          recurringDueDate: isLiability && recurringDueDate && recurringDueDate >= 1 && recurringDueDate <= 31 ? recurringDueDate : undefined,
+          minMonthlyPayment: isLiability && minMonthlyPayment && minMonthlyPayment > 0 ? minMonthlyPayment : undefined,
+          paymentToAvoidInterest: isLiability && paymentToAvoidInterest && paymentToAvoidInterest > 0 ? paymentToAvoidInterest : undefined,
           excludeFromTotal,
         });
         importedCount++;
