@@ -705,6 +705,46 @@ paymentToAvoidInterest?: number;   // Amount to pay to avoid interest charges
 - Sort by Due Date compares recurringDueDate (1-31), accounts without due date sort to end
 - Default sort: alphabetically by account name
 
+### Step 6: Separate Assets & Liabilities CSV Export/Import (Planned)
+
+**Goal:** Fix CSV export/import to properly handle assets and liabilities as separate entities.
+
+**Current Problem:**
+- Assets and liabilities are exported together in a single CSV file
+- When importing, the type field determines asset vs liability but:
+  - Liability-specific fields (min_payment, no_interest_payment, due_date) may be lost or mishandled
+  - Balance sign (positive for assets, negative for liabilities) may not be preserved correctly
+  - User confusion when editing mixed CSV file
+
+**Proposed Solution:**
+
+| Task | Status |
+| --- | --- |
+| Add "nature" column to CSV (asset/liability) | ⬜ |
+| Update `exportAccountsToCSV` to include nature field | ⬜ |
+| Update `parseAccountCSV` to read nature field | ⬜ |
+| Validate liability-specific fields only for liabilities | ⬜ |
+| Auto-detect nature from type if nature column missing (backwards compat) | ⬜ |
+| Ensure negative balances for liabilities on import | ⬜ |
+
+**CSV Format Update:**
+```
+name,type,nature,currency,balance,yield,due_date,min_payment,no_interest_payment,excluded
+Savings,bank,asset,MXN,100000,5.5,,,,false
+Credit Card,credit-card,liability,USD,-5000,,15,200,5000,false
+```
+
+**Type-to-Nature Mapping (for backwards compatibility):**
+- Asset types: `cash`, `bank`, `exchange`, `investment`, `property`
+- Liability types: `loan`, `credit-card`, `mortgage`
+- Ambiguous: `other` (requires explicit nature column or defaults to asset if balance >= 0)
+
+**Implementation Notes:**
+- Export: Always include nature column for clarity
+- Import: If nature column missing, infer from type; if type is 'other', infer from balance sign
+- Liability fields (due_date, min_payment, no_interest_payment) ignored for assets
+- Balances for liabilities are stored as negative values internally
+
 ---
 
 ## Future Phases
@@ -713,4 +753,4 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-12-12 (Phase 17 completed)
+**Last Updated:** 2025-12-14 (Phase 17 Step 6 planned)
