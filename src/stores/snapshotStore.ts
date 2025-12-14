@@ -2,11 +2,27 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getNetWorthAt } from '../selectors/finance';
 import type { AccountNature } from '../domain/ledger';
+import { useAccountStore } from './accountStore';
+import { useCurrencyStore } from './currencyStore';
+import type { AccountType } from '../types';
+
+// Per-account snapshot for historical tracking
+export interface AccountSnapshot {
+  accountId: string;
+  balance: number; // Balance in original currency
+  balanceBase: number; // Balance converted to base currency
+  // Reference data preserved in case account is later deleted/renamed
+  accountName: string;
+  accountType: AccountType;
+  currency: string;
+  nature: 'asset' | 'liability';
+}
 
 export interface NetWorthSnapshot {
   monthEndLocal: string; // YYYY-MM format (local month end)
   netWorthBase: number; // Net worth in base currency
   totalsByNature: Record<AccountNature, number>; // Totals by account nature in base currency
+  accountSnapshots?: AccountSnapshot[]; // Per-account breakdown (optional for backwards compat)
   createdAt: string; // ISO timestamp when snapshot was created
 }
 
@@ -27,6 +43,14 @@ const getMonthEndString = (date: Date = new Date()): string => {
 const getMonthEndDate = (monthEndString: string): Date => {
   const [year, month] = monthEndString.split('-').map(Number);
   return new Date(year, month, 0, 23, 59, 59, 999); // Last day of the month
+};
+
+// Determine if account type is an asset or liability
+const LIABILITY_TYPES = ['loan', 'credit-card', 'mortgage'];
+const getNatureFromType = (type: string, balance: number): 'asset' | 'liability' => {
+  if (LIABILITY_TYPES.includes(type)) return 'liability';
+  if (type === 'other') return balance < 0 ? 'liability' : 'asset';
+  return 'asset';
 };
 
 export const useSnapshotStore = create<SnapshotState>()(
@@ -56,33 +80,50 @@ export const useSnapshotStore = create<SnapshotState>()(
       createSnapshot: async (monthEnd?: string) => {
         const monthEndString = monthEnd || getMonthEndString();
         const monthEndDate = getMonthEndDate(monthEndString);
-        
+
         // Get net worth data at month end
         const netWorthData = getNetWorthAt(monthEndDate);
-        
+
         // Calculate totals by account nature
         const totalsByNature: Record<AccountNature, number> = {
-          asset: netWorthData.breakdown.ledger.assets.toMajorUnits() + 
+          asset: netWorthData.breakdown.ledger.assets.toMajorUnits() +
                  netWorthData.breakdown.external.assets.toMajorUnits(),
-          liability: netWorthData.breakdown.ledger.liabilities.toMajorUnits() + 
+          liability: netWorthData.breakdown.ledger.liabilities.toMajorUnits() +
                     netWorthData.breakdown.external.liabilities.toMajorUnits(),
           income: 0, // Income/expense are flow accounts, not balance sheet items
           expense: 0,
           equity: 0 // Equity is typically calculated as assets - liabilities
         };
 
+        // Capture per-account balances
+        const accounts = useAccountStore.getState().accounts;
+        const { convertAmount, baseCurrency } = useCurrencyStore.getState();
+
+        const accountSnapshots: AccountSnapshot[] = accounts
+          .filter(a => !a.excludeFromTotal) // Only include accounts that count toward net worth
+          .map(account => ({
+            accountId: account.id,
+            balance: account.balance,
+            balanceBase: convertAmount(account.balance, account.currency, baseCurrency),
+            accountName: account.name,
+            accountType: account.type,
+            currency: account.currency,
+            nature: getNatureFromType(account.type, account.balance),
+          }));
+
         const snapshot: NetWorthSnapshot = {
           monthEndLocal: monthEndString,
           netWorthBase: netWorthData.netWorth.toMajorUnits(),
           totalsByNature,
+          accountSnapshots,
           createdAt: new Date().toISOString()
         };
 
         // Remove existing snapshot for the same month if it exists
         const existingSnapshots = get().snapshots.filter(s => s.monthEndLocal !== monthEndString);
-        
+
         set({
-          snapshots: [...existingSnapshots, snapshot].sort((a, b) => 
+          snapshots: [...existingSnapshots, snapshot].sort((a, b) =>
             a.monthEndLocal.localeCompare(b.monthEndLocal)
           )
         });
@@ -103,7 +144,22 @@ export const useSnapshotStore = create<SnapshotState>()(
     }),
     {
       name: 'fintonico-snapshots',
-      version: 1
+      version: 2,
+      migrate: (persistedState: unknown, version: number) => {
+        const state = persistedState as { snapshots?: NetWorthSnapshot[] };
+
+        if (version < 2) {
+          // Migration from v1 to v2: add empty accountSnapshots to existing snapshots
+          if (state.snapshots) {
+            state.snapshots = state.snapshots.map(snapshot => ({
+              ...snapshot,
+              accountSnapshots: snapshot.accountSnapshots || [],
+            }));
+          }
+        }
+
+        return state as SnapshotState;
+      },
     }
   )
 );

@@ -773,36 +773,45 @@ Credit Card,credit-card,liability,USD,-5000,,15,200,5000,false
    - Extend snapshot store to include per-account balances
    - Allows viewing "which accounts made up this month's net worth"
 
-### Step 1: Account Balance History Store (Planned)
+### Step 1: Account Balance History Store ✅
 
 **Goal:** Track historical account balances by month.
 
 | Task | Status |
 | --- | --- |
-| Create `accountHistoryStore` or extend `snapshotStore` | ⬜ |
-| Store monthly account balances: `{ monthEnd, accountId, balance }` | ⬜ |
-| Auto-capture account balances when snapshot is created | ⬜ |
-| Migration: backfill from current accounts for current month | ⬜ |
+| Extend `snapshotStore` with `AccountSnapshot` interface | ✅ |
+| Store monthly account balances with currency conversion | ✅ |
+| Auto-capture account balances when snapshot is created | ✅ |
+| Migration v1→v2: add empty accountSnapshots to existing data | ✅ |
+| Update mock data with historical account snapshots | ✅ |
 
 **Data Structure:**
 ```typescript
 interface AccountSnapshot {
   accountId: string;
-  balance: number;
-  // Reference data (in case account is deleted later)
-  accountName: string;
-  accountType: string;
+  balance: number;        // Balance in original currency
+  balanceBase: number;    // Balance converted to base currency
+  accountName: string;    // Preserved in case account is deleted
+  accountType: AccountType;
   currency: string;
+  nature: 'asset' | 'liability';
 }
 
-interface EnhancedNetWorthSnapshot {
+interface NetWorthSnapshot {
   monthEndLocal: string;
   netWorthBase: number;
   totalsByNature: Record<AccountNature, number>;
-  accountSnapshots: AccountSnapshot[]; // NEW: per-account breakdown
+  accountSnapshots?: AccountSnapshot[]; // Per-account breakdown
   createdAt: string;
 }
 ```
+
+**Implementation Notes:**
+- Extended `snapshotStore.ts` with `AccountSnapshot` interface
+- `createSnapshot()` now captures all non-excluded accounts
+- Each account snapshot includes both original and base currency balances
+- Nature (asset/liability) is determined by account type
+- Mock data includes 5 months of historical account snapshots showing growth
 
 ### Step 2: Month Selector UI (Planned)
 
@@ -866,4 +875,4 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-12-14 (Phase 18 planned)
+**Last Updated:** 2025-12-14 (Phase 18 Step 1 completed)

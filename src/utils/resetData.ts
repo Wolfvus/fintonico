@@ -243,37 +243,62 @@ export const seedMockData = async (): Promise<void> => {
   }
 
   // Seed historical net worth snapshots for testing
-  // This shows net worth growing over time
+  // This shows net worth growing over time with per-account breakdown
   const snapshotStore = useSnapshotStore.getState();
+
+  // Helper to create historical account snapshots with progressive values
+  const createHistoricalAccountSnapshots = (monthIndex: number) => {
+    // monthIndex: 0=July, 1=Aug, 2=Sep, 3=Oct, 4=Nov
+    // Assets grow over time, liabilities shrink
+    const growthFactor = 1 + (monthIndex * 0.03); // 3% growth per month
+    const debtReduction = 1 - (monthIndex * 0.02); // 2% debt reduction per month
+
+    return [
+      { accountId: 'mock-bbva', balance: Math.round(35000 * growthFactor), balanceBase: Math.round(35000 * growthFactor), accountName: 'BBVA Checking', accountType: 'bank' as const, currency: 'MXN', nature: 'asset' as const },
+      { accountId: 'mock-banorte', balance: Math.round(100000 * growthFactor), balanceBase: Math.round(100000 * growthFactor), accountName: 'Banorte Savings', accountType: 'bank' as const, currency: 'MXN', nature: 'asset' as const },
+      { accountId: 'mock-brokerage', balance: Math.round(10000 * growthFactor), balanceBase: Math.round(10000 * growthFactor * 20.5), accountName: 'Brokerage Account', accountType: 'investment' as const, currency: 'USD', nature: 'asset' as const },
+      { accountId: 'mock-gbm', balance: Math.round(40000 * growthFactor), balanceBase: Math.round(40000 * growthFactor), accountName: 'GBM+ CETES', accountType: 'investment' as const, currency: 'MXN', nature: 'asset' as const },
+      { accountId: 'mock-emergency', balance: Math.round(20000 * growthFactor), balanceBase: Math.round(20000 * growthFactor), accountName: 'Emergency Fund', accountType: 'cash' as const, currency: 'MXN', nature: 'asset' as const },
+      { accountId: 'mock-amex', balance: Math.round(-12000 * debtReduction), balanceBase: Math.round(-12000 * debtReduction), accountName: 'AMEX Gold', accountType: 'credit-card' as const, currency: 'MXN', nature: 'liability' as const },
+      { accountId: 'mock-visa', balance: Math.round(-5000 * debtReduction), balanceBase: Math.round(-5000 * debtReduction), accountName: 'Visa Infinite', accountType: 'credit-card' as const, currency: 'MXN', nature: 'liability' as const },
+      { accountId: 'mock-car', balance: Math.round(-95000 * debtReduction), balanceBase: Math.round(-95000 * debtReduction), accountName: 'Car Loan', accountType: 'loan' as const, currency: 'MXN', nature: 'liability' as const },
+    ];
+  };
+
   const historicalSnapshots = [
     {
       monthEndLocal: '2025-07',
       netWorthBase: 320000,
       totalsByNature: { asset: 380000, liability: -60000, income: 0, expense: 0, equity: 0 },
+      accountSnapshots: createHistoricalAccountSnapshots(0),
       createdAt: '2025-07-31T23:59:59.000Z',
     },
     {
       monthEndLocal: '2025-08',
       netWorthBase: 335000,
       totalsByNature: { asset: 400000, liability: -65000, income: 0, expense: 0, equity: 0 },
+      accountSnapshots: createHistoricalAccountSnapshots(1),
       createdAt: '2025-08-31T23:59:59.000Z',
     },
     {
       monthEndLocal: '2025-09',
       netWorthBase: 348000,
       totalsByNature: { asset: 420000, liability: -72000, income: 0, expense: 0, equity: 0 },
+      accountSnapshots: createHistoricalAccountSnapshots(2),
       createdAt: '2025-09-30T23:59:59.000Z',
     },
     {
       monthEndLocal: '2025-10',
       netWorthBase: 362000,
       totalsByNature: { asset: 445000, liability: -83000, income: 0, expense: 0, equity: 0 },
+      accountSnapshots: createHistoricalAccountSnapshots(3),
       createdAt: '2025-10-31T23:59:59.000Z',
     },
     {
       monthEndLocal: '2025-11',
       netWorthBase: 378000,
       totalsByNature: { asset: 470000, liability: -92000, income: 0, expense: 0, equity: 0 },
+      accountSnapshots: createHistoricalAccountSnapshots(4),
       createdAt: '2025-11-30T23:59:59.000Z',
     },
   ];
