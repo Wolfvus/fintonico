@@ -684,20 +684,26 @@ paymentToAvoidInterest?: number;   // Amount to pay to avoid interest charges
 - Sort by Yield compares percentage values (defaults to 0 if undefined)
 - Default sort: alphabetically by account name
 
-### Step 5: Liabilities Table Sorting
+### Step 5: Liabilities Table Sorting ✅
 
 **Goal:** Add sortable columns to Liabilities table in NetWorthPage.
 
 | Task | Status |
 | --- | --- |
-| Add sort state for liabilities table | Planned |
-| Implement sort by Value/Balance (asc/desc) | Planned |
-| Implement sort by Due Date (asc/desc) | Planned |
-| Add sort indicators to column headers | Planned |
+| Add sort state for liabilities table | ✅ |
+| Implement sort by Value/Balance (asc/desc) | ✅ |
+| Implement sort by Due Date (asc/desc) | ✅ |
+| Add sort indicators to column headers | ✅ |
 
 **Sortable Columns:**
 - Value/Balance (numeric sort, converted to base currency)
-- Due Date (date/day-of-month sort)
+- Due Date (day-of-month sort, no due date sorts to end)
+
+**Implementation Notes:**
+- Created `LiabilitySortableHeader` component with red accent color
+- Sort by Balance uses absolute value for consistent comparison (liabilities are stored negative)
+- Sort by Due Date compares recurringDueDate (1-31), accounts without due date sort to end
+- Default sort: alphabetically by account name
 
 ---
 
@@ -707,4 +713,4 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-12-12 (Phase 17 Step 4 completed)
+**Last Updated:** 2025-12-12 (Phase 17 completed)

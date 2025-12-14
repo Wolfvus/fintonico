@@ -897,6 +897,40 @@ const AssetSortableHeader: React.FC<AssetSortableHeaderProps> = ({ label, column
   );
 };
 
+// Sortable Column Header Component for Liabilities
+interface LiabilitySortableHeaderProps {
+  label: string;
+  column: 'value' | 'dueDate';
+  currentSort: LiabilitySortColumn;
+  direction: SortDirection;
+  onSort: (column: 'value' | 'dueDate') => void;
+  align?: 'left' | 'right' | 'center';
+}
+
+const LiabilitySortableHeader: React.FC<LiabilitySortableHeaderProps> = ({ label, column, currentSort, direction, onSort, align = 'left' }) => {
+  const isActive = currentSort === column;
+
+  return (
+    <button
+      onClick={() => onSort(column)}
+      className={`flex items-center gap-1 text-xs font-medium transition-colors w-full ${
+        align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : 'justify-start'
+      } ${isActive ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+    >
+      <span>{label}</span>
+      {isActive ? (
+        direction === 'asc' ? (
+          <ArrowUp className="w-3 h-3" />
+        ) : (
+          <ArrowDown className="w-3 h-3" />
+        )
+      ) : (
+        <ArrowUpDown className="w-3 h-3 opacity-50" />
+      )}
+    </button>
+  );
+};
+
 // Assets Table Header with Toggle Filter (same pattern as Income/Expense)
 interface AssetsTableHeaderProps {
   nameFilter: string;
@@ -1075,6 +1109,9 @@ interface LiabilitiesTableHeaderProps {
   onClearFilters: () => void;
   isOpen: boolean;
   onToggle: () => void;
+  sortColumn: LiabilitySortColumn;
+  sortDirection: SortDirection;
+  onSort: (column: 'value' | 'dueDate') => void;
 }
 
 const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
@@ -1094,6 +1131,9 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
   onClearFilters,
   isOpen,
   onToggle,
+  sortColumn,
+  sortDirection,
+  onSort,
 }) => {
   return (
     <thead>
@@ -1107,8 +1147,15 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
           Currency
         </th>
-        <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-28">
-          Balance
+        <th className="px-2 py-2 border-l border-gray-300 dark:border-gray-600 w-28">
+          <LiabilitySortableHeader
+            label="Balance"
+            column="value"
+            currentSort={sortColumn}
+            direction={sortDirection}
+            onSort={onSort}
+            align="right"
+          />
         </th>
         <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
           Min Pay
@@ -1116,8 +1163,15 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
         <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24" title="Payment to avoid interest">
           No Interest
         </th>
-        <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 w-16">
-          Due
+        <th className="px-2 py-2 border-l border-gray-300 dark:border-gray-600 w-16">
+          <LiabilitySortableHeader
+            label="Due"
+            column="dueDate"
+            currentSort={sortColumn}
+            direction={sortDirection}
+            onSort={onSort}
+            align="center"
+          />
         </th>
         <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-12">
           Paid
@@ -1244,6 +1298,10 @@ export const NetWorthPage: React.FC = () => {
   const [liabilityPaidFilter, setLiabilityPaidFilter] = useState('');
   const [liabilityExcludedFilter, setLiabilityExcludedFilter] = useState('');
 
+  // Liability sort states
+  const [liabilitySortColumn, setLiabilitySortColumn] = useState<LiabilitySortColumn>(null);
+  const [liabilitySortDirection, setLiabilitySortDirection] = useState<SortDirection>('desc');
+
   const hasAssetFilters = assetNameFilter !== '' || assetTypeFilter !== '' || assetCurrencyFilter !== '' || assetExcludedFilter !== '';
   const hasLiabilityFilters = liabilityNameFilter !== '' || liabilityTypeFilter !== '' || liabilityCurrencyFilter !== '' || liabilityPaidFilter !== '' || liabilityExcludedFilter !== '';
 
@@ -1261,6 +1319,16 @@ export const NetWorthPage: React.FC = () => {
     } else {
       setAssetSortColumn(column);
       setAssetSortDirection('desc');
+    }
+  };
+
+  // Handle sort toggle for liabilities
+  const handleLiabilitySort = (column: 'value' | 'dueDate') => {
+    if (liabilitySortColumn === column) {
+      setLiabilitySortDirection(liabilitySortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setLiabilitySortColumn(column);
+      setLiabilitySortDirection('desc');
     }
   };
 
@@ -1336,7 +1404,7 @@ export const NetWorthPage: React.FC = () => {
     });
   }, [allAssetAccounts, assetNameFilter, assetTypeFilter, assetCurrencyFilter, assetExcludedFilter, assetSortColumn, assetSortDirection, convertAmount, baseCurrency]);
 
-  // Apply filters to liabilities
+  // Apply filters and sorting to liabilities
   const liabilityAccounts = useMemo(() => {
     return allLiabilityAccounts.filter((account) => {
       if (liabilityNameFilter && !account.name.toLowerCase().includes(liabilityNameFilter.toLowerCase())) {
@@ -1361,8 +1429,23 @@ export const NetWorthPage: React.FC = () => {
         return false;
       }
       return true;
+    }).sort((a, b) => {
+      // Apply custom sort if selected
+      if (liabilitySortColumn === 'value') {
+        // For liabilities, balance is negative - sort by absolute value
+        const valueA = Math.abs(convertAmount(a.balance, a.currency, baseCurrency));
+        const valueB = Math.abs(convertAmount(b.balance, b.currency, baseCurrency));
+        return liabilitySortDirection === 'asc' ? valueA - valueB : valueB - valueA;
+      }
+      if (liabilitySortColumn === 'dueDate') {
+        const dueDateA = a.recurringDueDate || 32; // No due date = sort to end
+        const dueDateB = b.recurringDueDate || 32;
+        return liabilitySortDirection === 'asc' ? dueDateA - dueDateB : dueDateB - dueDateA;
+      }
+      // Default sort: alphabetically by name
+      return a.name.localeCompare(b.name);
     });
-  }, [allLiabilityAccounts, liabilityNameFilter, liabilityTypeFilter, liabilityCurrencyFilter, liabilityPaidFilter, liabilityExcludedFilter]);
+  }, [allLiabilityAccounts, liabilityNameFilter, liabilityTypeFilter, liabilityCurrencyFilter, liabilityPaidFilter, liabilityExcludedFilter, liabilitySortColumn, liabilitySortDirection, convertAmount, baseCurrency]);
 
   // Calculate totals (excluding excluded accounts)
   const { totalAssets, totalLiabilities, netWorth, excludedCount } = useMemo(() => {
@@ -1698,6 +1781,9 @@ export const NetWorthPage: React.FC = () => {
                   onClearFilters={clearLiabilityFilters}
                   isOpen={isLiabilityFilterOpen}
                   onToggle={() => setIsLiabilityFilterOpen(!isLiabilityFilterOpen)}
+                  sortColumn={liabilitySortColumn}
+                  sortDirection={liabilitySortDirection}
+                  onSort={handleLiabilitySort}
                 />
                 <tbody>
                   {liabilityAccounts.map((account, index) => (
