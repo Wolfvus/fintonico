@@ -88,9 +88,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     try {
       setIsClearingData(true);
       await clearMockData();
-      setDraftEnabled(SUPPORTED_CURRENCIES.map((currency) => currency.code));
-      setDraftBaseCurrency('MXN');
-    } finally {
+      // Reload to ensure all components reflect the cleared state
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to clear data:', error);
       setIsClearingData(false);
     }
   };
@@ -99,9 +100,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     try {
       setIsSeedingData(true);
       await seedMockData();
-      setDraftEnabled(SUPPORTED_CURRENCIES.map((currency) => currency.code));
-      setDraftBaseCurrency('MXN');
-    } finally {
+      // Reload to ensure all components reflect the new data
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to seed data:', error);
       setIsSeedingData(false);
     }
   };
