@@ -2,11 +2,23 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useAccountStore } from '../../stores/accountStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, ChevronRight, Check, EyeOff, X, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { useSnapshotStore, type AccountSnapshot } from '../../stores/snapshotStore';
+import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, ChevronRight, ChevronLeft, Check, EyeOff, Eye, X, Filter, ArrowUpDown, ArrowUp, ArrowDown, Calendar } from 'lucide-react';
 import type { AccountType, Account } from '../../types';
 import { CSVActions } from '../Shared/CSVActions';
 import { exportAccountsToCSV, parseAccountCSV, downloadCSV, readCSVFile } from '../../utils/csv';
 import { NetWorthHistory } from './NetWorthHistory';
+
+// Helper to get month string in YYYY-MM format
+const getMonthString = (date: Date): string => {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+};
+
+// Helper to check if a date is the current month
+const isCurrentMonth = (date: Date): boolean => {
+  const now = new Date();
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+};
 
 // Format number with thousand separators
 const formatNumberWithCommas = (value: number | string): string => {
@@ -507,6 +519,7 @@ interface AccountRowProps {
   onDelete: () => void;
   enabledCurrencies: string[];
   index: number;
+  readOnly?: boolean;
 }
 
 const AccountRow: React.FC<AccountRowProps> = ({
@@ -518,8 +531,10 @@ const AccountRow: React.FC<AccountRowProps> = ({
   onDelete,
   enabledCurrencies,
   index,
+  readOnly = false,
 }) => {
   const isExcluded = account.excludeFromTotal || false;
+  const isDisabled = readOnly || isExcluded;
   const isEven = index % 2 === 0;
 
   // Calculate returns based on yield (for any asset type with yield)
@@ -536,14 +551,14 @@ const AccountRow: React.FC<AccountRowProps> = ({
   }));
 
   return (
-    <tr className={`group border-b border-gray-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors ${isExcluded ? 'opacity-50' : ''} ${isEven ? 'bg-gray-50/50 dark:bg-gray-800/30' : ''}`}>
+    <tr className={`group border-b border-gray-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors ${isExcluded ? 'opacity-50' : ''} ${readOnly ? 'bg-amber-50/30 dark:bg-amber-900/10' : ''} ${isEven && !readOnly ? 'bg-gray-50/50 dark:bg-gray-800/30' : ''}`}>
       {/* Name */}
       <td className="py-1 px-1">
         <EditableCell
           value={account.name}
           onChange={(name) => onUpdate({ name })}
           placeholder="Account name"
-          disabled={isExcluded}
+          disabled={isDisabled}
         />
       </td>
 
@@ -553,7 +568,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
           value={account.type}
           options={typeOptions}
           onChange={(type) => onUpdate({ type })}
-          disabled={isExcluded}
+          disabled={isDisabled}
         />
       </td>
 
@@ -563,7 +578,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
           value={account.currency}
           options={currencyOptions}
           onChange={(currency) => onUpdate({ currency })}
-          disabled={isExcluded}
+          disabled={isDisabled}
         />
       </td>
 
@@ -578,7 +593,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
           type="currency"
           placeholder="0.00"
           align="right"
-          disabled={isExcluded}
+          disabled={isDisabled}
           className={isLiability ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}
         />
       </td>
@@ -595,7 +610,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
             type="currency"
             placeholder="-"
             align="right"
-            disabled={isExcluded}
+            disabled={isDisabled}
             className="text-orange-600 dark:text-orange-400"
           />
         </td>
@@ -613,7 +628,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
             type="currency"
             placeholder="-"
             align="right"
-            disabled={isExcluded}
+            disabled={isDisabled}
             className="text-yellow-600 dark:text-yellow-400"
           />
         </td>
@@ -631,7 +646,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
             type="percent"
             placeholder="-"
             align="right"
-            disabled={isExcluded}
+            disabled={isDisabled}
             className="text-blue-600 dark:text-blue-400"
           />
         </td>
@@ -665,7 +680,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
           <DayOfMonthSelector
             value={account.recurringDueDate}
             onChange={(recurringDueDate) => onUpdate({ recurringDueDate })}
-            disabled={isExcluded}
+            disabled={isDisabled}
           />
         </td>
       )}
@@ -680,7 +695,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
                 isPaidThisMonth,
                 lastPaidDate: isPaidThisMonth ? new Date().toISOString().split('T')[0] : account.lastPaidDate
               })}
-              disabled={isExcluded}
+              disabled={isDisabled}
             />
           </div>
         </td>
@@ -703,13 +718,15 @@ const AccountRow: React.FC<AccountRowProps> = ({
 
       {/* Delete */}
       <td className="py-1 px-1 w-10 border-l border-gray-200 dark:border-gray-700">
-        <button
-          onClick={onDelete}
-          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-all"
-          title="Delete account"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        {!readOnly && (
+          <button
+            onClick={onDelete}
+            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-all"
+            title="Delete account"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
       </td>
     </tr>
   );
@@ -1272,6 +1289,59 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
 export const NetWorthPage: React.FC = () => {
   const { accounts, addAccount, deleteAccount, updateAccount, toggleExcludeFromTotal } = useAccountStore();
   const { baseCurrency, convertAmount, formatAmount, enabledCurrencies } = useCurrencyStore();
+  const { getSnapshot } = useSnapshotStore();
+
+  // Month selector state
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const isViewingCurrentMonth = isCurrentMonth(selectedDate);
+  const selectedMonthString = getMonthString(selectedDate);
+
+  // Get snapshot for selected month (used when viewing past months)
+  const selectedSnapshot = useMemo(() => {
+    if (isViewingCurrentMonth) return null;
+    return getSnapshot(selectedMonthString);
+  }, [selectedMonthString, isViewingCurrentMonth, getSnapshot]);
+
+  // Convert snapshot account data to Account-like objects for display
+  const snapshotAccounts = useMemo((): Account[] => {
+    if (isViewingCurrentMonth || !selectedSnapshot?.accountSnapshots) return [];
+
+    return selectedSnapshot.accountSnapshots.map((snap: AccountSnapshot) => ({
+      id: snap.accountId,
+      name: snap.accountName,
+      type: snap.accountType,
+      currency: snap.currency,
+      balance: snap.balance,
+      excludeFromTotal: false, // Snapshots only include non-excluded accounts
+      // Historical snapshots don't have these fields - they're view-only
+      estimatedYield: undefined,
+      recurringDueDate: undefined,
+      isPaidThisMonth: undefined,
+      minMonthlyPayment: undefined,
+      paymentToAvoidInterest: undefined,
+    }));
+  }, [isViewingCurrentMonth, selectedSnapshot]);
+
+  // Use either live accounts or snapshot accounts based on selected month
+  const displayAccounts = isViewingCurrentMonth ? accounts : snapshotAccounts;
+
+  // Navigation functions
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newDate = new Date(selectedDate);
+    newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
+
+    // Don't allow navigating to future months
+    const now = new Date();
+    if (newDate.getFullYear() > now.getFullYear() ||
+        (newDate.getFullYear() === now.getFullYear() && newDate.getMonth() > now.getMonth())) {
+      return;
+    }
+    setSelectedDate(newDate);
+  };
+
+  const getMonthLabel = () => {
+    return selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
 
   // Collapsible states
   const [isAssetsCollapsed, setIsAssetsCollapsed] = useState(false);
@@ -1358,14 +1428,14 @@ export const NetWorthPage: React.FC = () => {
     return { totalMonthlyReturn: monthly, totalYearlyReturn: yearly };
   }, [accounts, convertAmount, baseCurrency]);
 
-  // Filter accounts by type
+  // Filter accounts by type (use displayAccounts which is either live or snapshot data)
   const allAssetAccounts = useMemo(
-    () => accounts.filter((account) => assetTypes.includes(account.type)),
-    [accounts]
+    () => displayAccounts.filter((account) => assetTypes.includes(account.type)),
+    [displayAccounts]
   );
   const allLiabilityAccounts = useMemo(
-    () => accounts.filter((account) => liabilityTypes.includes(account.type)),
-    [accounts]
+    () => displayAccounts.filter((account) => liabilityTypes.includes(account.type)),
+    [displayAccounts]
   );
 
   // Apply filters and sorting to assets
@@ -1447,8 +1517,19 @@ export const NetWorthPage: React.FC = () => {
     });
   }, [allLiabilityAccounts, liabilityNameFilter, liabilityTypeFilter, liabilityCurrencyFilter, liabilityPaidFilter, liabilityExcludedFilter, liabilitySortColumn, liabilitySortDirection, convertAmount, baseCurrency]);
 
-  // Calculate totals (excluding excluded accounts)
+  // Calculate totals (use snapshot data for past months, live data for current month)
   const { totalAssets, totalLiabilities, netWorth, excludedCount } = useMemo(() => {
+    // For past months, use snapshot totals directly (more accurate)
+    if (!isViewingCurrentMonth && selectedSnapshot) {
+      return {
+        totalAssets: selectedSnapshot.totalsByNature.asset,
+        totalLiabilities: Math.abs(selectedSnapshot.totalsByNature.liability),
+        netWorth: selectedSnapshot.netWorthBase,
+        excludedCount: 0, // Snapshots don't track excluded count
+      };
+    }
+
+    // For current month, calculate from live accounts
     let totalAssets = 0;
     let totalLiabilities = 0;
     let excludedCount = 0;
@@ -1474,7 +1555,7 @@ export const NetWorthPage: React.FC = () => {
       netWorth: totalAssets - totalLiabilities,
       excludedCount,
     };
-  }, [accounts, baseCurrency, convertAmount]);
+  }, [accounts, baseCurrency, convertAmount, isViewingCurrentMonth, selectedSnapshot]);
 
   // Count unpaid liabilities (use all, not filtered)
   const unpaidCount = allLiabilityAccounts.filter(
@@ -1620,14 +1701,76 @@ export const NetWorthPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* CSV Actions Bar */}
-      <div className="flex justify-end">
-        <CSVActions
-          onExport={handleExportCSV}
-          onImport={handleImportCSV}
-          entityName="accounts"
-        />
+      {/* Sticky Month Selector */}
+      <div className="sticky top-16 z-20 -mx-4 px-4 py-2 bg-gray-100 dark:bg-gray-900">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3">
+          <div className="flex items-center justify-between">
+            {/* CSV Actions - Left (only show for current month) */}
+            <div className="flex-1">
+              {isViewingCurrentMonth ? (
+                <CSVActions
+                  onExport={handleExportCSV}
+                  onImport={handleImportCSV}
+                  entityName="accounts"
+                />
+              ) : (
+                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                  <Eye className="w-4 h-4" />
+                  <span className="text-sm font-medium">View Only</span>
+                </div>
+              )}
+            </div>
+
+            {/* Month Navigation - Center */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigateMonth('prev')}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </button>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <span className="text-lg font-semibold text-gray-900 dark:text-white min-w-[180px] text-center">
+                  {getMonthLabel()}
+                </span>
+                {!isViewingCurrentMonth && (
+                  <span className="text-xs bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
+                    Historical
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => navigateMonth('next')}
+                className={`p-2 rounded-lg transition-colors ${
+                  isViewingCurrentMonth
+                    ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400'
+                }`}
+                disabled={isViewingCurrentMonth}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Spacer - Right */}
+            <div className="flex-1" />
+          </div>
+        </div>
       </div>
+
+      {/* No Data Message for Past Months */}
+      {!isViewingCurrentMonth && !selectedSnapshot && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6 text-center">
+          <Calendar className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+          <h3 className="text-lg font-semibold text-amber-800 dark:text-amber-200 mb-2">
+            No Data for {getMonthLabel()}
+          </h3>
+          <p className="text-amber-600 dark:text-amber-400 text-sm">
+            No snapshot was recorded for this month. Snapshots are automatically created when you visit the app.
+          </p>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1731,15 +1874,18 @@ export const NetWorthPage: React.FC = () => {
                       onDelete={() => deleteAccount(account.id)}
                       enabledCurrencies={enabledCurrencies}
                       index={index}
+                      readOnly={!isViewingCurrentMonth}
                     />
                   ))}
-                  <AddAccountRow
-                    typeOptions={ASSET_TYPES}
-                    onAdd={addAccount}
-                    baseCurrency={baseCurrency}
-                    enabledCurrencies={enabledCurrencies}
-                    colSpan={10}
-                  />
+                  {isViewingCurrentMonth && (
+                    <AddAccountRow
+                      typeOptions={ASSET_TYPES}
+                      onAdd={addAccount}
+                      baseCurrency={baseCurrency}
+                      enabledCurrencies={enabledCurrencies}
+                      colSpan={10}
+                    />
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1800,16 +1946,19 @@ export const NetWorthPage: React.FC = () => {
                       onDelete={() => deleteAccount(account.id)}
                       enabledCurrencies={enabledCurrencies}
                       index={index}
+                      readOnly={!isViewingCurrentMonth}
                     />
                   ))}
-                  <AddAccountRow
-                    typeOptions={LIABILITY_TYPES}
-                    isLiability
-                    onAdd={addAccount}
-                    baseCurrency={baseCurrency}
-                    enabledCurrencies={enabledCurrencies}
-                    colSpan={11}
-                  />
+                  {isViewingCurrentMonth && (
+                    <AddAccountRow
+                      typeOptions={LIABILITY_TYPES}
+                      isLiability
+                      onAdd={addAccount}
+                      baseCurrency={baseCurrency}
+                      enabledCurrencies={enabledCurrencies}
+                      colSpan={11}
+                    />
+                  )}
                 </tbody>
               </table>
             </div>

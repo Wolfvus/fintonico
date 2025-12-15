@@ -813,22 +813,38 @@ interface NetWorthSnapshot {
 - Nature (asset/liability) is determined by account type
 - Mock data includes 5 months of historical account snapshots showing growth
 
-### Step 2: Month Selector UI (Planned)
+### Step 2: Month Selector UI ✅
 
 **Goal:** Add month navigation to Net Worth page.
 
 | Task | Status |
 | --- | --- |
-| Add sticky month selector (same style as Income/Expenses) | ⬜ |
-| Current month: Show live editable accounts | ⬜ |
-| Past months: Show read-only account snapshot | ⬜ |
-| Visual indicator for view-only mode (past months) | ⬜ |
-| Summary cards update based on selected month | ⬜ |
+| Add sticky month selector (same style as Income/Expenses) | ✅ |
+| Current month: Show live editable accounts | ✅ |
+| Past months: Show read-only account snapshot | ✅ |
+| Visual indicator for view-only mode (past months) | ✅ |
+| Summary cards update based on selected month | ✅ |
 
 **UI Behavior:**
 - **Current month selected:** Tables are editable, shows live data
 - **Past month selected:** Tables are read-only, shows snapshot data
 - **Future month selected:** Not allowed (disabled in selector)
+
+**Implementation Notes:**
+- Added month selector state using `useState(new Date())` with navigation functions
+- Created `getMonthString()` and `isCurrentMonth()` helper functions
+- `snapshotAccounts` useMemo converts `AccountSnapshot[]` to `Account[]` for display
+- `displayAccounts` switches between live accounts and snapshot accounts
+- Summary totals use snapshot data for past months, live calculation for current month
+- Sticky month selector UI with:
+  - Left: CSV actions (current month only) / "View Only" indicator (past months)
+  - Center: Month navigation with prev/next arrows
+  - Right: Balanced spacer
+- "Historical" badge shown when viewing past months
+- "No Data" message displayed for months without snapshots
+- AccountRow component accepts `readOnly` prop to disable all inputs
+- AddAccountRow hidden when viewing past months
+- Delete button hidden in read-only mode
 
 ### Step 3: Net Worth Chart Improvements (Planned)
 
@@ -875,4 +891,4 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-12-14 (Phase 18 Step 1 completed)
+**Last Updated:** 2025-12-14 (Phase 18 Step 2 completed)
