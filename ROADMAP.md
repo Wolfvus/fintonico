@@ -905,10 +905,58 @@ interface NetWorthSnapshot {
 
 ---
 
+## Phase 19: UI/UX Tweaks & Sticky Headers (Planned)
+
+**Goal:** Improve navigation consistency across all pages with sticky headers, and fix CSV import/export issues.
+
+### Step 1: Fix CSV Import/Export (Planned)
+
+**Goal:** Fix issues with CSV import/export functionality.
+
+| Task | Status |
+| --- | --- |
+| Audit current CSV import/export issues | ⬜ |
+| Fix identified bugs | ⬜ |
+| Test import/export round-trip | ⬜ |
+
+### Step 2: Income Page Sticky Header (Planned)
+
+**Goal:** Make summary cards and month selector sticky on Income page.
+
+| Task | Status |
+| --- | --- |
+| Make month selector sticky (already done in Phase 13) | ✅ |
+| Make summary cards sticky below month selector | ⬜ |
+| Ensure proper z-index layering | ⬜ |
+
+### Step 3: Expenses Page Sticky Header (Planned)
+
+**Goal:** Make summary cards and month selector sticky on Expenses page.
+
+| Task | Status |
+| --- | --- |
+| Make month selector sticky (already done in Phase 13) | ✅ |
+| Make summary cards sticky below month selector | ⬜ |
+| Ensure proper z-index layering | ⬜ |
+
+### Step 4: Dashboard Sticky Header (Planned)
+
+**Goal:** Make Dashboard header, month selector, quick access, and summary cards sticky.
+
+| Task | Status |
+| --- | --- |
+| Make top dashboard header sticky | ⬜ |
+| Make month selector sticky | ⬜ |
+| Make quick access section sticky | ⬜ |
+| Make summary cards sticky | ⬜ |
+| Ensure proper z-index layering with nav | ⬜ |
+
+---
+
 ## Future Phases
 
 See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvements.
 
 ---
 
-**Last Updated:** 2025-12-14 (Phase 18 completed)
+**Last Updated:** 2025-12-14 (Phase 19 planned)
