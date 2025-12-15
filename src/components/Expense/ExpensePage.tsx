@@ -1293,23 +1293,30 @@ export const ExpensePage: React.FC = () => {
                 placeholder="Description"
                 className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white placeholder-gray-400"
               />
-              <div className="flex gap-2">
-                <input
-                  name="quickAmount"
-                  type="number"
-                  placeholder="0.00"
-                  step="0.01"
-                  className="w-20 px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white placeholder-gray-400"
-                />
-                <select
-                  value={quickRating}
-                  onChange={(e) => setQuickRating(e.target.value as ExpenseRating)}
-                  className="flex-1 px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
-                >
-                  {RATING_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
+              <input
+                name="quickAmount"
+                type="number"
+                placeholder="0.00"
+                step="0.01"
+                className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white placeholder-gray-400"
+              />
+              {/* Category Buttons */}
+              <div className="flex gap-1">
+                {RATING_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setQuickRating(opt.value)}
+                    className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded text-xs font-medium border transition-all ${
+                      quickRating === opt.value
+                        ? `${opt.bgColor} ${opt.color} border-current`
+                        : 'border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:border-gray-300'
+                    }`}
+                  >
+                    <opt.icon className="w-3 h-3" />
+                    <span>{opt.label}</span>
+                  </button>
+                ))}
               </div>
               <div className="flex gap-2">
                 <button

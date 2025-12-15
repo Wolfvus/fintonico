@@ -1015,7 +1015,7 @@ interface NetWorthSnapshot {
 
 ---
 
-## Phase 20: Sticky Header & Layout Fix (Planned)
+## Phase 20: Sticky Header & Layout Fix ✅
 
 **Goal:** Fix sticky headers on Income/Expenses pages and restore compact Quick Add layout with proper sticky behavior.
 
@@ -1056,25 +1056,26 @@ interface NetWorthSnapshot {
 | Include Net Worth hero (Total Net Worth, Assets, Liabilities) in sticky | ✅ |
 | Include KPI summary cards in sticky | ✅ |
 
-### Step 4: Expense Category Color Buttons ⬜
+### Step 4: Expense Category Color Buttons ✅
 
 **Goal:** Restore colored category buttons in Expenses Quick Add form.
 
 | Task | Status |
 | --- | --- |
-| Replace category dropdown with colored button group | ⬜ |
-| Essential = green, Discretionary = yellow, Luxury = red | ⬜ |
-| Compact button style fitting in Quick Add form | ⬜ |
+| Replace category dropdown with colored button group | ✅ |
+| Essential = green, Discretionary = yellow, Luxury = red | ✅ |
+| Compact button style fitting in Quick Add form | ✅ |
 
-### Step 5: Compact Design Polish ⬜
+### Step 5: Compact Design Polish ✅
 
 **Goal:** Make sticky sections compact so they don't take too much viewport space.
 
 | Task | Status |
 | --- | --- |
-| Reduce padding on sticky sections | ⬜ |
-| Use smaller fonts where appropriate | ⬜ |
-| Ensure mobile responsiveness | ⬜ |
+| Reduce padding on sticky sections | ✅ |
+| Use smaller fonts where appropriate | ✅ |
+| Ensure mobile responsiveness | ✅ |
+| Consistent styling across all pages | ✅ |
 
 ---
 
