@@ -878,22 +878,30 @@ interface NetWorthSnapshot {
 - Hover shows vertical indicator line and data points for all visible series
 - Legend displayed in breakdown mode showing line colors
 
-### Step 4: Data Integrity & Edge Cases (Planned)
+### Step 4: Data Integrity & Edge Cases ✅
 
 **Goal:** Handle edge cases gracefully.
 
 | Task | Status |
 | --- | --- |
-| Prevent manual `lastUpdated` edits (system-only field) | ⬜ |
-| Handle deleted accounts in historical snapshots | ⬜ |
-| Handle currency changes (store original currency in snapshot) | ⬜ |
-| "No data for this month" empty state | ⬜ |
+| Prevent manual `lastUpdated` edits (system-only field) | ✅ |
+| Handle deleted accounts in historical snapshots | ✅ |
+| Handle currency changes (store original currency in snapshot) | ✅ |
+| "No data for this month" empty state | ✅ |
 
 **Integrity Rules:**
 - `lastUpdated` is set automatically when balance changes
 - Historical snapshots are immutable (cannot edit past months)
 - If account was deleted, historical snapshot still shows its data
 - Currency conversion uses current rates (historical rates not tracked)
+
+**Implementation Notes:**
+- `lastUpdated` column is display-only (not an EditableCell)
+- `accountStore.updateAccount()` and `toggleExcludeFromTotal()` auto-set `lastUpdated` to current date
+- AccountSnapshot stores account data independently (accountName, accountType, currency, balance)
+- Snapshot data persists even if the original account is deleted
+- ExcludeToggle disabled in read-only mode (historical view)
+- "No Data for [Month]" empty state displays when viewing a month with no snapshot
 
 ---
 
@@ -903,4 +911,4 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-12-14 (Phase 18 Step 3 completed)
+**Last Updated:** 2025-12-14 (Phase 18 completed)

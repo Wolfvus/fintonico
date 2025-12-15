@@ -491,18 +491,22 @@ const PaidCheckbox: React.FC<PaidCheckboxProps> = ({ isPaid, onChange, disabled 
 interface ExcludeToggleProps {
   isExcluded: boolean;
   onChange: () => void;
+  disabled?: boolean;
 }
 
-const ExcludeToggle: React.FC<ExcludeToggleProps> = ({ isExcluded, onChange }) => {
+const ExcludeToggle: React.FC<ExcludeToggleProps> = ({ isExcluded, onChange, disabled }) => {
   return (
     <button
-      onClick={onChange}
+      onClick={() => !disabled && onChange()}
+      disabled={disabled}
       className={`p-1.5 rounded-md transition-colors ${
-        isExcluded
+        disabled
+          ? 'opacity-50 cursor-default'
+          : isExcluded
           ? 'bg-gray-200 dark:bg-gray-700 text-gray-500'
           : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
       }`}
-      title={isExcluded ? 'Include in totals' : 'Exclude from totals'}
+      title={disabled ? 'View only' : isExcluded ? 'Include in totals' : 'Exclude from totals'}
     >
       <EyeOff className="w-4 h-4" />
     </button>
@@ -713,6 +717,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
         <ExcludeToggle
           isExcluded={isExcluded}
           onChange={onToggleExclude}
+          disabled={readOnly}
         />
       </td>
 
@@ -1768,6 +1773,19 @@ export const NetWorthPage: React.FC = () => {
           </h3>
           <p className="text-amber-600 dark:text-amber-400 text-sm">
             No snapshot was recorded for this month. Snapshots are automatically created when you visit the app.
+          </p>
+        </div>
+      )}
+
+      {/* Legacy Snapshot Message - has totals but no account breakdown */}
+      {!isViewingCurrentMonth && selectedSnapshot && (!selectedSnapshot.accountSnapshots || selectedSnapshot.accountSnapshots.length === 0) && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-center">
+          <p className="text-blue-700 dark:text-blue-300 text-sm">
+            This snapshot was created before account-level tracking was available. Only totals are shown above.
+            <br />
+            <span className="text-blue-500 dark:text-blue-400 text-xs">
+              Future snapshots will include detailed account breakdowns.
+            </span>
           </p>
         </div>
       )}
