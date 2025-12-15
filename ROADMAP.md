@@ -846,25 +846,37 @@ interface NetWorthSnapshot {
 - AddAccountRow hidden when viewing past months
 - Delete button hidden in read-only mode
 
-### Step 3: Net Worth Chart Improvements (Planned)
+### Step 3: Net Worth Chart Improvements ✅
 
 **Goal:** Enhance the history chart with better visualization.
 
 | Task | Status |
 | --- | --- |
-| Add Y-axis labels with formatted amounts | ⬜ |
-| Add intermediate X-axis labels for longer ranges | ⬜ |
-| Show assets/liabilities as separate lines (toggle) | ⬜ |
-| Improve tooltip positioning (follow mouse) | ⬜ |
-| Add responsive breakpoints for chart height | ⬜ |
-| Optional: Bar chart toggle for monthly comparison | ⬜ |
+| Add Y-axis labels with formatted amounts | ✅ |
+| Add intermediate X-axis labels for longer ranges | ✅ |
+| Show assets/liabilities as separate lines (toggle) | ✅ |
+| Improve tooltip positioning (follow mouse) | ✅ |
+| Add responsive breakpoints for chart height | ✅ |
+| Optional: Bar chart toggle for monthly comparison | ⬜ (deferred) |
 
 **Chart Enhancements:**
 - Green line for assets trend
 - Red line for liabilities trend
-- Gray/blue line for net worth (assets - liabilities)
+- Blue line for net worth (assets - liabilities)
 - Toggle to show/hide individual lines
 - Proper axis scaling and grid lines
+
+**Implementation Notes:**
+- Added `formatCompactAmount()` for Y-axis labels (e.g., "500K", "1.2M")
+- Added `formatMonthShort()` for X-axis labels (e.g., "Jan '25")
+- Y-axis shows 5 evenly spaced labels with horizontal grid lines
+- X-axis shows up to 6 evenly spaced labels for longer time ranges
+- Chart mode toggle: "Net Worth only" (single line) vs "Breakdown" (3 lines)
+- Breakdown mode shows assets (green), liabilities (red), and net worth (blue)
+- Responsive height: `h-48 sm:h-56 md:h-64` for taller charts on larger screens
+- Tooltip follows mouse horizontally with clamping to prevent overflow
+- Hover shows vertical indicator line and data points for all visible series
+- Legend displayed in breakdown mode showing line colors
 
 ### Step 4: Data Integrity & Edge Cases (Planned)
 
@@ -891,4 +903,4 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-12-14 (Phase 18 Step 2 completed)
+**Last Updated:** 2025-12-14 (Phase 18 Step 3 completed)
