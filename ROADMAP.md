@@ -1045,14 +1045,16 @@ interface NetWorthSnapshot {
 | Add recurring toggle to Quick Add form | ✅ |
 | Match Income page design pattern | ✅ |
 
-### Step 3: Fix Dashboard Sticky ⬜
+### Step 3: Fix Dashboard Sticky ✅
 
-**Goal:** Ensure Dashboard time period controls are properly sticky.
+**Goal:** Ensure Dashboard top section is properly sticky.
 
 | Task | Status |
 | --- | --- |
-| Verify/fix sticky on Time Period Controls | ⬜ |
-| Test scroll behavior | ⬜ |
+| Verify/fix sticky on Time Period Controls | ✅ |
+| Make compact to match Income/Expenses style | ✅ |
+| Include Net Worth hero (Total Net Worth, Assets, Liabilities) in sticky | ✅ |
+| Include KPI summary cards in sticky | ✅ |
 
 ### Step 4: Expense Category Color Buttons ⬜
 
