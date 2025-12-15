@@ -1015,10 +1015,75 @@ interface NetWorthSnapshot {
 
 ---
 
+## Phase 20: Sticky Header & Layout Fix (Planned)
+
+**Goal:** Fix sticky headers on Income/Expenses pages and restore compact Quick Add layout with proper sticky behavior.
+
+### Step 1: Revert Income Page Layout ⬜
+
+**Goal:** Restore original grid layout (Quick Add + Summary Cards side by side).
+
+| Task | Status |
+| --- | --- |
+| Revert to grid layout: Quick Add (1/3) + Summary Cards (2/3) | ⬜ |
+| Make entire top section compact (smaller padding, tighter spacing) | ⬜ |
+| Keep Import button in accessible location | ⬜ |
+
+### Step 2: Revert Expenses Page Layout ⬜
+
+**Goal:** Restore original grid layout (Quick Add + Summary Cards side by side).
+
+| Task | Status |
+| --- | --- |
+| Revert to grid layout: Quick Add (1/3) + Summary Cards (2/3) | ⬜ |
+| Make entire top section compact (smaller padding, tighter spacing) | ⬜ |
+| Keep Import button in accessible location | ⬜ |
+
+### Step 3: Fix Sticky Behavior - Income ⬜
+
+**Goal:** Make the entire top section (Quick Add + Cards + Month Nav) sticky.
+
+| Task | Status |
+| --- | --- |
+| Wrap entire top section in sticky container | ⬜ |
+| Use proper z-index (z-20) and background colors | ⬜ |
+| Test scroll behavior - section should stick at nav bottom | ⬜ |
+
+### Step 4: Fix Sticky Behavior - Expenses ⬜
+
+**Goal:** Make the entire top section (Quick Add + Cards + Month Nav) sticky.
+
+| Task | Status |
+| --- | --- |
+| Wrap entire top section in sticky container | ⬜ |
+| Use proper z-index (z-20) and background colors | ⬜ |
+| Test scroll behavior - section should stick at nav bottom | ⬜ |
+
+### Step 5: Fix Dashboard Sticky ⬜
+
+**Goal:** Ensure Dashboard time period controls are properly sticky.
+
+| Task | Status |
+| --- | --- |
+| Verify/fix sticky on Time Period Controls | ⬜ |
+| Test scroll behavior | ⬜ |
+
+### Step 6: Compact Design Polish ⬜
+
+**Goal:** Make sticky sections compact so they don't take too much viewport space.
+
+| Task | Status |
+| --- | --- |
+| Reduce padding on sticky sections | ⬜ |
+| Use smaller fonts where appropriate | ⬜ |
+| Ensure mobile responsiveness | ⬜ |
+
+---
+
 ## Future Phases
 
 See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvements.
 
 ---
 
-**Last Updated:** 2025-12-14 (Phase 19 completed)
+**Last Updated:** 2025-12-14 (Phase 20 planned)
