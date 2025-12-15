@@ -32,156 +32,6 @@ const RATING_OPTIONS: { value: ExpenseRating; label: string; color: string; bgCo
   { value: 'luxury', label: 'Luxury', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', icon: Sparkles },
 ];
 
-// Quick Add Form Component
-interface QuickAddFormProps {
-  onAdd: (expense: { what: string; amount: number; currency: string; rating: ExpenseRating; date: string; recurring?: boolean }) => void;
-  baseCurrency: string;
-  enabledCurrencies: string[];
-}
-
-const QuickAddForm: React.FC<QuickAddFormProps> = ({ onAdd, baseCurrency, enabledCurrencies }) => {
-  const [what, setWhat] = useState('');
-  const [amount, setAmount] = useState('');
-  const [currency, setCurrency] = useState(baseCurrency);
-  const [rating, setRating] = useState<ExpenseRating>('discretionary');
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const currencyRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (currencyRef.current && !currencyRef.current.contains(event.target as Node)) {
-        setShowCurrencyDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (what.trim() && amount) {
-      onAdd({
-        what: what.trim(),
-        amount: parseFloat(amount) || 0,
-        currency,
-        rating,
-        date: getTodayString(),
-        recurring: isRecurring,
-      });
-      setWhat('');
-      setAmount('');
-      setIsRecurring(false);
-      inputRef.current?.focus();
-    }
-  };
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Plus className="w-5 h-5 text-red-600 dark:text-red-400" />
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Quick Add</h2>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-3">
-        {/* Description */}
-        <input
-          ref={inputRef}
-          type="text"
-          value={what}
-          onChange={(e) => setWhat(e.target.value)}
-          placeholder="What did you spend on?"
-          className="w-full px-3 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-900 dark:text-white placeholder-gray-400"
-        />
-
-        {/* Amount + Currency */}
-        <div className="flex gap-2">
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0.00"
-            step="0.01"
-            className="flex-1 px-3 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-900 dark:text-white placeholder-gray-400"
-          />
-          <div className="relative" ref={currencyRef}>
-            <button
-              type="button"
-              onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
-              className="px-3 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
-            >
-              {currency}
-              <ChevronDown className="w-3 h-3" />
-            </button>
-            {showCurrencyDropdown && (
-              <div className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 py-1 min-w-[80px]">
-                {enabledCurrencies.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => {
-                      setCurrency(c);
-                      setShowCurrencyDropdown(false);
-                    }}
-                    className={`w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                      c === currency ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Category Buttons */}
-        <div className="flex gap-2">
-          {RATING_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setRating(opt.value)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border transition-all text-sm ${
-                rating === opt.value
-                  ? `${opt.bgColor} border-current ${opt.color}`
-                  : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300'
-              }`}
-            >
-              <opt.icon className="w-4 h-4" />
-              <span className="font-medium hidden sm:inline">{opt.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Recurring Toggle */}
-        <button
-          type="button"
-          onClick={() => setIsRecurring(!isRecurring)}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-sm ${
-            isRecurring
-              ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400'
-              : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300'
-          }`}
-        >
-          <RefreshCw className="w-4 h-4" />
-          <span className="font-medium">Recurring</span>
-        </button>
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={!what.trim() || !amount}
-          className="w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Add Expense
-        </button>
-      </form>
-    </div>
-  );
-};
-
 // Editable Cell Component
 // Format number with thousands separator (1,895.00)
 const formatNumberWithCommas = (value: number | string): string => {
@@ -1105,6 +955,10 @@ export const ExpensePage: React.FC = () => {
   // Import modal state
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
+  // Quick Add form state
+  const [quickRating, setQuickRating] = useState<ExpenseRating>('discretionary');
+  const [quickRecurring, setQuickRecurring] = useState(false);
+
   // Section collapse states
   const [isRecurringCollapsed, setIsRecurringCollapsed] = useState(false);
   const [isMonthlyCollapsed, setIsMonthlyCollapsed] = useState(false);
@@ -1402,80 +1256,149 @@ export const ExpensePage: React.FC = () => {
   }, []);
 
   return (
-    <div className="space-y-4">
-      {/* Quick Add Form - Not Sticky */}
-      <QuickAddForm
-        onAdd={addExpense}
-        baseCurrency={baseCurrency}
-        enabledCurrencies={enabledCurrencies}
-      />
-
-      {/* Sticky Section: Summary Cards + Month Navigation */}
-      <div className="sticky top-16 z-20 -mx-4 px-4 pt-2 pb-4 bg-gray-100 dark:bg-gray-900 space-y-3">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-3 border border-gray-200 dark:border-gray-700">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Monthly Total</p>
-            <p className="text-lg font-bold text-red-600 dark:text-red-400 truncate">
-              {formatAmount(monthlyTotal)}
-            </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500">
-              + {formatAmount(recurringTotal)} recurring
-            </p>
+    <div className="space-y-3">
+      {/* Sticky Top Section: Quick Add + Summary Cards + Month Navigation */}
+      <div className="sticky top-16 z-20 -mx-4 px-4 pt-2 pb-3 bg-gray-100 dark:bg-gray-900 space-y-2">
+        {/* Grid: Quick Add (1/3) + Summary Cards (2/3) */}
+        <div className="grid grid-cols-3 gap-3">
+          {/* Quick Add Form - Compact */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const form = e.target as HTMLFormElement;
+              const whatInput = form.elements.namedItem('quickWhat') as HTMLInputElement;
+              const amountInput = form.elements.namedItem('quickAmount') as HTMLInputElement;
+              if (whatInput.value.trim() && amountInput.value) {
+                addExpense({
+                  what: whatInput.value.trim(),
+                  amount: parseFloat(amountInput.value) || 0,
+                  currency: baseCurrency,
+                  rating: quickRating,
+                  date: getTodayString(),
+                  recurring: quickRecurring,
+                });
+                whatInput.value = '';
+                amountInput.value = '';
+                setQuickRecurring(false);
+                whatInput.focus();
+              }
+            }} className="space-y-2">
+              <div className="flex items-center gap-2 mb-1">
+                <Plus className="w-4 h-4 text-red-600 dark:text-red-400" />
+                <span className="text-sm font-medium text-gray-900 dark:text-white">Quick Add</span>
+              </div>
+              <input
+                name="quickWhat"
+                type="text"
+                placeholder="Description"
+                className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white placeholder-gray-400"
+              />
+              <div className="flex gap-2">
+                <input
+                  name="quickAmount"
+                  type="number"
+                  placeholder="0.00"
+                  step="0.01"
+                  className="w-20 px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white placeholder-gray-400"
+                />
+                <select
+                  value={quickRating}
+                  onChange={(e) => setQuickRating(e.target.value as ExpenseRating)}
+                  className="flex-1 px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
+                >
+                  {RATING_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setQuickRecurring(!quickRecurring)}
+                  className={`flex items-center gap-1 px-2 py-1.5 text-xs rounded border transition-colors ${
+                    quickRecurring
+                      ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400'
+                      : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300'
+                  }`}
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>Recurring</span>
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-1.5 bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white text-sm font-medium rounded transition-colors"
+                >
+                  Add
+                </button>
+              </div>
+            </form>
           </div>
 
-          {RATING_OPTIONS.map((rating) => (
-            <div key={rating.value} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-3 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-1 mb-0.5">
-                <rating.icon className={`w-3 h-3 ${rating.color}`} />
-                <p className="text-xs text-gray-500 dark:text-gray-400">{rating.label}</p>
-              </div>
-              <p className={`text-base font-semibold truncate ${rating.color}`}>
-                {formatAmount(ratingBreakdown[rating.value])}
+          {/* Summary Cards (2/3) */}
+          <div className="col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {/* Monthly Total */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 border border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Monthly</p>
+              <p className="text-lg font-bold text-red-600 dark:text-red-400 truncate">
+                {formatAmount(monthlyTotal)}
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                + {formatAmount(recurringTotal)} rec.
               </p>
             </div>
-          ))}
+
+            {/* Category Breakdowns */}
+            {RATING_OPTIONS.map((rating) => (
+              <div key={rating.value} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-1 mb-0.5">
+                  <rating.icon className={`w-3 h-3 ${rating.color}`} />
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{rating.label}</p>
+                </div>
+                <p className={`text-base font-semibold truncate ${rating.color}`}>
+                  {formatAmount(ratingBreakdown[rating.value])}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Month Navigation */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-2">
+        {/* Month Navigation - Compact */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 px-3 py-1.5">
           <div className="flex items-center justify-between">
-            {/* Import Button - Left */}
-            <div className="flex-1">
-              <button
-                onClick={() => setIsImportModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                title="Import expenses from CSV"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Import</span>
-              </button>
-            </div>
+            {/* Import Button */}
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              title="Import expenses from CSV"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Import</span>
+            </button>
 
-            {/* Month Navigation - Center */}
-            <div className="flex items-center gap-2">
+            {/* Month Navigation */}
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => navigateMonth('prev')}
-                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                <span className="text-sm font-semibold text-gray-900 dark:text-white min-w-[140px] text-center">
+              <div className="flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                <span className="text-sm font-medium text-gray-900 dark:text-white min-w-[130px] text-center">
                   {getMonthLabel()}
                 </span>
               </div>
               <button
                 onClick={() => navigateMonth('next')}
-                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
             </div>
 
-            {/* Spacer - Right (for balance) */}
-            <div className="flex-1" />
+            {/* Spacer */}
+            <div className="w-16" />
           </div>
         </div>
       </div>

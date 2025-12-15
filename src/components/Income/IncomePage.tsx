@@ -44,158 +44,6 @@ const MONTHLY_FACTORS: Record<string, number> = {
   'yearly': 1, // Legacy support - treat yearly as monthly for display
 };
 
-// Quick Add Form Component
-interface QuickAddFormProps {
-  onAdd: (income: { source: string; amount: number; currency: string; frequency: IncomeFrequency; date: string }) => void;
-  baseCurrency: string;
-  enabledCurrencies: string[];
-}
-
-const QuickAddForm: React.FC<QuickAddFormProps> = ({ onAdd, baseCurrency, enabledCurrencies }) => {
-  const [source, setSource] = useState('');
-  const [amount, setAmount] = useState('');
-  const [currency, setCurrency] = useState(baseCurrency);
-  const [frequency, setFrequency] = useState<IncomeFrequency>('one-time');
-  const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
-  const [showFrequencyDropdown, setShowFrequencyDropdown] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const currencyRef = useRef<HTMLDivElement>(null);
-  const frequencyRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (currencyRef.current && !currencyRef.current.contains(event.target as Node)) {
-        setShowCurrencyDropdown(false);
-      }
-      if (frequencyRef.current && !frequencyRef.current.contains(event.target as Node)) {
-        setShowFrequencyDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (source.trim() && amount) {
-      onAdd({
-        source: source.trim(),
-        amount: parseFloat(amount) || 0,
-        currency,
-        frequency,
-        date: getTodayString(),
-      });
-      setSource('');
-      setAmount('');
-      inputRef.current?.focus();
-    }
-  };
-
-  const selectedFrequency = FREQUENCY_OPTIONS.find((f) => f.value === frequency);
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Plus className="w-5 h-5 text-green-600 dark:text-green-400" />
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Quick Add</h2>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-3">
-        {/* Source */}
-        <input
-          ref={inputRef}
-          type="text"
-          value={source}
-          onChange={(e) => setSource(e.target.value)}
-          placeholder="Income source (Salary, Freelance...)"
-          className="w-full px-3 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-gray-900 dark:text-white placeholder-gray-400"
-        />
-
-        {/* Amount + Currency */}
-        <div className="flex gap-2">
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0.00"
-            step="0.01"
-            className="flex-1 px-3 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-gray-900 dark:text-white placeholder-gray-400"
-          />
-          <div className="relative" ref={currencyRef}>
-            <button
-              type="button"
-              onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
-              className="px-3 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center gap-1 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
-            >
-              {currency}
-              <ChevronDown className="w-3 h-3" />
-            </button>
-            {showCurrencyDropdown && (
-              <div className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 py-1 min-w-[80px]">
-                {enabledCurrencies.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => {
-                      setCurrency(c);
-                      setShowCurrencyDropdown(false);
-                    }}
-                    className={`w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                      c === currency ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' : 'text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Frequency Dropdown */}
-        <div className="relative" ref={frequencyRef}>
-          <button
-            type="button"
-            onClick={() => setShowFrequencyDropdown(!showFrequencyDropdown)}
-            className="w-full px-3 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center justify-between text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
-          >
-            <span>{selectedFrequency?.label || 'Select frequency'}</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${showFrequencyDropdown ? 'rotate-180' : ''}`} />
-          </button>
-          {showFrequencyDropdown && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 py-1">
-              {FREQUENCY_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => {
-                    setFrequency(opt.value);
-                    setShowFrequencyDropdown(false);
-                  }}
-                  className={`w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                    opt.value === frequency ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' : 'text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={!source.trim() || !amount}
-          className="w-full py-2.5 px-4 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Add Income
-        </button>
-      </form>
-    </div>
-  );
-};
-
 // Format number with thousands separator (1,895.00)
 const formatNumberWithCommas = (value: number | string): string => {
   const num = typeof value === 'string' ? parseFloat(value) : value;
@@ -944,6 +792,9 @@ export const IncomePage: React.FC = () => {
   // Import modal state
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
+  // Quick Add form state
+  const [quickFrequency, setQuickFrequency] = useState<IncomeFrequency>('one-time');
+
   // Filter states
   const [sourceFilter, setSourceFilter] = useState('');
   const [currencyFilter, setCurrencyFilter] = useState('');
@@ -1161,92 +1012,143 @@ export const IncomePage: React.FC = () => {
   }, []);
 
   return (
-    <div className="space-y-4">
-      {/* Quick Add Form - Not Sticky */}
-      <QuickAddForm
-        onAdd={addIncome}
-        baseCurrency={baseCurrency}
-        enabledCurrencies={enabledCurrencies}
-      />
-
-      {/* Sticky Section: Summary Cards + Month Navigation */}
-      <div className="sticky top-16 z-20 -mx-4 px-4 pt-2 pb-4 bg-gray-100 dark:bg-gray-900 space-y-3">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Monthly Income (Actual) */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-3 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
+    <div className="space-y-3">
+      {/* Sticky Top Section: Quick Add + Summary Cards + Month Navigation */}
+      <div className="sticky top-16 z-20 -mx-4 px-4 pt-2 pb-3 bg-gray-100 dark:bg-gray-900 space-y-2">
+        {/* Grid: Quick Add (1/3) + Summary Cards (2/3) */}
+        <div className="grid grid-cols-3 gap-3">
+          {/* Quick Add Form - Compact */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const form = e.target as HTMLFormElement;
+              const sourceInput = form.elements.namedItem('quickSource') as HTMLInputElement;
+              const amountInput = form.elements.namedItem('quickAmount') as HTMLInputElement;
+              if (sourceInput.value.trim() && amountInput.value) {
+                addIncome({
+                  source: sourceInput.value.trim(),
+                  amount: parseFloat(amountInput.value) || 0,
+                  currency: baseCurrency,
+                  frequency: quickFrequency,
+                  date: getTodayString(),
+                });
+                sourceInput.value = '';
+                amountInput.value = '';
+                sourceInput.focus();
+              }
+            }} className="space-y-2">
+              <div className="flex items-center gap-2 mb-1">
+                <Plus className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium text-gray-900 dark:text-white">Quick Add</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-gray-500 dark:text-gray-400">{getMonthLabel()}</p>
-                <p className="text-xl font-bold text-green-600 dark:text-green-400 truncate">
-                  {formatAmount(monthlyTotal)}
-                </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">{filteredIncomes.length} entries</p>
+              <input
+                name="quickSource"
+                type="text"
+                placeholder="Source"
+                className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white placeholder-gray-400"
+              />
+              <div className="flex gap-2">
+                <input
+                  name="quickAmount"
+                  type="number"
+                  placeholder="0.00"
+                  step="0.01"
+                  className="w-24 px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white placeholder-gray-400"
+                />
+                <select
+                  value={quickFrequency}
+                  onChange={(e) => setQuickFrequency(e.target.value as IncomeFrequency)}
+                  className="flex-1 px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
+                >
+                  {FREQUENCY_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
               </div>
-            </div>
+              <button
+                type="submit"
+                className="w-full py-1.5 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white text-sm font-medium rounded transition-colors"
+              >
+                Add Income
+              </button>
+            </form>
           </div>
 
-          {/* Expected Monthly Income */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-3 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          {/* Summary Cards (2/3) */}
+          <div className="col-span-2 grid grid-cols-2 gap-3">
+            {/* Monthly Income (Actual) */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                  <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{getMonthLabel()}</p>
+                  <p className="text-lg font-bold text-green-600 dark:text-green-400 truncate">
+                    {formatAmount(monthlyTotal)}
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{filteredIncomes.length} entries</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Expected Monthly</p>
-                <p className="text-xl font-bold text-blue-600 dark:text-blue-400 truncate">
-                  {formatAmount(expectedMonthlyIncome)}
-                </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
-                  {recurringCount > 0 ? `${recurringCount} recurring` : 'no recurring'}
-                </p>
+            </div>
+
+            {/* Expected Monthly Income */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Expected Monthly</p>
+                  <p className="text-lg font-bold text-blue-600 dark:text-blue-400 truncate">
+                    {formatAmount(expectedMonthlyIncome)}
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    {recurringCount > 0 ? `${recurringCount} recurring` : 'no recurring'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Month Navigation */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-2">
+        {/* Month Navigation - Compact */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 px-3 py-1.5">
           <div className="flex items-center justify-between">
-            {/* Import Button - Left */}
-            <div className="flex-1">
-              <button
-                onClick={() => setIsImportModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                title="Import income from CSV"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Import</span>
-              </button>
-            </div>
+            {/* Import Button */}
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              title="Import income from CSV"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Import</span>
+            </button>
 
-            {/* Month Navigation - Center */}
-            <div className="flex items-center gap-2">
+            {/* Month Navigation */}
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => navigateMonth('prev')}
-                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                <span className="text-sm font-semibold text-gray-900 dark:text-white min-w-[140px] text-center">
+              <div className="flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                <span className="text-sm font-medium text-gray-900 dark:text-white min-w-[130px] text-center">
                   {getMonthLabel()}
                 </span>
               </div>
               <button
                 onClick={() => navigateMonth('next')}
-                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
             </div>
 
-            {/* Spacer - Right (for balance) */}
-            <div className="flex-1" />
+            {/* Spacer */}
+            <div className="w-16" />
           </div>
         </div>
       </div>

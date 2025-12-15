@@ -1019,47 +1019,33 @@ interface NetWorthSnapshot {
 
 **Goal:** Fix sticky headers on Income/Expenses pages and restore compact Quick Add layout with proper sticky behavior.
 
-### Step 1: Revert Income Page Layout ⬜
+### Step 1: Revert Income Page Layout ✅
 
 **Goal:** Restore original grid layout (Quick Add + Summary Cards side by side).
 
 | Task | Status |
 | --- | --- |
-| Revert to grid layout: Quick Add (1/3) + Summary Cards (2/3) | ⬜ |
-| Make entire top section compact (smaller padding, tighter spacing) | ⬜ |
-| Keep Import button in accessible location | ⬜ |
+| Revert to grid layout: Quick Add (1/3) + Summary Cards (2/3) | ✅ |
+| Make entire top section compact (smaller padding, tighter spacing) | ✅ |
+| Keep Import button in accessible location | ✅ |
+| Wrap entire top section in sticky container | ✅ |
+| Add frequency selector to Quick Add form | ✅ |
 
-### Step 2: Revert Expenses Page Layout ⬜
+### Step 2: Revert Expenses Page Layout ✅
 
-**Goal:** Restore original grid layout (Quick Add + Summary Cards side by side).
-
-| Task | Status |
-| --- | --- |
-| Revert to grid layout: Quick Add (1/3) + Summary Cards (2/3) | ⬜ |
-| Make entire top section compact (smaller padding, tighter spacing) | ⬜ |
-| Keep Import button in accessible location | ⬜ |
-
-### Step 3: Fix Sticky Behavior - Income ⬜
-
-**Goal:** Make the entire top section (Quick Add + Cards + Month Nav) sticky.
+**Goal:** Restore original grid layout matching Income page design.
 
 | Task | Status |
 | --- | --- |
-| Wrap entire top section in sticky container | ⬜ |
-| Use proper z-index (z-20) and background colors | ⬜ |
-| Test scroll behavior - section should stick at nav bottom | ⬜ |
+| Revert to grid layout: Quick Add (1/3) + Summary Cards (2/3) | ✅ |
+| Make entire top section compact (smaller padding, tighter spacing) | ✅ |
+| Keep Import button in accessible location | ✅ |
+| Wrap entire top section in sticky container | ✅ |
+| Add category selector to Quick Add form | ✅ |
+| Add recurring toggle to Quick Add form | ✅ |
+| Match Income page design pattern | ✅ |
 
-### Step 4: Fix Sticky Behavior - Expenses ⬜
-
-**Goal:** Make the entire top section (Quick Add + Cards + Month Nav) sticky.
-
-| Task | Status |
-| --- | --- |
-| Wrap entire top section in sticky container | ⬜ |
-| Use proper z-index (z-20) and background colors | ⬜ |
-| Test scroll behavior - section should stick at nav bottom | ⬜ |
-
-### Step 5: Fix Dashboard Sticky ⬜
+### Step 3: Fix Dashboard Sticky ⬜
 
 **Goal:** Ensure Dashboard time period controls are properly sticky.
 
@@ -1068,7 +1054,17 @@ interface NetWorthSnapshot {
 | Verify/fix sticky on Time Period Controls | ⬜ |
 | Test scroll behavior | ⬜ |
 
-### Step 6: Compact Design Polish ⬜
+### Step 4: Expense Category Color Buttons ⬜
+
+**Goal:** Restore colored category buttons in Expenses Quick Add form.
+
+| Task | Status |
+| --- | --- |
+| Replace category dropdown with colored button group | ⬜ |
+| Essential = green, Discretionary = yellow, Luxury = red | ⬜ |
+| Compact button style fitting in Quick Add form | ⬜ |
+
+### Step 5: Compact Design Polish ⬜
 
 **Goal:** Make sticky sections compact so they don't take too much viewport space.
 
