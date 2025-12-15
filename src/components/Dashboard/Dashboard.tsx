@@ -454,8 +454,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Time Period Controls */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-5">
+      {/* Sticky Time Period Controls */}
+      <div className="sticky top-16 z-20 -mx-4 px-4 py-2 bg-gray-100 dark:bg-gray-900">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center justify-center sm:justify-start gap-2">
             <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -529,6 +530,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               />
             </div>
           )}
+        </div>
         </div>
       </div>
 

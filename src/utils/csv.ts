@@ -458,3 +458,128 @@ export const parseLedgerAccountCSV = (
     errors: [...result.errors, ...warnings],
   };
 };
+
+// ============================================
+// CSV Template Generators
+// ============================================
+
+export type CSVTemplateType = 'expenses' | 'income' | 'accounts' | 'ledger-accounts';
+
+export interface CSVTemplateInfo {
+  headers: string[];
+  description: string;
+  exampleRows: string[][];
+  notes: string[];
+}
+
+/**
+ * Get template information for a specific CSV type
+ */
+export const getCSVTemplateInfo = (type: CSVTemplateType): CSVTemplateInfo => {
+  switch (type) {
+    case 'expenses':
+      return {
+        headers: EXPENSE_CSV_HEADERS,
+        description: 'Import your expenses with date, description, amount, currency, category, and recurring status.',
+        exampleRows: [
+          ['2025-01-15', 'Groceries', '150.00', 'MXN', 'essential', 'false'],
+          ['2025-01-16', 'Netflix Subscription', '199.00', 'MXN', 'discretionary', 'true'],
+          ['2025-01-20', 'New Headphones', '2500.00', 'MXN', 'luxury', 'false'],
+        ],
+        notes: [
+          'date: YYYY-MM-DD format (e.g., 2025-01-15)',
+          'description: Text description of the expense',
+          'amount: Positive number (e.g., 150.00)',
+          'currency: MXN, USD, EUR, etc.',
+          'category: essential, discretionary, or luxury',
+          'recurring: true or false',
+        ],
+      };
+
+    case 'income':
+      return {
+        headers: INCOME_CSV_HEADERS,
+        description: 'Import your income sources with date, source name, amount, currency, and frequency.',
+        exampleRows: [
+          ['2025-01-01', 'Monthly Salary', '50000.00', 'MXN', 'monthly'],
+          ['2025-01-15', 'Freelance Project', '1500.00', 'USD', 'one-time'],
+          ['2025-01-05', 'Investment Dividends', '2500.00', 'MXN', 'monthly'],
+        ],
+        notes: [
+          'date: YYYY-MM-DD format (e.g., 2025-01-01)',
+          'source: Name of the income source',
+          'amount: Positive number (e.g., 50000.00)',
+          'currency: MXN, USD, EUR, etc.',
+          'frequency: one-time, weekly, bi-weekly, or monthly',
+        ],
+      };
+
+    case 'accounts':
+      return {
+        headers: ACCOUNT_CSV_HEADERS,
+        description: 'Import your financial accounts (assets and liabilities) for net worth tracking.',
+        exampleRows: [
+          ['Savings Account', 'bank', 'asset', 'MXN', '100000.00', '5.5', '', '', '', 'false'],
+          ['Brokerage', 'investment', 'asset', 'USD', '15000.00', '7.5', '', '', '', 'false'],
+          ['Credit Card', 'credit-card', 'liability', 'MXN', '-8500.00', '', '15', '850', '8500', 'false'],
+          ['Car Loan', 'loan', 'liability', 'MXN', '-85000.00', '', '5', '4500', '', 'false'],
+        ],
+        notes: [
+          'name: Account name',
+          'type: cash, bank, exchange, investment, property, loan, credit-card, mortgage, or other',
+          'nature: asset or liability',
+          'currency: MXN, USD, EUR, etc.',
+          'balance: Positive for assets, negative for liabilities',
+          'yield: Annual yield % (optional, for investments)',
+          'due_date: Day of month for payments (1-31, optional)',
+          'min_payment: Minimum monthly payment (optional, for liabilities)',
+          'no_interest_payment: Amount to pay to avoid interest (optional)',
+          'excluded: true or false (exclude from net worth totals)',
+        ],
+      };
+
+    case 'ledger-accounts':
+      return {
+        headers: LEDGER_ACCOUNT_CSV_HEADERS,
+        description: 'Import your chart of accounts with account numbers and CLABE codes for reference.',
+        exampleRows: [
+          ['BBVA Checking', '0123456789', '012180001234567891', 'debit', 'true'],
+          ['Banorte Savings', '9876543210', '072180009876543212', 'debit', 'true'],
+          ['AMEX Gold', '3742-XXXXXX-12345', '', 'credit', 'true'],
+        ],
+        notes: [
+          'name: Account name for reference',
+          'account_number: Bank account number (optional)',
+          'clabe: 18-digit CLABE code (optional, Mexico only)',
+          'normal_balance: debit or credit',
+          'active: true or false',
+        ],
+      };
+  }
+};
+
+/**
+ * Generate a downloadable CSV template with headers and example rows
+ */
+export const generateCSVTemplate = (type: CSVTemplateType): string => {
+  const info = getCSVTemplateInfo(type);
+
+  // Header row
+  const headerRow = info.headers.join(',');
+
+  // Example rows
+  const exampleRows = info.exampleRows.map((row) =>
+    row.map((val) => escapeCSVValue(val)).join(',')
+  );
+
+  return [headerRow, ...exampleRows].join('\n');
+};
+
+/**
+ * Download a CSV template file
+ */
+export const downloadCSVTemplate = (type: CSVTemplateType): void => {
+  const template = generateCSVTemplate(type);
+  const filename = `fintonico-${type}-template.csv`;
+  downloadCSV(template, filename);
+};

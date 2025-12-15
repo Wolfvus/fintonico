@@ -1,12 +1,12 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useAccountStore } from '../../stores/accountStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { useSnapshotStore, type AccountSnapshot } from '../../stores/snapshotStore';
-import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, ChevronRight, ChevronLeft, Check, EyeOff, Eye, X, Filter, ArrowUpDown, ArrowUp, ArrowDown, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, ChevronRight, ChevronLeft, Check, EyeOff, Eye, X, Filter, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Upload } from 'lucide-react';
 import type { AccountType, Account } from '../../types';
-import { CSVActions } from '../Shared/CSVActions';
-import { exportAccountsToCSV, parseAccountCSV, downloadCSV, readCSVFile } from '../../utils/csv';
+import { ImportModal } from '../Shared/ImportModal';
+import { parseAccountCSV } from '../../utils/csv';
 import { NetWorthHistory } from './NetWorthHistory';
 
 // Helper to get month string in YYYY-MM format
@@ -1296,6 +1296,9 @@ export const NetWorthPage: React.FC = () => {
   const { baseCurrency, convertAmount, formatAmount, enabledCurrencies } = useCurrencyStore();
   const { getSnapshot } = useSnapshotStore();
 
+  // Import modal state
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
   // Month selector state
   const [selectedDate, setSelectedDate] = useState(new Date());
   const isViewingCurrentMonth = isCurrentMonth(selectedDate);
@@ -1567,142 +1570,103 @@ export const NetWorthPage: React.FC = () => {
     (a) => a.recurringDueDate && !a.isPaidThisMonth && !a.excludeFromTotal
   ).length;
 
-  // CSV Export handler
-  const handleExportCSV = () => {
-    const csvContent = exportAccountsToCSV(accounts);
-    const dateStr = new Date().toISOString().split('T')[0];
-    downloadCSV(csvContent, `fintonico-accounts-${dateStr}.csv`);
-  };
+  // CSV validation function for ImportModal
+  const validateAccountRow = useCallback((row: Record<string, string>, _index: number): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    const validTypes = ['cash', 'bank', 'exchange', 'investment', 'property', 'loan', 'credit-card', 'mortgage', 'other'];
 
-  // CSV Import handler
-  const handleImportCSV = async (file: File): Promise<{ success: boolean; message: string; count?: number }> => {
+    // Validate required fields
+    if (!row.name) errors.push('Missing name');
+    if (!row.type) errors.push('Missing type');
+    if (!row.balance) errors.push('Missing balance');
+
+    // Validate type
+    if (row.type && !validTypes.includes(row.type.toLowerCase())) {
+      errors.push('Invalid type');
+    }
+
+    // Validate balance
+    const balance = parseFloat(row.balance);
+    if (row.balance && isNaN(balance)) {
+      errors.push('Invalid balance');
+    }
+
+    return { isValid: errors.length === 0, errors };
+  }, []);
+
+  // CSV import handler for ImportModal
+  const handleImportRows = useCallback(async (rows: Record<string, string>[]): Promise<{ success: boolean; message: string; count?: number }> => {
     const MAX_IMPORT_ROWS = 100;
 
-    try {
-      const csvContent = await readCSVFile(file);
-      const { data, errors } = parseAccountCSV(csvContent);
-
-      if (errors.length > 0) {
-        return {
-          success: false,
-          message: errors.join('\n'),
-        };
-      }
-
-      if (data.length === 0) {
-        return {
-          success: false,
-          message: 'No valid accounts found in the CSV file',
-        };
-      }
-
-      // Limit import size
-      if (data.length > MAX_IMPORT_ROWS) {
-        return {
-          success: false,
-          message: `Too many rows (${data.length}). Maximum ${MAX_IMPORT_ROWS} accounts per import.`,
-        };
-      }
-
-      // Build set of existing accounts for duplicate detection
-      // Key: name (case-insensitive) + type + currency
-      const existingKeys = new Set(
-        accounts.map((a) => `${a.name.toLowerCase()}|${a.type}|${a.currency}`)
-      );
-
-      // Validate and import each row
-      const validTypes = ['cash', 'bank', 'exchange', 'investment', 'property', 'loan', 'credit-card', 'mortgage', 'other'];
-      let importedCount = 0;
-      let skippedDuplicates = 0;
-      const importErrors: string[] = [];
-
-      for (let i = 0; i < data.length; i++) {
-        const row = data[i];
-        const rowNum = i + 2; // +2 because row 1 is header, and array is 0-indexed
-
-        // Validate required fields
-        if (!row.name || !row.type || !row.balance) {
-          importErrors.push(`Row ${rowNum}: Missing required fields (name, type, balance)`);
-          continue;
-        }
-
-        // Validate type
-        const accountType = row.type.toLowerCase();
-        if (!validTypes.includes(accountType)) {
-          importErrors.push(`Row ${rowNum}: Invalid type (${row.type})`);
-          continue;
-        }
-
-        // Validate balance
-        const balance = parseFloat(row.balance);
-        if (isNaN(balance)) {
-          importErrors.push(`Row ${rowNum}: Invalid balance`);
-          continue;
-        }
-
-        const currency = row.currency?.toUpperCase() || baseCurrency;
-
-        // Check for duplicate
-        const key = `${row.name.toLowerCase()}|${accountType}|${currency}`;
-        if (existingKeys.has(key)) {
-          skippedDuplicates++;
-          continue;
-        }
-
-        // Add to existing keys to prevent duplicates within the import
-        existingKeys.add(key);
-
-        // Parse optional fields
-        const estimatedYield = row.yield ? parseFloat(row.yield) : undefined;
-        const recurringDueDate = row.due_date ? parseInt(row.due_date, 10) : undefined;
-        const minMonthlyPayment = row.min_payment ? parseFloat(row.min_payment) : undefined;
-        const paymentToAvoidInterest = row.no_interest_payment ? parseFloat(row.no_interest_payment) : undefined;
-        const excludeFromTotal = row.excluded?.toLowerCase() === 'true';
-
-        // Add the account (balance is negative for liabilities)
-        // Use nature field from CSV (already validated/inferred by parseAccountCSV)
-        const isLiability = row.nature === 'liability';
-        addAccount({
-          name: row.name,
-          type: accountType as AccountType,
-          currency,
-          balance: isLiability ? -Math.abs(balance) : balance,
-          // Asset-specific field
-          estimatedYield: !isLiability && estimatedYield && estimatedYield > 0 ? estimatedYield : undefined,
-          // Liability-specific fields
-          recurringDueDate: isLiability && recurringDueDate && recurringDueDate >= 1 && recurringDueDate <= 31 ? recurringDueDate : undefined,
-          minMonthlyPayment: isLiability && minMonthlyPayment && minMonthlyPayment > 0 ? minMonthlyPayment : undefined,
-          paymentToAvoidInterest: isLiability && paymentToAvoidInterest && paymentToAvoidInterest > 0 ? paymentToAvoidInterest : undefined,
-          excludeFromTotal,
-        });
-        importedCount++;
-      }
-
-      if (importErrors.length > 0 && importedCount === 0 && skippedDuplicates === 0) {
-        return {
-          success: false,
-          message: importErrors.slice(0, 5).join('\n') + (importErrors.length > 5 ? `\n...and ${importErrors.length - 5} more errors` : ''),
-        };
-      }
-
-      // Build result message
-      const messages: string[] = [];
-      if (importedCount > 0) messages.push(`${importedCount} imported`);
-      if (skippedDuplicates > 0) messages.push(`${skippedDuplicates} duplicates skipped`);
-      if (importErrors.length > 0) messages.push(`${importErrors.length} errors`);
-
-      return {
-        success: importedCount > 0 || skippedDuplicates > 0,
-        message: messages.join(', ') || 'No accounts imported',
-        count: importedCount,
-      };
-    } catch (error) {
+    if (rows.length > MAX_IMPORT_ROWS) {
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to parse CSV file',
+        message: `Too many rows (${rows.length}). Maximum ${MAX_IMPORT_ROWS} accounts per import.`,
       };
     }
-  };
+
+    // Build set of existing accounts for duplicate detection
+    const existingKeys = new Set(
+      accounts.map((a) => `${a.name.toLowerCase()}|${a.type}|${a.currency}`)
+    );
+
+    let importedCount = 0;
+    let skippedDuplicates = 0;
+
+    for (const row of rows) {
+      const accountType = row.type.toLowerCase() as AccountType;
+      const balance = parseFloat(row.balance);
+      const currency = row.currency?.toUpperCase() || baseCurrency;
+
+      // Check for duplicate
+      const key = `${row.name.toLowerCase()}|${accountType}|${currency}`;
+      if (existingKeys.has(key)) {
+        skippedDuplicates++;
+        continue;
+      }
+
+      existingKeys.add(key);
+
+      // Parse optional fields
+      const estimatedYield = row.yield ? parseFloat(row.yield) : undefined;
+      const recurringDueDate = row.due_date ? parseInt(row.due_date, 10) : undefined;
+      const minMonthlyPayment = row.min_payment ? parseFloat(row.min_payment) : undefined;
+      const paymentToAvoidInterest = row.no_interest_payment ? parseFloat(row.no_interest_payment) : undefined;
+      const excludeFromTotal = row.excluded?.toLowerCase() === 'true';
+
+      // Use nature field from CSV (already validated/inferred by parseAccountCSV)
+      const isLiability = row.nature === 'liability';
+
+      addAccount({
+        name: row.name,
+        type: accountType,
+        currency,
+        balance: isLiability ? -Math.abs(balance) : balance,
+        estimatedYield: !isLiability && estimatedYield && estimatedYield > 0 ? estimatedYield : undefined,
+        recurringDueDate: isLiability && recurringDueDate && recurringDueDate >= 1 && recurringDueDate <= 31 ? recurringDueDate : undefined,
+        minMonthlyPayment: isLiability && minMonthlyPayment && minMonthlyPayment > 0 ? minMonthlyPayment : undefined,
+        paymentToAvoidInterest: isLiability && paymentToAvoidInterest && paymentToAvoidInterest > 0 ? paymentToAvoidInterest : undefined,
+        excludeFromTotal,
+      });
+      importedCount++;
+    }
+
+    const messages: string[] = [];
+    if (importedCount > 0) messages.push(`${importedCount} imported`);
+    if (skippedDuplicates > 0) messages.push(`${skippedDuplicates} duplicates skipped`);
+
+    return {
+      success: importedCount > 0,
+      message: messages.join(', ') || 'No accounts imported',
+      count: importedCount,
+    };
+  }, [accounts, baseCurrency, addAccount]);
+
+  // CSV parse wrapper for ImportModal
+  const parseCSVForModal = useCallback((csvString: string): { data: Record<string, string>[]; errors: string[] } => {
+    const result = parseAccountCSV(csvString);
+    return { data: result.data as unknown as Record<string, string>[], errors: result.errors };
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -1710,14 +1674,17 @@ export const NetWorthPage: React.FC = () => {
       <div className="sticky top-16 z-20 -mx-4 px-4 py-2 bg-gray-100 dark:bg-gray-900">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3">
           <div className="flex items-center justify-between">
-            {/* CSV Actions - Left (only show for current month) */}
+            {/* Import Button - Left (only show for current month) */}
             <div className="flex-1">
               {isViewingCurrentMonth ? (
-                <CSVActions
-                  onExport={handleExportCSV}
-                  onImport={handleImportCSV}
-                  entityName="accounts"
-                />
+                <button
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  title="Import accounts from CSV"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Import CSV</span>
+                </button>
               ) : (
                 <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                   <Eye className="w-4 h-4" />
@@ -2009,6 +1976,17 @@ export const NetWorthPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Import Modal */}
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        templateType="accounts"
+        entityName="accounts"
+        parseCSV={parseCSVForModal}
+        validateRow={validateAccountRow}
+        onImport={handleImportRows}
+      />
     </div>
   );
 };

@@ -905,51 +905,113 @@ interface NetWorthSnapshot {
 
 ---
 
-## Phase 19: UI/UX Tweaks & Sticky Headers (Planned)
+## Phase 19: UI/UX Tweaks & Sticky Headers ✅
 
-**Goal:** Improve navigation consistency across all pages with sticky headers, and fix CSV import/export issues.
+**Goal:** Improve navigation consistency across all pages with sticky headers, and improve CSV import workflow (exports disabled).
 
-### Step 1: Fix CSV Import/Export (Planned)
+### Step 1: Disable CSV Exports ✅
 
-**Goal:** Fix issues with CSV import/export functionality.
-
-| Task | Status |
-| --- | --- |
-| Audit current CSV import/export issues | ⬜ |
-| Fix identified bugs | ⬜ |
-| Test import/export round-trip | ⬜ |
-
-### Step 2: Income Page Sticky Header (Planned)
-
-**Goal:** Make summary cards and month selector sticky on Income page.
+**Goal:** Hide export functionality to encourage data retention.
 
 | Task | Status |
 | --- | --- |
-| Make month selector sticky (already done in Phase 13) | ✅ |
-| Make summary cards sticky below month selector | ⬜ |
-| Ensure proper z-index layering | ⬜ |
+| Hide/remove Export button from CSVActions component | ✅ |
+| Remove export buttons from all pages (Income, Expenses, Net Worth, Accounts) | ✅ |
+| Keep export utility functions for potential future admin use | ✅ |
 
-### Step 3: Expenses Page Sticky Header (Planned)
+**Implementation Notes:**
+- Removed Export button from CSVActions component
+- Made `onExport` prop optional (for backward compatibility)
+- Commented out `handleExportCSV` functions in all 4 pages (kept for future use)
+- Export utility functions in `csv.ts` remain available for potential admin features
 
-**Goal:** Make summary cards and month selector sticky on Expenses page.
+### Step 2: CSV Template Generators ✅
 
-| Task | Status |
-| --- | --- |
-| Make month selector sticky (already done in Phase 13) | ✅ |
-| Make summary cards sticky below month selector | ⬜ |
-| Ensure proper z-index layering | ⬜ |
-
-### Step 4: Dashboard Sticky Header (Planned)
-
-**Goal:** Make Dashboard header, month selector, quick access, and summary cards sticky.
+**Goal:** Create downloadable CSV templates with example data for each data type.
 
 | Task | Status |
 | --- | --- |
-| Make top dashboard header sticky | ⬜ |
-| Make month selector sticky | ⬜ |
-| Make quick access section sticky | ⬜ |
-| Make summary cards sticky | ⬜ |
-| Ensure proper z-index layering with nav | ⬜ |
+| Add `generateTemplate(type)` function to csv.ts | ✅ |
+| Generate template for Expenses (with example rows) | ✅ |
+| Generate template for Income (with example rows) | ✅ |
+| Generate template for Accounts/Net Worth (with example rows) | ✅ |
+| Generate template for Chart of Accounts (with example rows) | ✅ |
+
+**Implementation Notes:**
+- Added `CSVTemplateType` union type: `'expenses' | 'income' | 'accounts' | 'ledger-accounts'`
+- Added `CSVTemplateInfo` interface with headers, description, exampleRows, and notes
+- `getCSVTemplateInfo(type)` returns template metadata for each type
+- `generateCSVTemplate(type)` creates CSV string with headers + example rows
+- `downloadCSVTemplate(type)` downloads template file as `fintonico-{type}-template.csv`
+- Each template includes 2-4 realistic example rows with proper formatting
+
+### Step 3: Import Modal Component ✅
+
+**Goal:** Create unified ImportModal with template view, upload, and preview.
+
+| Task | Status |
+| --- | --- |
+| Create ImportModal component structure | ✅ |
+| Tab 1: Template view (format + example + download button) | ✅ |
+| Tab 2: Upload zone (drag-drop + file picker) | ✅ |
+| Tab 3: Preview table (parsed rows with status icons) | ✅ |
+| Footer: Import controls (import all / skip invalid toggle) | ✅ |
+
+**Implementation Notes:**
+- Created `src/components/Shared/ImportModal.tsx` with 3 tabs (Template, Upload, Preview)
+- Template tab shows field reference, example table, and download button
+- Upload tab has drag-and-drop zone with file picker
+- Preview tab shows parsed data with per-row validation status
+- Footer has "Skip invalid rows" checkbox and Import button
+
+### Step 4: Enhanced Validation ✅
+
+**Goal:** Improve validation with per-row status and better error messages.
+
+| Task | Status |
+| --- | --- |
+| Per-row validation status (✅ valid / ❌ error) | ✅ |
+| Show validation errors in preview | ✅ |
+| "Import valid only" option to skip invalid rows | ✅ |
+
+**Implementation Notes:**
+- Each parsed row shows green checkmark (valid) or red X (invalid)
+- Invalid rows show error messages on hover
+- "Skip invalid rows" checkbox defaults to true
+- Import button shows count of rows to be imported
+
+### Step 5: Wire Up Import Modal ✅
+
+**Goal:** Replace current import flow with new ImportModal across all pages.
+
+| Task | Status |
+| --- | --- |
+| Wire up Expenses page import | ✅ |
+| Wire up Income page import | ✅ |
+| Wire up Net Worth page import | ✅ |
+| Wire up Chart of Accounts page import | ✅ |
+| Replace CSVActions with Import button | ✅ |
+
+**Implementation Notes:**
+- Replaced CSVActions component with Import CSV button on all pages
+- Each page has validateRow and handleImportRows callbacks for the modal
+- Removed unused CSVActions component imports
+
+### Step 6: Sticky Headers ✅
+
+**Goal:** Verify sticky headers are working on all pages.
+
+| Task | Status |
+| --- | --- |
+| Income page month selector sticky | ✅ |
+| Expenses page month selector sticky | ✅ |
+| Net Worth page month selector sticky | ✅ |
+| Dashboard time period controls sticky | ✅ |
+
+**Implementation Notes:**
+- All pages use `sticky top-16 z-20` on navigation/control sections
+- Background color matches page theme to hide scrolling content
+- Proper z-index layering with main nav (z-30)
 
 ---
 
@@ -959,4 +1021,4 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-12-14 (Phase 19 planned)
+**Last Updated:** 2025-12-14 (Phase 19 completed)

@@ -1,12 +1,12 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useIncomeStore } from '../../stores/incomeStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
-import { DollarSign, Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calendar, Filter, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { DollarSign, Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calendar, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, Upload } from 'lucide-react';
 import type { Income } from '../../types';
 import type { IncomeFrequency } from '../../stores/incomeStore';
-import { CSVActions } from '../Shared/CSVActions';
-import { exportIncomeToCSV, parseIncomeCSV, downloadCSV, readCSVFile } from '../../utils/csv';
+import { ImportModal } from '../Shared/ImportModal';
+import { parseIncomeCSV } from '../../utils/csv';
 
 // Format date for display (compact format: Dec 11)
 const formatDateCompact = (dateStr: string): string => {
@@ -941,6 +941,9 @@ export const IncomePage: React.FC = () => {
   const { baseCurrency, enabledCurrencies, formatAmount, convertAmount } = useCurrencyStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
 
+  // Import modal state
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
   // Filter states
   const [sourceFilter, setSourceFilter] = useState('');
   const [currencyFilter, setCurrencyFilter] = useState('');
@@ -1067,158 +1070,118 @@ export const IncomePage: React.FC = () => {
     });
   };
 
-  // CSV Export handler
-  const handleExportCSV = () => {
-    const csvContent = exportIncomeToCSV(incomes);
-    const dateStr = new Date().toISOString().split('T')[0];
-    downloadCSV(csvContent, `fintonico-income-${dateStr}.csv`);
-  };
+  // CSV validation function for ImportModal
+  const validateIncomeRow = useCallback((row: Record<string, string>, _index: number): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    const validFrequencies = ['one-time', 'weekly', 'bi-weekly', 'monthly'];
 
-  // CSV Import handler
-  const handleImportCSV = async (file: File): Promise<{ success: boolean; message: string; count?: number }> => {
+    // Validate required fields
+    if (!row.date) errors.push('Missing date');
+    if (!row.source) errors.push('Missing source');
+    if (!row.amount) errors.push('Missing amount');
+
+    // Validate date format (YYYY-MM-DD)
+    if (row.date && !/^\d{4}-\d{2}-\d{2}$/.test(row.date)) {
+      errors.push('Invalid date format (use YYYY-MM-DD)');
+    }
+
+    // Validate amount
+    const amount = parseFloat(row.amount);
+    if (row.amount && (isNaN(amount) || amount <= 0)) {
+      errors.push('Invalid amount');
+    }
+
+    // Validate frequency
+    const frequency = row.frequency?.toLowerCase() || 'one-time';
+    if (row.frequency && !validFrequencies.includes(frequency)) {
+      errors.push('Invalid frequency');
+    }
+
+    return { isValid: errors.length === 0, errors };
+  }, []);
+
+  // CSV import handler for ImportModal
+  const handleImportRows = useCallback(async (rows: Record<string, string>[]): Promise<{ success: boolean; message: string; count?: number }> => {
     const MAX_IMPORT_ROWS = 500;
 
-    try {
-      const csvContent = await readCSVFile(file);
-      const { data, errors } = parseIncomeCSV(csvContent);
-
-      if (errors.length > 0) {
-        return {
-          success: false,
-          message: errors.join('\n'),
-        };
-      }
-
-      if (data.length === 0) {
-        return {
-          success: false,
-          message: 'No valid income entries found in the CSV file',
-        };
-      }
-
-      // Limit import size
-      if (data.length > MAX_IMPORT_ROWS) {
-        return {
-          success: false,
-          message: `Too many rows (${data.length}). Maximum ${MAX_IMPORT_ROWS} rows per import.`,
-        };
-      }
-
-      // Build set of existing income for duplicate detection
-      // Key: date + source + amount + currency
-      const existingKeys = new Set(
-        incomes.map((i) => `${i.date}|${i.source.toLowerCase()}|${i.amount}|${i.currency}`)
-      );
-
-      // Validate and import each row
-      const validFrequencies = ['one-time', 'weekly', 'bi-weekly', 'monthly'];
-      let importedCount = 0;
-      let skippedDuplicates = 0;
-      const importErrors: string[] = [];
-
-      for (let i = 0; i < data.length; i++) {
-        const row = data[i];
-        const rowNum = i + 2; // +2 because row 1 is header, and array is 0-indexed
-
-        // Validate required fields
-        if (!row.date || !row.source || !row.amount) {
-          importErrors.push(`Row ${rowNum}: Missing required fields`);
-          continue;
-        }
-
-        // Validate date format (YYYY-MM-DD)
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(row.date)) {
-          importErrors.push(`Row ${rowNum}: Invalid date format (use YYYY-MM-DD)`);
-          continue;
-        }
-
-        // Validate amount
-        const amount = parseFloat(row.amount);
-        if (isNaN(amount) || amount <= 0) {
-          importErrors.push(`Row ${rowNum}: Invalid amount`);
-          continue;
-        }
-
-        // Validate frequency
-        const frequency = row.frequency?.toLowerCase() || 'one-time';
-        if (!validFrequencies.includes(frequency)) {
-          importErrors.push(`Row ${rowNum}: Invalid frequency (use one-time, weekly, bi-weekly, or monthly)`);
-          continue;
-        }
-
-        const currency = row.currency?.toUpperCase() || baseCurrency;
-
-        // Check for duplicate
-        const key = `${row.date}|${row.source.toLowerCase()}|${amount}|${currency}`;
-        if (existingKeys.has(key)) {
-          skippedDuplicates++;
-          continue;
-        }
-
-        // Add to existing keys to prevent duplicates within the import
-        existingKeys.add(key);
-
-        // Add the income
-        await addIncome({
-          source: row.source,
-          amount,
-          currency,
-          frequency: frequency as IncomeFrequency,
-          date: row.date,
-        });
-        importedCount++;
-      }
-
-      if (importErrors.length > 0 && importedCount === 0 && skippedDuplicates === 0) {
-        return {
-          success: false,
-          message: importErrors.slice(0, 5).join('\n') + (importErrors.length > 5 ? `\n...and ${importErrors.length - 5} more errors` : ''),
-        };
-      }
-
-      // Build result message
-      const messages: string[] = [];
-      if (importedCount > 0) messages.push(`${importedCount} imported`);
-      if (skippedDuplicates > 0) messages.push(`${skippedDuplicates} duplicates skipped`);
-      if (importErrors.length > 0) messages.push(`${importErrors.length} errors`);
-
-      return {
-        success: importedCount > 0 || skippedDuplicates > 0,
-        message: messages.join(', ') || 'No income imported',
-        count: importedCount,
-      };
-    } catch (error) {
+    if (rows.length > MAX_IMPORT_ROWS) {
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to parse CSV file',
+        message: `Too many rows (${rows.length}). Maximum ${MAX_IMPORT_ROWS} rows per import.`,
       };
     }
-  };
+
+    // Build set of existing income for duplicate detection
+    const existingKeys = new Set(
+      incomes.map((i) => `${i.date}|${i.source.toLowerCase()}|${i.amount}|${i.currency}`)
+    );
+
+    let importedCount = 0;
+    let skippedDuplicates = 0;
+
+    for (const row of rows) {
+      const amount = parseFloat(row.amount);
+      const currency = row.currency?.toUpperCase() || baseCurrency;
+      const frequency = (row.frequency?.toLowerCase() || 'one-time') as IncomeFrequency;
+
+      // Check for duplicate
+      const key = `${row.date}|${row.source.toLowerCase()}|${amount}|${currency}`;
+      if (existingKeys.has(key)) {
+        skippedDuplicates++;
+        continue;
+      }
+
+      existingKeys.add(key);
+
+      await addIncome({
+        source: row.source,
+        amount,
+        currency,
+        frequency,
+        date: row.date,
+      });
+      importedCount++;
+    }
+
+    const messages: string[] = [];
+    if (importedCount > 0) messages.push(`${importedCount} imported`);
+    if (skippedDuplicates > 0) messages.push(`${skippedDuplicates} duplicates skipped`);
+
+    return {
+      success: importedCount > 0,
+      message: messages.join(', ') || 'No income imported',
+      count: importedCount,
+    };
+  }, [incomes, baseCurrency, addIncome]);
+
+  // CSV parse wrapper for ImportModal
+  const parseCSVForModal = useCallback((csvString: string): { data: Record<string, string>[]; errors: string[] } => {
+    const result = parseIncomeCSV(csvString);
+    return { data: result.data as unknown as Record<string, string>[], errors: result.errors };
+  }, []);
 
   return (
-    <div className="space-y-6">
-      {/* Top Section: Quick Add + Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Quick Add Form */}
-        <div className="lg:col-span-1">
-          <QuickAddForm
-            onAdd={addIncome}
-            baseCurrency={baseCurrency}
-            enabledCurrencies={enabledCurrencies}
-          />
-        </div>
+    <div className="space-y-4">
+      {/* Quick Add Form - Not Sticky */}
+      <QuickAddForm
+        onAdd={addIncome}
+        baseCurrency={baseCurrency}
+        enabledCurrencies={enabledCurrencies}
+      />
 
+      {/* Sticky Section: Summary Cards + Month Navigation */}
+      <div className="sticky top-16 z-20 -mx-4 px-4 pt-2 pb-4 bg-gray-100 dark:bg-gray-900 space-y-3">
         {/* Summary Cards */}
-        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           {/* Monthly Income (Actual) */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-3 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-500 dark:text-gray-400">{getMonthLabel()}</p>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                <p className="text-xl font-bold text-green-600 dark:text-green-400 truncate">
                   {formatAmount(monthlyTotal)}
                 </p>
                 <p className="text-xs text-gray-400 dark:text-gray-500">{filteredIncomes.length} entries</p>
@@ -1227,57 +1190,58 @@ export const IncomePage: React.FC = () => {
           </div>
 
           {/* Expected Monthly Income */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-3 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-500 dark:text-gray-400">Expected Monthly</p>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                <p className="text-xl font-bold text-blue-600 dark:text-blue-400 truncate">
                   {formatAmount(expectedMonthlyIncome)}
                 </p>
                 <p className="text-xs text-gray-400 dark:text-gray-500">
-                  {recurringCount > 0 ? `${recurringCount} recurring` : 'no recurring income'}
+                  {recurringCount > 0 ? `${recurringCount} recurring` : 'no recurring'}
                 </p>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Sticky Month Navigation */}
-      <div className="sticky top-16 z-20 -mx-4 px-4 py-2 bg-gray-100 dark:bg-gray-900">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3">
+        {/* Month Navigation */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-2">
           <div className="flex items-center justify-between">
-            {/* CSV Actions - Left */}
+            {/* Import Button - Left */}
             <div className="flex-1">
-              <CSVActions
-                onExport={handleExportCSV}
-                onImport={handleImportCSV}
-                entityName="income"
-              />
+              <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                title="Import income from CSV"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Import</span>
+              </button>
             </div>
 
             {/* Month Navigation - Center */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => navigateMonth('prev')}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
-                <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                <span className="text-lg font-semibold text-gray-900 dark:text-white min-w-[180px] text-center">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <span className="text-sm font-semibold text-gray-900 dark:text-white min-w-[140px] text-center">
                   {getMonthLabel()}
                 </span>
               </div>
               <button
                 onClick={() => navigateMonth('next')}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
-                <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
             </div>
 
@@ -1329,6 +1293,17 @@ export const IncomePage: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Import Modal */}
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        templateType="income"
+        entityName="income"
+        parseCSV={parseCSVForModal}
+        validateRow={validateIncomeRow}
+        onImport={handleImportRows}
+      />
     </div>
   );
 };

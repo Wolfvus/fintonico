@@ -1,9 +1,9 @@
 import React, { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Download, Upload, X, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, X, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface CSVActionsProps {
-  onExport: () => void;
+  onExport?: () => void; // Made optional - exports disabled for now
   onImport: (file: File) => Promise<{ success: boolean; message: string; count?: number }>;
   exportLabel?: string;
   importLabel?: string;
@@ -11,9 +11,7 @@ interface CSVActionsProps {
 }
 
 export const CSVActions: React.FC<CSVActionsProps> = ({
-  onExport,
   onImport,
-  exportLabel = 'Export CSV',
   importLabel = 'Import CSV',
   entityName,
 }) => {
@@ -25,10 +23,6 @@ export const CSVActions: React.FC<CSVActionsProps> = ({
     count?: number;
   } | null>(null);
   const [showResultModal, setShowResultModal] = useState(false);
-
-  const handleExportClick = () => {
-    onExport();
-  };
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
@@ -76,15 +70,6 @@ export const CSVActions: React.FC<CSVActionsProps> = ({
   return (
     <>
       <div className="flex items-center gap-2">
-        <button
-          onClick={handleExportClick}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          title={`Export ${entityName} to CSV`}
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">{exportLabel}</span>
-        </button>
-
         <button
           onClick={handleImportClick}
           disabled={isImporting}
