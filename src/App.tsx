@@ -10,26 +10,33 @@ import { NetWorthPage } from './components/NetWorth/NetWorthPage';
 import { ChartOfAccountsPage } from './components/ChartOfAccounts/ChartOfAccountsPage';
 import { IncomePage } from './components/Income/IncomePage';
 import { ExpensePage } from './components/Expense/ExpensePage';
+import { AdminPage } from './components/Admin/AdminPage';
 import { CurrencySelector } from './components/Currency/CurrencySelector';
 import { Navigation } from './components/Navigation/Navigation';
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 import { SettingsModal } from './components/Settings/SettingsModal';
 import { Settings as SettingsIcon } from 'lucide-react';
 
+type TabType = 'dashboard' | 'expenses' | 'income' | 'networth' | 'accounts' | 'admin';
+
 function App() {
-  const { user, loading, checkUser } = useAuthStore();
+  const { user, loading, checkUser, canAccessAdmin } = useAuthStore();
   const { initializeDefaultAccounts } = useLedgerStore();
   const { isDark, toggleTheme, initializeTheme } = useThemeStore();
   const { ensureCurrentMonthSnapshot } = useSnapshotStore();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'expenses' | 'income' | 'networth' | 'accounts'>(() => {
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
     const saved = localStorage.getItem('fintonico-active-tab');
-    if (saved && ['dashboard', 'expenses', 'income', 'networth', 'accounts'].includes(saved)) {
-      return saved as 'dashboard' | 'expenses' | 'income' | 'networth' | 'accounts';
+    const validTabs: TabType[] = ['dashboard', 'expenses', 'income', 'networth', 'accounts', 'admin'];
+    if (saved && validTabs.includes(saved as TabType)) {
+      return saved as TabType;
     }
     return 'dashboard';
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Check if user can access admin panel
+  const showAdmin = canAccessAdmin();
 
   // Persist active tab to localStorage
   useEffect(() => {
@@ -67,7 +74,7 @@ function App() {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-bg)' }}>
       <Navigation
         activeTab={activeTab}
-        onTabChange={(tab) => setActiveTab(tab as typeof activeTab)}
+        onTabChange={(tab) => setActiveTab(tab as TabType)}
         isMobileMenuOpen={isMobileMenuOpen}
         onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         isDark={isDark}
@@ -75,6 +82,7 @@ function App() {
         onLogoClick={() => setActiveTab('dashboard')}
         onDateClick={() => setActiveTab('dashboard')}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        showAdmin={showAdmin}
       />
 
       {/* Desktop Top Bar */}
@@ -140,6 +148,12 @@ function App() {
           {activeTab === 'accounts' && (
             <ErrorBoundary>
               <ChartOfAccountsPage />
+            </ErrorBoundary>
+          )}
+
+          {activeTab === 'admin' && showAdmin && (
+            <ErrorBoundary>
+              <AdminPage />
             </ErrorBoundary>
           )}
         </div>

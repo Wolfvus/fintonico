@@ -30,8 +30,8 @@ export const clearMockData = async (): Promise<void> => {
   useCurrencyStore.setState((state) => ({
     ...state,
     baseCurrency: 'MXN',
-    enabledCurrencies: ['MXN', 'USD', 'EUR', 'BTC', 'ETH'],
-    exchangeRates: { MXN: 1, USD: 20.5, EUR: 22.0 },
+    enabledCurrencies: ['MXN', 'USD', 'EUR'],
+    exchangeRates: { MXN: 1, USD: 0.057, EUR: 0.052 },
     lastUpdated: Date.now(),
     loading: false,
     error: null,

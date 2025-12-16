@@ -36,24 +36,6 @@ export const CURRENCY_REGISTRY: Record<string, CurrencyConfig> = {
     symbolPosition: 'after',
     thousandsSeparator: '.',
     decimalSeparator: ','
-  },
-  BTC: {
-    code: 'BTC',
-    symbol: '₿',
-    name: 'Bitcoin',
-    minorUnitScale: 8, // Show 8 decimal places for BTC
-    symbolPosition: 'after',
-    thousandsSeparator: ',',
-    decimalSeparator: '.'
-  },
-  ETH: {
-    code: 'ETH',
-    symbol: 'Ξ',
-    name: 'Ethereum',
-    minorUnitScale: 5, // Show 5 decimal places for ETH
-    symbolPosition: 'after',
-    thousandsSeparator: ',',
-    decimalSeparator: '.'
   }
 };
 

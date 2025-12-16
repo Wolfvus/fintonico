@@ -24,15 +24,6 @@ export class Money {
     return new Money(amountMinor, currency);
   }
 
-  // Convenience factory methods
-  static fromBTC(btcAmount: number): Money {
-    return Money.fromMajorUnits(btcAmount, 'BTC');
-  }
-
-  static fromETH(ethAmount: number): Money {
-    return Money.fromMajorUnits(ethAmount, 'ETH');
-  }
-
   // Getters
   getAmountMinor(): number {
     return this.amountMinor;
@@ -45,15 +36,6 @@ export class Money {
   getAmountMajor(): number {
     const config = getCurrencyConfig(this.currency);
     return this.amountMinor / Math.pow(10, config.minorUnitScale);
-  }
-
-  // Currency type check methods
-  isBTC(): boolean {
-    return this.currency === 'BTC';
-  }
-
-  isETH(): boolean {
-    return this.currency === 'ETH';
   }
 
   // Arithmetic operations

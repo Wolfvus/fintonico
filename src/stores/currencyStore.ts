@@ -151,24 +151,7 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
             SUPPORTED_CURRENCIES.forEach(currency => {
               const code = currency.code.toLowerCase();
               if (rates[code] !== undefined) {
-                let rate = rates[code];
-                
-                // The API returns incorrect crypto rates - override with realistic values
-                if (currency.code === 'BTC' && baseCurrency === 'MXN') {
-                  rate = 0.00000060; // 1 MXN ≈ 0.00000060 BTC
-                } else if (currency.code === 'ETH' && baseCurrency === 'MXN') {
-                  rate = 0.000022;   // 1 MXN ≈ 0.000022 ETH
-                } else if (currency.code === 'BTC' && baseCurrency === 'USD') {
-                  rate = 0.0000105;  // 1 USD ≈ 0.0000105 BTC
-                } else if (currency.code === 'ETH' && baseCurrency === 'USD') {
-                  rate = 0.000385;   // 1 USD ≈ 0.000385 ETH
-                } else if (currency.code === 'BTC' && baseCurrency === 'EUR') {
-                  rate = 0.0000116;  // 1 EUR ≈ 0.0000116 BTC
-                } else if (currency.code === 'ETH' && baseCurrency === 'EUR') {
-                  rate = 0.000423;   // 1 EUR ≈ 0.000423 ETH
-                }
-                
-                formattedRates[currency.code] = rate;
+                formattedRates[currency.code] = rates[code];
               }
             });
             
@@ -191,30 +174,23 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
           
           // Fallback to approximate rates if API fails
           if (Object.keys(get().exchangeRates).length === 1) {
-            // Approximate rates based on current market values (August 2025)
+            // Approximate rates based on current market values
             const fallbackRates: ExchangeRate = { [baseCurrency]: 1 };
-            
-            // Calculate realistic fallback rates based on approximate values:
-            // 1 BTC ≈ $95,000, 1 ETH ≈ $2,600, 1 USD ≈ 17.5 MXN, 1 EUR ≈ 1.1 USD
+
+            // Calculate realistic fallback rates: 1 USD ≈ 17.5 MXN, 1 EUR ≈ 1.1 USD
             if (baseCurrency === 'MXN') {
               fallbackRates.USD = 0.057;      // 1 MXN ≈ 0.057 USD
-              fallbackRates.EUR = 0.052;      // 1 MXN ≈ 0.052 EUR  
-              fallbackRates.BTC = 0.00000060; // 1 MXN ≈ 0.00000060 BTC
-              fallbackRates.ETH = 0.000022;   // 1 MXN ≈ 0.000022 ETH
+              fallbackRates.EUR = 0.052;      // 1 MXN ≈ 0.052 EUR
             } else if (baseCurrency === 'USD') {
               fallbackRates.MXN = 17.5;       // 1 USD ≈ 17.5 MXN
               fallbackRates.EUR = 0.91;       // 1 USD ≈ 0.91 EUR
-              fallbackRates.BTC = 0.0000105;  // 1 USD ≈ 0.0000105 BTC (1 BTC ≈ $95,000)
-              fallbackRates.ETH = 0.000385;   // 1 USD ≈ 0.000385 ETH (1 ETH ≈ $2,600)
             } else {
               // Add basic rates for other base currencies
               fallbackRates.USD = 0.057;
               fallbackRates.MXN = 17.5;
               fallbackRates.EUR = 0.91;
-              fallbackRates.BTC = 0.0000105;
-              fallbackRates.ETH = 0.000385;
             }
-            
+
             set({ exchangeRates: fallbackRates });
           }
         }

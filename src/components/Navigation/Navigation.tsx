@@ -11,7 +11,8 @@ import {
   DollarSign,
   Landmark,
   Settings,
-  BookOpen
+  BookOpen,
+  Shield
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { CurrencySelector } from '../Currency/CurrencySelector';
@@ -26,6 +27,7 @@ interface NavigationProps {
   onLogoClick?: () => void;
   onDateClick?: () => void;
   onOpenSettings?: () => void;
+  showAdmin?: boolean;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -37,7 +39,8 @@ export const Navigation: React.FC<NavigationProps> = ({
   onThemeToggle,
   onLogoClick,
   onDateClick,
-  onOpenSettings
+  onOpenSettings,
+  showAdmin = false
 }) => {
   const { user, signOut } = useAuthStore();
 
@@ -47,6 +50,7 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: 'expenses', label: 'Expenses', icon: Wallet },
     { id: 'networth', label: 'Net Worth', icon: Landmark },
     { id: 'accounts', label: 'Accounts', icon: BookOpen },
+    ...(showAdmin ? [{ id: 'admin', label: 'Admin', icon: Shield }] : []),
   ];
 
   const handleSignOut = async () => {

@@ -15,6 +15,7 @@ import incomeRouter from './routes/income';
 import expensesRouter from './routes/expenses';
 import reportsRouter from './routes/reports';
 import ratesRouter from './routes/rates';
+import adminRouter from './routes/admin';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -39,6 +40,7 @@ app.use('/api/income', incomeRouter);
 app.use('/api/expenses', expensesRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/rates', ratesRouter);
+app.use('/api/admin', adminRouter);
 
 // Error handler (must be last)
 app.use(errorHandler);
@@ -84,4 +86,17 @@ app.listen(PORT, () => {
   console.log('  GET  /api/rates');
   console.log('  POST /api/rates/refresh');
   console.log('  GET  /api/rates/convert');
+  console.log('  --- Admin Routes ---');
+  console.log('  GET    /api/admin/users');
+  console.log('  POST   /api/admin/users');
+  console.log('  GET    /api/admin/users/:id');
+  console.log('  PUT    /api/admin/users/:id');
+  console.log('  DELETE /api/admin/users/:id');
+  console.log('  PUT    /api/admin/users/:id/role');
+  console.log('  GET    /api/admin/users/:id/accounts');
+  console.log('  GET    /api/admin/users/:id/expenses');
+  console.log('  GET    /api/admin/users/:id/incomes');
+  console.log('  GET    /api/admin/config');
+  console.log('  PUT    /api/admin/config/:key');
+  console.log('  GET    /api/admin/audit-log');
 });

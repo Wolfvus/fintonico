@@ -1,3 +1,6 @@
+// Re-export admin types
+export * from './admin';
+
 export interface Currency {
   code: string;
   symbol: string;

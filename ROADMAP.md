@@ -1079,10 +1079,114 @@ interface NetWorthSnapshot {
 
 ---
 
+## Phase 21: Super Admin Panel (In Progress)
+
+**Goal:** Implement a Super Admin Panel for managing user accounts, their financial data, and system-wide configuration. Admin panel accessible via new Admin tab visible only to super_admin and admin roles.
+
+### Step 1: Database Schema Updates ⬜
+
+| Task | Status |
+| --- | --- |
+| Create `user_profiles` table with role field | ⬜ |
+| Create `system_config` table for global settings | ⬜ |
+| Create `admin_audit_log` table for tracking | ⬜ |
+| Add RLS policies for admin access | ⬜ |
+| Create trigger to auto-create profile on registration | ⬜ |
+| Seed default system config values | ⬜ |
+
+### Step 2: Type Definitions ⬜
+
+| Task | Status |
+| --- | --- |
+| Create `UserRole` type (super_admin, admin, user) | ⬜ |
+| Create `UserProfile` interface | ⬜ |
+| Create `SystemConfig` interface | ⬜ |
+| Create `AdminAuditLog` interface | ⬜ |
+
+### Step 3: Auth Store Updates ⬜
+
+| Task | Status |
+| --- | --- |
+| Add `userProfile` to auth state | ⬜ |
+| Add `role` to auth state | ⬜ |
+| Add `fetchUserProfile()` method | ⬜ |
+| Add `isAdmin()`, `isSuperAdmin()`, `canAccessAdmin()` helpers | ⬜ |
+| Update DEV_MODE with super_admin role | ⬜ |
+
+### Step 4: Admin Store & Service ⬜
+
+| Task | Status |
+| --- | --- |
+| Create `adminStore.ts` with user management | ⬜ |
+| Create `adminService.ts` with API methods | ⬜ |
+| Add system config management | ⬜ |
+| Add audit logging | ⬜ |
+
+### Step 5: Server Admin Routes ⬜
+
+| Task | Status |
+| --- | --- |
+| Create `server/routes/admin.ts` | ⬜ |
+| Create `server/middleware/adminAuth.ts` | ⬜ |
+| Add admin routes to server index | ⬜ |
+| User CRUD endpoints | ⬜ |
+| System config endpoints | ⬜ |
+
+### Step 6: Navigation Updates ⬜
+
+| Task | Status |
+| --- | --- |
+| Add 'admin' to activeTab type | ⬜ |
+| Add AdminPage import and conditional render | ⬜ |
+| Add Shield icon admin nav item | ⬜ |
+| Show admin tab only for admin/super_admin roles | ⬜ |
+
+### Step 7: Admin Page Structure ⬜
+
+| Task | Status |
+| --- | --- |
+| Create `AdminPage.tsx` with sub-navigation | ⬜ |
+| Create `AdminSubNav.tsx` component | ⬜ |
+| Sections: Users, Financial Data, System Config | ⬜ |
+
+### Step 8: Users Management Section ⬜
+
+| Task | Status |
+| --- | --- |
+| Create `UsersSection.tsx` with user list table | ⬜ |
+| Create `UserDetailModal.tsx` for viewing/editing | ⬜ |
+| Create `CreateUserModal.tsx` for adding users | ⬜ |
+| Search/filter functionality | ⬜ |
+| Role dropdown (super_admin only) | ⬜ |
+| Delete with confirmation | ⬜ |
+
+### Step 9: Financial Data Section ⬜
+
+| Task | Status |
+| --- | --- |
+| Create `FinancialDataSection.tsx` | ⬜ |
+| User selector dropdown | ⬜ |
+| Tabs: Accounts, Expenses, Incomes | ⬜ |
+| Read-only data tables | ⬜ |
+| Export to CSV functionality | ⬜ |
+
+### Step 10: System Configuration Section ⬜
+
+| Task | Status |
+| --- | --- |
+| Create `SystemConfigSection.tsx` | ⬜ |
+| Default currency selector | ⬜ |
+| Supported currencies multi-select | ⬜ |
+| Expense categories editable list | ⬜ |
+| Income categories editable list | ⬜ |
+| Save with confirmation | ⬜ |
+
+---
+
 ## Future Phases
 
 See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvements.
 
 ---
 
-**Last Updated:** 2025-12-14 (Phase 20 planned)
+**Last Updated:** 2025-12-15 (Phase 21 in progress)

@@ -51,8 +51,8 @@ const resetStores = () => {
   useCurrencyStoreRef.setState(state => ({
     ...state,
     baseCurrency: 'MXN',
-    enabledCurrencies: ['MXN', 'USD', 'EUR', 'BTC', 'ETH'],
-    exchangeRates: { MXN: 1, USD: 0.057, EUR: 0.052, BTC: 0.0000006, ETH: 0.000022 },
+    enabledCurrencies: ['MXN', 'USD', 'EUR'],
+    exchangeRates: { MXN: 1, USD: 0.057, EUR: 0.052 },
     lastUpdated: Date.now(),
     loading: false,
     error: null,

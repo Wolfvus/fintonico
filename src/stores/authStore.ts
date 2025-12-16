@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
+import type { UserProfile, UserRole } from '../types/admin';
 
 // Dev mode configuration
 const DEV_MODE = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_DEV_MODE === 'true';
@@ -25,9 +26,21 @@ const DEV_SESSION: Session = {
   user: DEV_USER,
 } as Session;
 
+// Dev mode user profile with super_admin role for testing
+const DEV_USER_PROFILE: UserProfile = {
+  id: 'test-user-00000000-0000-0000-0000-000000000001',
+  email: 'admin@fintonico.com',
+  displayName: 'Dev Admin',
+  role: 'super_admin',
+  isActive: true,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
 interface AuthState {
   user: User | null;
   session: Session | null;
+  userProfile: UserProfile | null;
   loading: boolean;
   error: string | null;
   isDevMode: boolean;
@@ -35,11 +48,18 @@ interface AuthState {
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   checkUser: () => Promise<void>;
+  fetchUserProfile: () => Promise<void>;
+  // Role helper methods
+  getRole: () => UserRole;
+  isAdmin: () => boolean;
+  isSuperAdmin: () => boolean;
+  canAccessAdmin: () => boolean;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   session: null,
+  userProfile: null,
   loading: true,
   error: null,
   isDevMode: DEV_MODE,
@@ -54,6 +74,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({
           user: DEV_USER,
           session: DEV_SESSION,
+          userProfile: DEV_USER_PROFILE,
           loading: false,
           error: null,
         });
@@ -81,6 +102,9 @@ export const useAuthStore = create<AuthState>((set) => ({
         loading: false,
         error: null,
       });
+
+      // Fetch user profile after successful login
+      await get().fetchUserProfile();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sign in failed';
       set({ error: message, loading: false });
@@ -97,6 +121,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({
         user: DEV_USER,
         session: DEV_SESSION,
+        userProfile: DEV_USER_PROFILE,
         loading: false,
         error: null,
       });
@@ -120,6 +145,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({
           user: null,
           session: null,
+          userProfile: null,
           loading: false,
           error: null,
         });
@@ -132,6 +158,9 @@ export const useAuthStore = create<AuthState>((set) => ({
         loading: false,
         error: null,
       });
+
+      // Fetch user profile after successful signup
+      await get().fetchUserProfile();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sign up failed';
       set({ error: message, loading: false });
@@ -149,6 +178,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({
         user: null,
         session: null,
+        userProfile: null,
         loading: false,
         error: null,
       });
@@ -166,6 +196,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({
         user: null,
         session: null,
+        userProfile: null,
         loading: false,
         error: null,
       });
@@ -187,12 +218,13 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({
           user: DEV_USER,
           session: DEV_SESSION,
+          userProfile: DEV_USER_PROFILE,
           loading: false,
           error: null,
         });
         return;
       }
-      set({ user: null, session: null, loading: false });
+      set({ user: null, session: null, userProfile: null, loading: false });
       return;
     }
 
@@ -203,7 +235,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       } = await supabase.auth.getSession();
 
       if (error) {
-        set({ user: null, session: null, loading: false, error: error.message });
+        set({ user: null, session: null, userProfile: null, loading: false, error: error.message });
         return;
       }
 
@@ -214,15 +246,92 @@ export const useAuthStore = create<AuthState>((set) => ({
         error: null,
       });
 
+      // Fetch user profile if we have a session
+      if (session) {
+        await get().fetchUserProfile();
+      }
+
       // Set up auth state change listener
-      supabase.auth.onAuthStateChange((_event, session) => {
+      supabase.auth.onAuthStateChange(async (_event, session) => {
         set({
           user: session?.user ?? null,
           session: session,
         });
+        if (session) {
+          await get().fetchUserProfile();
+        } else {
+          set({ userProfile: null });
+        }
       });
     } catch {
-      set({ user: null, session: null, loading: false });
+      set({ user: null, session: null, userProfile: null, loading: false });
     }
+  },
+
+  fetchUserProfile: async () => {
+    const { user } = get();
+    if (!user) {
+      set({ userProfile: null });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Failed to fetch user profile:', error);
+        // Create a default profile if not found
+        set({
+          userProfile: {
+            id: user.id,
+            email: user.email || '',
+            role: 'user',
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        });
+        return;
+      }
+
+      set({
+        userProfile: {
+          id: data.id,
+          email: data.email,
+          displayName: data.display_name,
+          role: data.role as UserRole,
+          isActive: data.is_active,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        },
+      });
+    } catch (err) {
+      console.error('Error fetching user profile:', err);
+    }
+  },
+
+  // Role helper methods
+  getRole: () => {
+    const { userProfile } = get();
+    return userProfile?.role || 'user';
+  },
+
+  isAdmin: () => {
+    const { userProfile } = get();
+    return userProfile?.role === 'admin' || userProfile?.role === 'super_admin';
+  },
+
+  isSuperAdmin: () => {
+    const { userProfile } = get();
+    return userProfile?.role === 'super_admin';
+  },
+
+  canAccessAdmin: () => {
+    const { userProfile } = get();
+    return userProfile?.role === 'admin' || userProfile?.role === 'super_admin';
   },
 }));
