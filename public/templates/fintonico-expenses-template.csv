@@ -1,0 +1,4 @@
+date,description,amount,currency,category,recurring
+2025-01-15,Groceries,150.00,MXN,essential,false
+2025-01-16,Netflix Subscription,199.00,MXN,discretionary,true
+2025-01-20,New Headphones,2500.00,MXN,luxury,false

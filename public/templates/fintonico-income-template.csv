@@ -1,0 +1,4 @@
+date,source,amount,currency,frequency
+2025-01-01,Monthly Salary,50000.00,MXN,monthly
+2025-01-15,Freelance Project,1500.00,USD,one-time
+2025-01-05,Investment Dividends,2500.00,MXN,monthly

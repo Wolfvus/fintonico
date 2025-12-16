@@ -1,0 +1,4 @@
+name,account_number,clabe,normal_balance,active
+BBVA Checking,0123456789,012180001234567891,debit,true
+Banorte Savings,9876543210,072180009876543212,debit,true
+AMEX Gold,3742-XXXXXX-12345,,credit,true

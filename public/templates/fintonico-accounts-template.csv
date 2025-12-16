@@ -1,0 +1,5 @@
+name,type,nature,currency,balance,yield,due_date,min_payment,no_interest_payment,excluded
+Savings Account,bank,asset,MXN,100000.00,5.5,,,,false
+Brokerage,investment,asset,USD,15000.00,7.5,,,,false
+Credit Card,credit-card,liability,MXN,-8500.00,,15,850,8500,false
+Car Loan,loan,liability,MXN,-85000.00,,5,4500,,false
