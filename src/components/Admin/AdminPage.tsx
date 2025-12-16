@@ -7,6 +7,8 @@ import { useState } from 'react';
 import { Users, Database, Settings, Shield } from 'lucide-react';
 import type { AdminSection } from '../../types/admin';
 import { UsersSection } from './UsersSection';
+import { FinancialDataSection } from './FinancialDataSection';
+import { SystemConfigSection } from './SystemConfigSection';
 
 export const AdminPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<AdminSection>('users');
@@ -55,19 +57,11 @@ export const AdminPage: React.FC = () => {
         )}
 
         {activeSection === 'financial-data' && (
-          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-            <Database className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-medium mb-2">Financial Data</h3>
-            <p className="text-sm">Financial data viewer coming soon...</p>
-          </div>
+          <FinancialDataSection />
         )}
 
         {activeSection === 'system-config' && (
-          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-            <Settings className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-medium mb-2">System Configuration</h3>
-            <p className="text-sm">System configuration coming soon...</p>
-          </div>
+          <SystemConfigSection />
         )}
       </div>
     </div>

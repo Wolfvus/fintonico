@@ -67,7 +67,8 @@ export const adminService = {
       throw new Error(`Failed to fetch users: ${error.message}`);
     }
 
-    return data.map((row) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (data as any[]).map((row) => ({
       id: row.id,
       email: row.email,
       displayName: row.display_name,
@@ -94,14 +95,16 @@ export const adminService = {
       throw new Error(`Failed to fetch user: ${error.message}`);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const row = data as any;
     return {
-      id: data.id,
-      email: data.email,
-      displayName: data.display_name,
-      role: data.role as UserRole,
-      isActive: data.is_active,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
+      id: row.id,
+      email: row.email,
+      displayName: row.display_name,
+      role: row.role as UserRole,
+      isActive: row.is_active,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
     };
   },
 
@@ -133,8 +136,9 @@ export const adminService = {
 
     // Update profile with role if specified
     if (request.role && request.role !== 'user') {
-      const { error: profileError } = await supabase
-        .from('user_profiles')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: profileError } = await (supabase
+        .from('user_profiles') as any)
         .update({
           role: request.role,
           display_name: request.displayName,
@@ -170,8 +174,9 @@ export const adminService = {
       return MOCK_USERS[userIndex];
     }
 
-    const { error } = await supabase
-      .from('user_profiles')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase
+      .from('user_profiles') as any)
       .update({
         ...(updates.displayName !== undefined && { display_name: updates.displayName }),
         ...(updates.role !== undefined && { role: updates.role }),
@@ -239,7 +244,8 @@ export const adminService = {
       throw new Error(`Failed to fetch user accounts: ${error.message}`);
     }
 
-    return data.map((row) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (data as any[]).map((row) => ({
       id: row.id,
       name: row.name,
       type: row.type,
@@ -265,7 +271,8 @@ export const adminService = {
       throw new Error(`Failed to fetch user expenses: ${error.message}`);
     }
 
-    return data.map((row) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (data as any[]).map((row) => ({
       id: row.id,
       what: row.what,
       amount: Number(row.amount),
@@ -292,7 +299,8 @@ export const adminService = {
       throw new Error(`Failed to fetch user incomes: ${error.message}`);
     }
 
-    return data.map((row) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (data as any[]).map((row) => ({
       id: row.id,
       source: row.source,
       amount: Number(row.amount_cents) / 100,
@@ -321,7 +329,8 @@ export const adminService = {
       throw new Error(`Failed to fetch system config: ${error.message}`);
     }
 
-    return data.map((row) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (data as any[]).map((row) => ({
       id: row.id,
       key: row.key,
       value: row.value,
@@ -349,7 +358,8 @@ export const adminService = {
       throw new Error(`Failed to fetch config: ${error.message}`);
     }
 
-    return data.value as T;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (data as any).value as T;
   },
 
   async updateSystemConfig(key: string, value: unknown, adminUserId: string): Promise<void> {
@@ -366,8 +376,9 @@ export const adminService = {
       return;
     }
 
-    const { error } = await supabase
-      .from('system_config')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase
+      .from('system_config') as any)
       .update({
         value,
         updated_by: adminUserId,
@@ -398,7 +409,8 @@ export const adminService = {
       return;
     }
 
-    const { error } = await supabase.from('admin_audit_log').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from('admin_audit_log') as any).insert({
       admin_user_id: adminUserId,
       action,
       target_user_id: details?.targetUserId,
@@ -421,7 +433,8 @@ export const adminService = {
       return [];
     }
 
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query: any = supabase
       .from('admin_audit_log')
       .select('*')
       .order('created_at', { ascending: false });
@@ -445,7 +458,8 @@ export const adminService = {
       throw new Error(`Failed to fetch audit log: ${error.message}`);
     }
 
-    return data.map((row) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (data as any[]).map((row) => ({
       id: row.id,
       adminUserId: row.admin_user_id,
       action: row.action,

@@ -298,15 +298,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const row = data as any;
       set({
         userProfile: {
-          id: data.id,
-          email: data.email,
-          displayName: data.display_name,
-          role: data.role as UserRole,
-          isActive: data.is_active,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
+          id: row.id,
+          email: row.email,
+          displayName: row.display_name,
+          role: row.role as UserRole,
+          isActive: row.is_active,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
         },
       });
     } catch (err) {

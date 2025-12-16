@@ -12,7 +12,7 @@ import { UserDetailModal } from './UserDetailModal';
 import { CreateUserModal } from './CreateUserModal';
 
 export const UsersSection: React.FC = () => {
-  const { users, loadingUsers, errorUsers, fetchUsers, deleteUser } = useAdminStore();
+  const { users, usersLoading, usersError, fetchUsers, deleteUser } = useAdminStore();
   const { isSuperAdmin } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
@@ -53,7 +53,7 @@ export const UsersSection: React.FC = () => {
     setShowDeleteConfirm(null);
   };
 
-  if (loadingUsers) {
+  if (usersLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-primary)' }}></div>
@@ -61,10 +61,10 @@ export const UsersSection: React.FC = () => {
     );
   }
 
-  if (errorUsers) {
+  if (usersError) {
     return (
       <div className="text-center py-12 text-red-500">
-        <p>Error loading users: {errorUsers}</p>
+        <p>Error loading users: {usersError}</p>
         <button
           onClick={() => fetchUsers()}
           className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"

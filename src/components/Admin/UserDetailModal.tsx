@@ -15,7 +15,7 @@ interface UserDetailModalProps {
 }
 
 export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user, onClose }) => {
-  const { updateUser, updateUserRole } = useAdminStore();
+  const { updateUser, setUserRole } = useAdminStore();
   const { isSuperAdmin, user: currentUser } = useAuthStore();
   const [displayName, setDisplayName] = useState(user.displayName || '');
   const [role, setRole] = useState<UserRole>(user.role);
@@ -39,7 +39,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user, onClose 
 
       // Update role if changed and user has permission
       if (role !== user.role && canManageRoles) {
-        await updateUserRole(user.id, role);
+        await setUserRole(user.id, role);
       }
 
       onClose();
