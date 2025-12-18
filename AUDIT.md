@@ -70,11 +70,43 @@ This document outlines a systematic approach to auditing the Fintonico codebase 
 
 | Task | Files | Status |
 | --- | --- | --- |
-| Review form input sanitization | `src/utils/sanitization.ts` | ⬜ |
-| Check API request validation | `server/middleware/*.ts` | ⬜ |
-| Verify file upload validation | `src/utils/xlsx.ts`, `src/utils/csv.ts` | ⬜ |
-| Check for XSS vulnerabilities | All components with user input | ⬜ |
-| Review SQL/NoSQL injection points | `server/services/*.ts` | ⬜ |
+| Review form input sanitization | `src/utils/sanitization.ts` | ✅ |
+| Check API request validation | `server/middleware/*.ts` | ✅ |
+| Verify file upload validation | `src/utils/xlsx.ts`, `src/utils/csv.ts` | ⚠️ |
+| Check for XSS vulnerabilities | All components with user input | ✅ |
+| Review SQL/NoSQL injection points | `server/services/*.ts` | ✅ |
+
+**1.2 Findings:**
+
+✅ **Form Input Sanitization (PASS):**
+- `sanitization.ts` provides comprehensive XSS prevention
+- Removes: `<>`, `javascript:`, `onclick=`, `script`, `iframe`, `object`, `embed`
+- Applied in ExpenseForm, IncomeForm, and corresponding stores
+- Amount validation with range checks (0.01 to $1B)
+- Date validation with reasonable range (-100 to +10 years)
+
+✅ **API Request Validation (PASS):**
+- Zod schemas used for body, query, and params validation
+- UUID validation on all ID parameters
+- Pagination limits enforced (max 100)
+- Date format validation (YYYY-MM-DD)
+- Proper error responses with field-level details
+
+⚠️ **File Upload Validation (MEDIUM):**
+- Header validation ensures required columns exist
+- Data parsed through controlled functions, not executed
+- Missing: explicit file size limit (server config may handle)
+- Missing: file type validation beyond extension
+
+✅ **XSS Vulnerabilities (PASS):**
+- No `dangerouslySetInnerHTML` usage found
+- React's default JSX escaping handles user content
+- Sanitization applied before storage in stores
+
+✅ **SQL/NoSQL Injection (PASS):**
+- Supabase client uses parameterized queries
+- No raw SQL with user input concatenation
+- Query builders (.eq(), .in(), etc.) prevent injection
 
 ### 1.3 Data Exposure
 
@@ -362,6 +394,7 @@ Track audit progress here:
 | Date | Category | Section | Findings | Actions |
 | --- | --- | --- | --- | --- |
 | 2025-12-17 | Security | 1.1 Auth & Authorization | 4 PASS, 1 MEDIUM issue (dev mode security) | Ensure DEV_MODE=false in production |
+| 2025-12-17 | Security | 1.2 Input Validation | 4 PASS, 1 MEDIUM issue (file upload limits) | Add file size/type validation |
 
 ---
 
@@ -372,6 +405,7 @@ Track critical issues requiring immediate attention:
 | ID | Category | Description | Severity | Status |
 | --- | --- | --- | --- | --- |
 | SEC-001 | Security | Dev mode accepts weak credentials (any email + 1-char password) | Medium | Open |
+| SEC-002 | Security | File uploads lack explicit size limit and MIME type validation | Medium | Open |
 
 **Severity Levels:**
 - **Critical**: Security vulnerability or data loss risk
@@ -384,10 +418,10 @@ Track critical issues requiring immediate attention:
 ## Audit Summary
 
 **Total Items:** 100+
-**Completed:** 5 (Section 1.1)
+**Completed:** 10 (Sections 1.1, 1.2)
 **Critical Issues:** 0
 **High Priority Issues:** 0
-**Medium Priority Issues:** 1 (SEC-001)
+**Medium Priority Issues:** 2 (SEC-001, SEC-002)
 
 ---
 
@@ -398,3 +432,100 @@ Track critical issues requiring immediate attention:
 3. Document findings in Execution Log
 4. Create issues for critical findings
 5. Schedule follow-up audit after fixes
+
+---
+
+## Detailed Audit Notes
+
+### Section 1.1 - Authentication & Authorization (2025-12-17)
+
+**Files Reviewed:**
+- `supabase/migrations/001_initial_schema.sql`
+- `supabase/migrations/002_phase1_schema.sql`
+- `supabase/migrations/003_admin_schema.sql`
+- `src/stores/authStore.ts`
+- `server/middleware/adminAuth.ts`
+- `server/routes/admin.ts`
+- `server/routes/expenses.ts`
+
+**RLS Policy Analysis:**
+
+| Table | Policy | Evaluation |
+| --- | --- | --- |
+| expenses | `user_id = auth.uid()` | ✅ Secure |
+| accounts | `user_id = auth.uid()` | ✅ Secure |
+| transactions | `user_id = auth.uid()` | ✅ Secure |
+| income | `user_id = auth.uid()` | ✅ Secure |
+| postings | EXISTS subquery on transaction.user_id | ✅ Secure |
+| user_profiles | Own profile only + admin read | ✅ Secure |
+| system_config | Auth read, admin write | ✅ Secure |
+| admin_audit_log | Admin read only | ✅ Secure |
+
+**Auth Flow Analysis:**
+1. User signs in via Supabase Auth
+2. authStore receives session and sets user/session state
+3. fetchUserProfile() retrieves role from user_profiles table
+4. Role helpers (isAdmin, isSuperAdmin, canAccessAdmin) check userProfile.role
+5. Server middleware validates JWT and checks role in database
+
+**Dev Mode Concerns:**
+- Location: `src/stores/authStore.ts:70-86`
+- DEV_MODE enabled when: `!import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_DEV_MODE === 'true'`
+- Accepts credentials: `(email === 'admin' && password === 'admin') || (email.includes('@') && password.length >= 1)`
+- Mitigation: Ensure production builds have VITE_SUPABASE_URL set and VITE_DEV_MODE !== 'true'
+
+---
+
+### Section 1.2 - Input Validation & Sanitization (2025-12-17)
+
+**Files Reviewed:**
+- `src/utils/sanitization.ts`
+- `server/middleware/validation.ts`
+- `src/utils/xlsx.ts`
+- `src/utils/csv.ts`
+- `src/stores/expenseStore.ts`
+- `src/components/ExpenseForm/ExpenseForm.tsx`
+- `server/services/AccountService.ts`
+
+**Sanitization Functions Analysis:**
+
+| Function | Purpose | Protection |
+| --- | --- | --- |
+| `sanitizeText()` | General text sanitization | Removes XSS vectors, 1000 char limit |
+| `sanitizeDescription()` | Description fields | Same as sanitizeText, 30 char limit |
+| `validateAmount()` | Numeric validation | Range: $0.01 - $1B, 2 decimal places |
+| `validateDate()` | Date validation | Format: YYYY-MM-DD, -100 to +10 years |
+| `validateCurrency()` | Currency codes | Whitelist: USD, MXN, EUR |
+
+**API Validation Middleware:**
+
+| Middleware | Schema Type | Usage |
+| --- | --- | --- |
+| `validate()` | Request body | POST/PUT endpoints |
+| `validateQuery()` | Query parameters | GET with filters |
+| `validateParams()` | URL parameters | All :id routes |
+
+**Zod Schemas Used:**
+- `createExpenseSchema`: what (1-255), amount (positive), rating (enum), date (ISO)
+- `updateExpenseSchema`: Same fields, all optional
+- `paginationSchema`: page (int, min 1), limit (int, 1-100)
+- `idParamSchema`: UUID format validation
+
+**File Upload Analysis:**
+- XLSX: Uses SheetJS library for parsing
+- CSV: Custom parser with proper quote handling
+- Both validate required headers before processing
+- Data is type-converted, not executed
+- Gap: No explicit file size limit in application code
+- Gap: Only file extension check (.xlsx, .xls), no MIME verification
+
+**XSS Prevention:**
+- Search for `dangerouslySetInnerHTML`: 0 results
+- User input rendered via React JSX (auto-escaped)
+- Sanitization applied at storage time in Zustand stores
+
+**SQL Injection Prevention:**
+- Supabase client uses parameterized queries internally
+- All queries use method chaining: `.eq()`, `.in()`, `.gte()`, `.lte()`
+- No string concatenation for query building
+- Example safe pattern: `query.eq('user_id', req.userId)`
