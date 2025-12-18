@@ -33,11 +33,38 @@ This document outlines a systematic approach to auditing the Fintonico codebase 
 
 | Task | Files | Status |
 | --- | --- | --- |
-| Review Supabase RLS policies | `supabase/migrations/*.sql` | ⬜ |
-| Verify user session handling | `src/stores/authStore.ts` | ⬜ |
-| Check admin role enforcement | `src/stores/authStore.ts`, `server/middleware/adminAuth.ts` | ⬜ |
-| Review dev mode token security | `src/stores/authStore.ts` | ⬜ |
-| Audit API route authentication | `server/routes/*.ts` | ⬜ |
+| Review Supabase RLS policies | `supabase/migrations/*.sql` | ✅ |
+| Verify user session handling | `src/stores/authStore.ts` | ✅ |
+| Check admin role enforcement | `src/stores/authStore.ts`, `server/middleware/adminAuth.ts` | ✅ |
+| Review dev mode token security | `src/stores/authStore.ts` | ⚠️ |
+| Audit API route authentication | `server/routes/*.ts` | ✅ |
+
+**1.1 Findings:**
+
+✅ **RLS Policies (PASS):** All tables have proper RLS enabled with user_id isolation:
+- `expenses`, `accounts`, `transactions`, `income`: Filter by `user_id = auth.uid()`
+- `postings`: Uses EXISTS subquery to verify parent transaction ownership
+- `user_profiles`, `system_config`, `admin_audit_log`: Role-based access for admins
+
+✅ **Session Handling (PASS):** authStore.ts properly manages:
+- Supabase session with auth state change listener
+- Profile fetching after successful authentication
+- Session persistence via localStorage (dev mode) / Supabase (prod)
+
+✅ **Admin Role Enforcement (PASS):** Server middleware properly validates:
+- `requireAdmin()`: Checks for admin or super_admin role
+- `requireSuperAdmin()`: Checks for super_admin role only
+- Both verify is_active status before granting access
+
+⚠️ **Dev Mode Token Security (MEDIUM):**
+- Hardcoded token: `dev-token-fintonico`
+- Weak credential acceptance: any email with password >= 1 character
+- Recommendation: Ensure DEV_MODE is false in production builds
+
+✅ **API Route Authentication (PASS):**
+- All routes use `authMiddleware` for authentication
+- Admin routes additionally use `requireAdmin` or `requireSuperAdmin`
+- All queries filter by `req.userId` for user isolation
 
 ### 1.2 Input Validation & Sanitization
 
@@ -334,7 +361,7 @@ Track audit progress here:
 
 | Date | Category | Section | Findings | Actions |
 | --- | --- | --- | --- | --- |
-| | | | | |
+| 2025-12-17 | Security | 1.1 Auth & Authorization | 4 PASS, 1 MEDIUM issue (dev mode security) | Ensure DEV_MODE=false in production |
 
 ---
 
@@ -344,7 +371,7 @@ Track critical issues requiring immediate attention:
 
 | ID | Category | Description | Severity | Status |
 | --- | --- | --- | --- | --- |
-| | | | | |
+| SEC-001 | Security | Dev mode accepts weak credentials (any email + 1-char password) | Medium | Open |
 
 **Severity Levels:**
 - **Critical**: Security vulnerability or data loss risk
@@ -357,9 +384,10 @@ Track critical issues requiring immediate attention:
 ## Audit Summary
 
 **Total Items:** 100+
-**Completed:** 0
+**Completed:** 5 (Section 1.1)
 **Critical Issues:** 0
 **High Priority Issues:** 0
+**Medium Priority Issues:** 1 (SEC-001)
 
 ---
 
