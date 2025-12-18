@@ -340,20 +340,81 @@ Issues:
 
 | Task | Files | Status |
 | --- | --- | --- |
-| Check expense validation rules | `src/stores/expenseStore.ts` | ⬜ |
-| Check income validation rules | `src/stores/incomeStore.ts` | ⬜ |
-| Check account validation rules | `src/stores/accountStore.ts` | ⬜ |
-| Review currency validation | `src/stores/currencyStore.ts` | ⬜ |
-| Verify date format consistency | All date handling | ⬜ |
+| Check expense validation rules | `src/stores/expenseStore.ts` | ✅ |
+| Check income validation rules | `src/stores/incomeStore.ts` | ✅ |
+| Check account validation rules | `src/stores/accountStore.ts` | ❌ |
+| Review currency validation | `src/stores/currencyStore.ts` | ⚠️ |
+| Verify date format consistency | All date handling | ✅ |
+
+**3.2 Findings:**
+
+✅ **Expense Validation (PASS):**
+- Uses `sanitizeDescription()` - max 30 chars, XSS protection
+- Uses `validateAmount()` - range $0.01 to $1B, 2 decimal places
+- Rating validated against enum: essential, discretionary, luxury
+- Date validated with `validateDate()` - YYYY-MM-DD format
+
+✅ **Income Validation (PASS):**
+- Same sanitization/validation as expenses
+- Frequency validated: one-time, weekly, bi-weekly, monthly
+- `yearly` frequency migrated to `monthly` in onRehydrateStorage
+
+❌ **Account Validation (HIGH - Missing):**
+- accountStore.addAccount() has NO input validation
+- No sanitization on account name
+- No amount/balance validation
+- No type validation against enum
+- Data directly stored without checks
+
+⚠️ **Currency Validation (MEDIUM - Incomplete):**
+- `validateCurrency()` only accepts: USD, MXN, EUR
+- App supports additional currencies: BTC, ETH
+- Whitelist should be expanded or made configurable
+
+✅ **Date Format Consistency (PASS):**
+- Consistent YYYY-MM-DD format throughout
+- `validateDate()` enforces format and range
+- Excel date serial numbers converted properly in xlsx.ts
 
 ### 3.3 Import/Export Integrity
 
 | Task | Files | Status |
 | --- | --- | --- |
-| Review XLSX parsing edge cases | `src/utils/xlsx.ts` | ⬜ |
-| Check CSV parsing edge cases | `src/utils/csv.ts` | ⬜ |
-| Verify data transformation accuracy | Import handlers in pages | ⬜ |
-| Test round-trip export/import | All entity types | ⬜ |
+| Review XLSX parsing edge cases | `src/utils/xlsx.ts` | ✅ |
+| Check CSV parsing edge cases | `src/utils/csv.ts` | ✅ |
+| Verify data transformation accuracy | Import handlers in pages | ✅ |
+| Test round-trip export/import | All entity types | ⚠️ |
+
+**3.3 Findings:**
+
+✅ **XLSX Parsing (PASS):**
+- Uses SheetJS library for robust parsing
+- Handles Excel date serial numbers (36526-73415 range)
+- Normalizes headers to lowercase
+- Empty cells default to empty string
+- Scientific notation handled for long numbers (CLABE)
+
+✅ **CSV Parsing (PASS):**
+- Custom parser handles quoted values with commas
+- Escaped quotes (`""`) properly unescaped
+- Line breaks within quotes handled
+- Header validation before processing
+
+✅ **Data Transformation (PASS):**
+- Import limits per entity type:
+  - Expenses: 500 rows max
+  - Income: 500 rows max
+  - Accounts: 100 rows max
+  - Ledger Accounts: 50 rows max
+- Duplicate detection in all import handlers
+- Required column validation
+- Nature field inferred from account type if missing
+
+⚠️ **Round-Trip (MEDIUM - Potential Issues):**
+- Export uses native types (numbers), import expects strings
+- Boolean fields: export as true/false, import should handle variations
+- Date format preserved (YYYY-MM-DD)
+- Long numbers (CLABE) may lose precision in Excel
 
 ---
 
@@ -568,6 +629,8 @@ Track audit progress here:
 | 2025-12-17 | Type Safety | 2.2 API Types | 1 PASS, 2 MEDIUM | Use Database types, fix middleware types |
 | 2025-12-17 | Type Safety | 2.3 Component Props | 3 PASS | All components properly typed |
 | 2025-12-17 | Data Integrity | 3.1 Store Consistency | 1 PASS, 3 MEDIUM | Standardize persist configs, add versions |
+| 2025-12-17 | Data Integrity | 3.2 Data Validation | 3 PASS, 1 MEDIUM, 1 HIGH | Add validation to accountStore |
+| 2025-12-17 | Data Integrity | 3.3 Import/Export | 3 PASS, 1 MEDIUM | Test round-trip for edge cases |
 
 ---
 
@@ -587,6 +650,8 @@ Track critical issues requiring immediate attention:
 | TYPE-001 | Type Safety | 80+ uses of `any` type - reduces type safety benefits | Medium | Open |
 | TYPE-002 | Type Safety | `authMiddleware as any` cast in all server routes | Medium | Open |
 | DATA-001 | Data Integrity | Store persist configs inconsistent (naming, versions, migrations) | Medium | Open |
+| DATA-002 | Data Integrity | accountStore has NO input validation - accepts any data | **High** | Open |
+| DATA-003 | Data Integrity | validateCurrency() missing BTC, ETH from whitelist | Medium | Open |
 
 **Severity Levels:**
 - **Critical**: Security vulnerability or data loss risk
@@ -599,10 +664,10 @@ Track critical issues requiring immediate attention:
 ## Audit Summary
 
 **Total Items:** 100+
-**Completed:** 33 (Categories 1, 2 + Section 3.1)
+**Completed:** 42 (Categories 1, 2, 3) - **Data Integrity Audit Complete**
 **Critical Issues:** 0
-**High Priority Issues:** 3 (SEC-003, SEC-005, SEC-006)
-**Medium Priority Issues:** 7 (SEC-001, SEC-002, SEC-004, SEC-007, TYPE-001, TYPE-002, DATA-001)
+**High Priority Issues:** 4 (SEC-003, SEC-005, SEC-006, DATA-002)
+**Medium Priority Issues:** 9 (SEC-001, SEC-002, SEC-004, SEC-007, TYPE-001, TYPE-002, DATA-001, DATA-003)
 
 ---
 
@@ -954,3 +1019,99 @@ clearAllData: () => {
 }
 ```
 This bypasses Zustand's state management for other stores.
+
+---
+
+### Section 3.2 - Data Validation (2025-12-17)
+
+**Files Reviewed:**
+- `src/utils/sanitization.ts`
+- `src/stores/expenseStore.ts`
+- `src/stores/incomeStore.ts`
+- `src/stores/accountStore.ts`
+- `src/stores/currencyStore.ts`
+
+**Validation Functions Available:**
+
+| Function | Purpose | Limits |
+| --- | --- | --- |
+| `sanitizeText()` | XSS prevention | 1000 chars max |
+| `sanitizeDescription()` | Field sanitization | 30 chars max |
+| `validateAmount()` | Number validation | $0.01 - $1B |
+| `validateDate()` | Date validation | YYYY-MM-DD, ±100/+10 years |
+| `validateCurrency()` | Currency whitelist | USD, MXN, EUR only |
+
+**Store Validation Comparison:**
+
+| Store | Sanitization | Amount Check | Type Check | Date Check |
+| --- | --- | --- | --- | --- |
+| expenseStore | ✅ sanitizeDescription | ✅ validateAmount | ✅ Enum | ✅ validateDate |
+| incomeStore | ✅ sanitizeDescription | ✅ validateAmount | ✅ Enum | ✅ validateDate |
+| accountStore | ❌ None | ❌ None | ❌ None | ❌ None |
+| ledgerAccountStore | ❌ None | N/A | ❌ None | N/A |
+
+**Critical Gap - accountStore:**
+```typescript
+// accountStore.ts:73-86 - NO VALIDATION
+addAccount: (newAccount) => {
+  const completeAccount: Account = {
+    ...newAccount,  // Accepts anything!
+    id: crypto.randomUUID(),
+    lastUpdated: new Date().toISOString().split('T')[0],
+  };
+  set((state) => ({ accounts: [...state.accounts, completeAccount] }));
+  return completeAccount;
+}
+```
+
+**Currency Whitelist Issue:**
+```typescript
+// sanitization.ts:173
+const validCurrencies = ['USD', 'MXN', 'EUR'];
+// Missing: BTC, ETH which are supported in currencyStore
+```
+
+---
+
+### Section 3.3 - Import/Export Integrity (2025-12-17)
+
+**Files Reviewed:**
+- `src/utils/xlsx.ts`
+- `src/utils/csv.ts`
+- `src/components/*/handleImportRows` functions
+
+**Import Limits by Entity:**
+
+| Entity | Max Rows | File |
+| --- | --- | --- |
+| Expenses | 500 | ExpensePage.tsx:1199 |
+| Income | 500 | IncomePage.tsx:956 |
+| Accounts | 100 | NetWorthPage.tsx:1599 |
+| Ledger Accounts | 50 | ChartOfAccountsPage.tsx:592 |
+
+**XLSX Edge Cases Handled:**
+
+| Case | Solution | Location |
+| --- | --- | --- |
+| Excel date serial | `XLSX.SSF.parse_date_code()` | xlsx.ts:103-109 |
+| Scientific notation | `parseFloat().toFixed(0)` | xlsx.ts:391-398 |
+| Leading apostrophe | Strip from value | xlsx.ts:388 |
+| Empty cells | Default to empty string | xlsx.ts:60 |
+| Multiple sheets | Use first sheet only | xlsx.ts:49 |
+
+**CSV Edge Cases Handled:**
+
+| Case | Solution | Location |
+| --- | --- | --- |
+| Quoted commas | State machine parser | csv.ts:28-66 |
+| Escaped quotes (`""`) | Unescape to `"` | csv.ts:38-40 |
+| Line breaks in quotes | Tracked with `inQuotes` | csv.ts:37-48 |
+| Header normalization | Lowercase + trim | csv.ts:99 |
+
+**Import Validation Flow:**
+1. Parse file → get raw data
+2. Validate required headers
+3. Transform data to typed rows
+4. Check row count limit
+5. Detect duplicates (by date+description/source/name)
+6. Add to store
