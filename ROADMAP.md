@@ -1206,7 +1206,6 @@ interface NetWorthSnapshot {
 | Default currency selector | ✅ |
 | Supported currencies multi-select | ✅ |
 | Expense categories editable list | ✅ |
-| Income sources editable list | ✅ |
 | Save with confirmation | ✅ |
 | Reset to defaults option | ✅ |
 
@@ -1222,10 +1221,131 @@ interface NetWorthSnapshot {
 
 ---
 
+## Phase 22: XLSX Import (Replace CSV)
+
+**Goal:** Replace CSV import with XLSX (Excel) format for easier template usage and better user experience. Excel files support formatting, validation hints, and are more familiar to users.
+
+### Step 1: Add XLSX Library & Core Utilities ✅
+
+| Task | Status |
+| --- | --- |
+| Install `xlsx` package (SheetJS) | ✅ |
+| Create `src/utils/xlsx.ts` utility module | ✅ |
+| Implement `readXLSXFile(file)` - parse Excel to row arrays | ✅ |
+| Implement `generateXLSX(headers, rows)` - create Excel buffer | ✅ |
+| Implement `downloadXLSX(filename, buffer)` - download helper | ✅ |
+
+**Library Choice:** SheetJS (`xlsx` package) - most popular, no dependencies, works in browser.
+
+**Implementation Notes:**
+- Created `src/utils/xlsx.ts` with all core functions
+- `readXLSXFile()` handles Excel date serial conversion automatically
+- `generateXLSX()` creates workbooks with auto-sized columns
+- Added entity-specific parsers: `parseExpenseXLSX`, `parseIncomeXLSX`, `parseAccountXLSX`, `parseLedgerAccountXLSX`
+- Added template generators with Instructions sheet included
+
+### Step 2: XLSX Template Generation ✅
+
+| Task | Status |
+| --- | --- |
+| Create `generateXLSXTemplate(type)` for all entity types | ✅ |
+| Expenses template with headers + example rows | ✅ |
+| Income template with headers + example rows | ✅ |
+| Accounts (Net Worth) template with headers + example rows | ✅ |
+| Chart of Accounts template with headers + example rows | ✅ |
+| Add column formatting (date columns, number columns) | ✅ |
+| Add header row styling (bold, background color) | ⬜ (deferred - requires xlsx-style) |
+
+**Template Features:**
+- Headers in first row with formatting
+- 2-3 example rows showing correct format
+- Column widths auto-sized
+- Instructions sheet with field descriptions
+
+**Implementation Notes:**
+- `generateXLSXTemplate(type)` creates 2-sheet workbook (Data + Instructions)
+- `downloadXLSXTemplate(type)` downloads as `fintonico-{type}-template.xlsx`
+- `getXLSXTemplateInfo(type)` returns template metadata for UI display
+
+### Step 3: XLSX Parsing Functions ✅
+
+| Task | Status |
+| --- | --- |
+| Create `parseExpenseXLSX(file)` | ✅ |
+| Create `parseIncomeXLSX(file)` | ✅ |
+| Create `parseAccountXLSX(file)` | ✅ |
+| Create `parseLedgerAccountXLSX(file)` | ✅ |
+| Handle Excel date format conversion | ✅ |
+| Handle number/currency format parsing | ✅ |
+| Validate required columns exist | ✅ |
+
+**Implementation Notes:**
+- All parsers use async/await pattern (File → ArrayBuffer → XLSX.read)
+- Excel date serial numbers automatically converted to YYYY-MM-DD
+- Headers normalized to lowercase for flexible matching
+- Required column validation with clear error messages
+- Account nature auto-inferred from type if not provided
+
+### Step 4: Update ImportModal Component ✅
+
+| Task | Status |
+| --- | --- |
+| Change file accept filter from `.csv` to `.xlsx,.xls` | ✅ |
+| Update Template tab to download XLSX templates | ✅ |
+| Update Upload tab file type messaging | ✅ |
+| Update parsing logic to use XLSX functions | ✅ |
+| Keep Preview and Validation flow unchanged | ✅ |
+
+**Implementation Notes:**
+- Changed `parseCSV` prop to `parseFile` (async function accepting File)
+- Added `isParsing` state for loading indicator during file processing
+- Template download button now green with "Download Excel Template" text
+- Processing spinner shown while parsing large files
+
+### Step 5: Wire Up All Pages ✅
+
+| Task | Status |
+| --- | --- |
+| Update ExpensePage to use XLSX import | ✅ |
+| Update IncomePage to use XLSX import | ✅ |
+| Update NetWorthPage to use XLSX import | ✅ |
+| Update ChartOfAccountsPage to use XLSX import | ✅ |
+| Remove CSV import references | ✅ |
+| Keep CSV utility functions (for admin export only) | ✅ |
+
+**Implementation Notes:**
+- Each page now imports `parse{Entity}XLSX` from `xlsx.ts`
+- `parseFileForModal` wrapper converts async XLSX parser to expected interface
+- CSV utility functions preserved in `csv.ts` for potential admin features
+
+### Step 6: Testing & Edge Cases
+
+| Task | Status |
+| --- | --- |
+| Test with Excel-generated files | ⬜ |
+| Test with Numbers-generated files (Mac) | ⬜ |
+| Test with LibreOffice-generated files | ⬜ |
+| Handle files with multiple sheets (use first) | ⬜ |
+| Handle files with merged cells gracefully | ⬜ |
+| Error messages for unsupported formats | ⬜ |
+
+**Files to Modify:**
+- `src/utils/xlsx.ts` (new)
+- `src/components/Shared/ImportModal.tsx`
+- `src/components/Expense/ExpensePage.tsx`
+- `src/components/Income/IncomePage.tsx`
+- `src/components/NetWorth/NetWorthPage.tsx`
+- `src/components/ChartOfAccounts/ChartOfAccountsPage.tsx`
+
+**Files to Keep (for reference/admin):**
+- `src/utils/csv.ts` - Keep for potential admin export features
+
+---
+
 ## Future Phases
 
 See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvements.
 
 ---
 
-**Last Updated:** 2025-12-16 (Phase 21 completed)
+**Last Updated:** 2025-12-17 (Phase 22 Steps 1-5 completed)

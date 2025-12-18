@@ -5,7 +5,7 @@ import { useCurrencyStore } from '../../stores/currencyStore';
 import { Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calendar, RefreshCw, Home, ShoppingBag, Sparkles, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, Upload } from 'lucide-react';
 import type { Expense, ExpenseRating } from '../../types';
 import { ImportModal } from '../Shared/ImportModal';
-import { parseExpenseCSV } from '../../utils/csv';
+import { parseExpenseXLSX } from '../../utils/xlsx';
 
 // Format date for display (compact format: Dec 11)
 const formatDateCompact = (dateStr: string): string => {
@@ -1249,9 +1249,9 @@ export const ExpensePage: React.FC = () => {
     };
   }, [expenses, baseCurrency, addExpense]);
 
-  // CSV parse wrapper for ImportModal
-  const parseCSVForModal = useCallback((csvString: string): { data: Record<string, string>[]; errors: string[] } => {
-    const result = parseExpenseCSV(csvString);
+  // XLSX parse wrapper for ImportModal
+  const parseFileForModal = useCallback(async (file: File): Promise<{ data: Record<string, string>[]; errors: string[] }> => {
+    const result = await parseExpenseXLSX(file);
     return { data: result.data as unknown as Record<string, string>[], errors: result.errors };
   }, []);
 
@@ -1546,7 +1546,7 @@ export const ExpensePage: React.FC = () => {
         onClose={() => setIsImportModalOpen(false)}
         templateType="expenses"
         entityName="expenses"
-        parseCSV={parseCSVForModal}
+        parseFile={parseFileForModal}
         validateRow={validateExpenseRow}
         onImport={handleImportRows}
       />

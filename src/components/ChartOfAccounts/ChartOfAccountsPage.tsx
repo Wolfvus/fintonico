@@ -3,7 +3,7 @@ import { useLedgerAccountStore } from '../../stores/ledgerAccountStore';
 import { CreditCard, Plus, Trash2, ChevronDown, Copy, Check, X, Upload } from 'lucide-react';
 import type { LedgerAccount, LedgerAccountNormalBalance } from '../../types';
 import { ImportModal } from '../Shared/ImportModal';
-import { parseLedgerAccountCSV } from '../../utils/csv';
+import { parseLedgerAccountXLSX } from '../../utils/xlsx';
 
 // Copyable Cell Component - shows copy button on hover
 interface CopyableCellProps {
@@ -637,9 +637,9 @@ export const ChartOfAccountsPage: React.FC = () => {
     };
   }, [accounts, addAccount]);
 
-  // CSV parse wrapper for ImportModal
-  const parseCSVForModal = useCallback((csvString: string): { data: Record<string, string>[]; errors: string[] } => {
-    const result = parseLedgerAccountCSV(csvString);
+  // XLSX parse wrapper for ImportModal
+  const parseFileForModal = useCallback(async (file: File): Promise<{ data: Record<string, string>[]; errors: string[] }> => {
+    const result = await parseLedgerAccountXLSX(file);
     return { data: result.data as unknown as Record<string, string>[], errors: result.errors };
   }, []);
 
@@ -717,7 +717,7 @@ export const ChartOfAccountsPage: React.FC = () => {
         onClose={() => setIsImportModalOpen(false)}
         templateType="ledger-accounts"
         entityName="accounts"
-        parseCSV={parseCSVForModal}
+        parseFile={parseFileForModal}
         validateRow={validateAccountRow}
         onImport={handleImportRows}
       />

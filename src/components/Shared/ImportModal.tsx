@@ -1,12 +1,11 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Download, Upload, FileText, Check, AlertCircle, Info } from 'lucide-react';
-import type { CSVTemplateType } from '../../utils/csv';
+import type { XLSXTemplateType } from '../../utils/xlsx';
 import {
-  getCSVTemplateInfo,
-  downloadCSVTemplate,
-  readCSVFile,
-} from '../../utils/csv';
+  getXLSXTemplateInfo,
+  downloadXLSXTemplate,
+} from '../../utils/xlsx';
 
 export interface ParsedRow {
   data: Record<string, string>;
@@ -17,9 +16,9 @@ export interface ParsedRow {
 export interface ImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  templateType: CSVTemplateType;
+  templateType: XLSXTemplateType;
   entityName: string; // e.g., "expenses", "income", "accounts"
-  parseCSV: (csvString: string) => { data: Record<string, string>[]; errors: string[] };
+  parseFile: (file: File) => Promise<{ data: Record<string, string>[]; errors: string[] }>;
   validateRow: (row: Record<string, string>, index: number) => { isValid: boolean; errors: string[] };
   onImport: (rows: Record<string, string>[]) => Promise<{ success: boolean; message: string; count?: number }>;
 }
@@ -31,7 +30,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   onClose,
   templateType,
   entityName,
-  parseCSV,
+  parseFile,
   validateRow,
   onImport,
 }) => {
@@ -41,10 +40,11 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   const [parseErrors, setParseErrors] = useState<string[]>([]);
   const [skipInvalid, setSkipInvalid] = useState(true);
   const [isImporting, setIsImporting] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const [importResult, setImportResult] = useState<{ success: boolean; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const templateInfo = getCSVTemplateInfo(templateType);
+  const templateInfo = getXLSXTemplateInfo(templateType);
 
   const resetState = useCallback(() => {
     setActiveTab('template');
@@ -52,6 +52,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     setParseErrors([]);
     setSkipInvalid(true);
     setIsImporting(false);
+    setIsParsing(false);
     setImportResult(null);
   }, []);
 
@@ -61,15 +62,19 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   }, [onClose, resetState]);
 
   const processFile = useCallback(async (file: File) => {
-    if (!file.name.endsWith('.csv')) {
-      setParseErrors(['Please select a CSV file (.csv extension)']);
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+      setParseErrors(['Please select an Excel file (.xlsx or .xls extension)']);
       setActiveTab('preview');
       return;
     }
 
+    setIsParsing(true);
+    setParseErrors([]);
+    setParsedRows([]);
+
     try {
-      const csvString = await readCSVFile(file);
-      const { data, errors } = parseCSV(csvString);
+      const { data, errors } = await parseFile(file);
 
       if (errors.length > 0 && data.length === 0) {
         setParseErrors(errors);
@@ -94,8 +99,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     } catch (error) {
       setParseErrors([error instanceof Error ? error.message : 'Failed to read file']);
       setActiveTab('preview');
+    } finally {
+      setIsParsing(false);
     }
-  }, [parseCSV, validateRow]);
+  }, [parseFile, validateRow]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -122,7 +129,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   }, [processFile]);
 
   const handleDownloadTemplate = useCallback(() => {
-    downloadCSVTemplate(templateType);
+    downloadXLSXTemplate(templateType);
   }, [templateType]);
 
   const handleImport = useCallback(async () => {
@@ -245,7 +252,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                               key={cellIdx}
                               className="px-2 py-1.5 text-gray-700 dark:text-gray-300"
                             >
-                              {cell || '-'}
+                              {cell !== undefined && cell !== null && cell !== '' ? String(cell) : '-'}
                             </td>
                           ))}
                         </tr>
@@ -273,10 +280,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({
               {/* Download Button */}
               <button
                 onClick={handleDownloadTemplate}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-700 dark:text-green-300 rounded-lg transition-colors"
               >
                 <Download className="w-4 h-4" />
-                Download Template CSV
+                Download Excel Template
               </button>
             </div>
           )}
@@ -289,34 +296,47 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
-                onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-                  isDragging
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                onClick={() => !isParsing && fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
+                  isParsing
+                    ? 'border-gray-300 dark:border-gray-600 cursor-wait'
+                    : isDragging
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 cursor-pointer'
+                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 cursor-pointer'
                 }`}
               >
-                <Upload className={`w-10 h-10 mx-auto mb-3 ${
-                  isDragging ? 'text-blue-500' : 'text-gray-400'
-                }`} />
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                  {isDragging ? 'Drop your file here' : 'Drag & drop your CSV file here'}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  or click to browse
-                </p>
+                {isParsing ? (
+                  <>
+                    <div className="w-10 h-10 mx-auto mb-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+                      Processing file...
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className={`w-10 h-10 mx-auto mb-3 ${
+                      isDragging ? 'text-blue-500' : 'text-gray-400'
+                    }`} />
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+                      {isDragging ? 'Drop your file here' : 'Drag & drop your Excel file here'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      or click to browse
+                    </p>
+                  </>
+                )}
               </div>
 
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv"
+                accept=".xlsx,.xls"
                 onChange={handleFileSelect}
                 className="hidden"
               />
 
               <div className="text-center text-xs text-gray-500 dark:text-gray-400">
-                <p>Supported format: CSV (.csv)</p>
+                <p>Supported formats: Excel (.xlsx, .xls)</p>
                 <p className="mt-1">
                   Need a template?{' '}
                   <button
@@ -436,7 +456,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                       onClick={() => setActiveTab('upload')}
                       className="text-blue-600 dark:text-blue-400 hover:underline"
                     >
-                      Upload a CSV file
+                      Upload an Excel file
                     </button>
                     {' '}to get started
                   </p>
@@ -511,9 +531,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({
             {activeTab === 'upload' && (
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                disabled={isParsing}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed rounded-lg transition-colors"
               >
-                Select File
+                {isParsing ? 'Processing...' : 'Select File'}
               </button>
             )}
           </div>

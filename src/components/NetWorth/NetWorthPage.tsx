@@ -6,7 +6,7 @@ import { useSnapshotStore, type AccountSnapshot } from '../../stores/snapshotSto
 import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, ChevronRight, ChevronLeft, Check, EyeOff, Eye, X, Filter, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Upload } from 'lucide-react';
 import type { AccountType, Account } from '../../types';
 import { ImportModal } from '../Shared/ImportModal';
-import { parseAccountCSV } from '../../utils/csv';
+import { parseAccountXLSX } from '../../utils/xlsx';
 import { NetWorthHistory } from './NetWorthHistory';
 
 // Helper to get month string in YYYY-MM format
@@ -1662,9 +1662,9 @@ export const NetWorthPage: React.FC = () => {
     };
   }, [accounts, baseCurrency, addAccount]);
 
-  // CSV parse wrapper for ImportModal
-  const parseCSVForModal = useCallback((csvString: string): { data: Record<string, string>[]; errors: string[] } => {
-    const result = parseAccountCSV(csvString);
+  // XLSX parse wrapper for ImportModal
+  const parseFileForModal = useCallback(async (file: File): Promise<{ data: Record<string, string>[]; errors: string[] }> => {
+    const result = await parseAccountXLSX(file);
     return { data: result.data as unknown as Record<string, string>[], errors: result.errors };
   }, []);
 
@@ -1983,7 +1983,7 @@ export const NetWorthPage: React.FC = () => {
         onClose={() => setIsImportModalOpen(false)}
         templateType="accounts"
         entityName="accounts"
-        parseCSV={parseCSVForModal}
+        parseFile={parseFileForModal}
         validateRow={validateAccountRow}
         onImport={handleImportRows}
       />

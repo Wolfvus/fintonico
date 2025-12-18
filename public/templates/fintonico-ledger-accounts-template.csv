@@ -1,4 +1,7 @@
 name,account_number,clabe,normal_balance,active
-BBVA Checking,0123456789,012180001234567891,debit,true
-Banorte Savings,9876543210,072180009876543212,debit,true
-AMEX Gold,3742-XXXXXX-12345,,credit,true
+Mercadopago,,646014206827831000,debit,TRUE
+Dolar App,,706180292173080000,debit,TRUE
+Rappi ,,646180120638290000,debit,TRUE
+Plata,,706180147501600000,debit,TRUE
+Revolut,,646990404049148000,debit,TRUE
+Klar,,661180008090934000,debit,TRUE

@@ -6,7 +6,7 @@ import { DollarSign, Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calen
 import type { Income } from '../../types';
 import type { IncomeFrequency } from '../../stores/incomeStore';
 import { ImportModal } from '../Shared/ImportModal';
-import { parseIncomeCSV } from '../../utils/csv';
+import { parseIncomeXLSX } from '../../utils/xlsx';
 
 // Format date for display (compact format: Dec 11)
 const formatDateCompact = (dateStr: string): string => {
@@ -1005,9 +1005,9 @@ export const IncomePage: React.FC = () => {
     };
   }, [incomes, baseCurrency, addIncome]);
 
-  // CSV parse wrapper for ImportModal
-  const parseCSVForModal = useCallback((csvString: string): { data: Record<string, string>[]; errors: string[] } => {
-    const result = parseIncomeCSV(csvString);
+  // XLSX parse wrapper for ImportModal
+  const parseFileForModal = useCallback(async (file: File): Promise<{ data: Record<string, string>[]; errors: string[] }> => {
+    const result = await parseIncomeXLSX(file);
     return { data: result.data as unknown as Record<string, string>[], errors: result.errors };
   }, []);
 
@@ -1202,7 +1202,7 @@ export const IncomePage: React.FC = () => {
         onClose={() => setIsImportModalOpen(false)}
         templateType="income"
         entityName="income"
-        parseCSV={parseCSVForModal}
+        parseFile={parseFileForModal}
         validateRow={validateIncomeRow}
         onImport={handleImportRows}
       />

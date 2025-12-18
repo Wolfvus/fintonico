@@ -4,9 +4,9 @@ Personal finance management application with multi-currency support, expense tra
 
 ## Project Status
 
-**Version:** 2.2.0
-**Last Updated:** 2025-12-14
-**Status:** Core features complete through Phase 18
+**Version:** 2.3.0
+**Last Updated:** 2025-12-17
+**Status:** Core features complete through Phase 22
 
 ### Architecture Overview
 
@@ -58,7 +58,8 @@ Personal finance management application with multi-currency support, expense tra
 - **Column Sorting**: Sort by Amount or Date (ascending/descending)
 - **Sticky Month Navigation**: Month selector stays visible while scrolling
 - **Table Filters**: Filter by description, currency, category, and recurring status
-- **CSV Import/Export**: Backup and restore data via CSV files
+- **Excel Import**: Import data from XLSX/XLS files with template download
+- **Compact Quick Add**: Sticky top section with Quick Add form and summary cards
 
 ### Net Worth Tracking
 - **Assets & Liabilities**: Unified tables with account types
@@ -72,7 +73,7 @@ Personal finance management application with multi-currency support, expense tra
 - **Table Filters**: Filter by name, type, currency, paid status
 - **Collapsible Sections**: Expand/collapse Assets and Liabilities independently
 - **Month Selector**: View historical account balances (read-only for past months)
-- **CSV Import/Export**: Backup and restore accounts with nature (asset/liability) field
+- **Excel Import**: Import accounts from XLSX/XLS with nature (asset/liability) field
 
 ### Net Worth History
 - **Monthly Snapshots**: Automatic monthly net worth tracking
@@ -87,6 +88,14 @@ Personal finance management application with multi-currency support, expense tra
 - **Copy to Clipboard**: Quick copy for account numbers and CLABE codes
 - **Normal Balance**: Debit/Credit classification
 - **Active/Inactive**: Toggle account status
+- **Excel Import**: Import ledger accounts from XLSX/XLS templates
+
+### Admin Panel (Super Admin)
+- **User Management**: View, create, edit, and delete users
+- **Role Management**: Assign roles (user, admin, super_admin)
+- **Financial Data Viewer**: Read-only access to user financial data
+- **System Configuration**: Manage default currency, enabled currencies, expense categories
+- **Audit Logging**: Track admin actions (via Supabase)
 
 ### Multi-Currency Support
 - **Base Currency**: MXN, USD, EUR, BTC, ETH
@@ -165,6 +174,7 @@ fintonico/
 ├── src/
 │   ├── api/              # API client modules
 │   ├── components/       # React components
+│   │   ├── Admin/        # Admin panel (users, config)
 │   │   ├── Auth/         # Authentication
 │   │   ├── ChartOfAccounts/  # Ledger accounts management
 │   │   ├── Currency/     # Currency selector
@@ -174,7 +184,7 @@ fintonico/
 │   │   ├── Navigation/   # App navigation
 │   │   ├── NetWorth/     # Assets & liabilities
 │   │   ├── Settings/     # User settings modal
-│   │   └── Shared/       # Reusable components
+│   │   └── Shared/       # Reusable components (ImportModal)
 │   ├── config/           # App configuration
 │   ├── domain/           # Domain models (Money class)
 │   ├── lib/              # Supabase client
@@ -263,12 +273,17 @@ interface Account {
 | 16 | Net Worth History & Tracking | ✅ |
 | 17 | Table Sorting & Liability Enhancements | ✅ |
 | 18 | Net Worth Monthly View & Chart Improvements | ✅ |
+| 19 | UI/UX Tweaks & Sticky Headers | ✅ |
+| 20 | Sticky Header & Layout Fix | ✅ |
+| 21 | Super Admin Panel | ✅ |
+| 22 | XLSX Import (Replace CSV) | ✅ |
 
 ## Documentation
 
-- **[ROADMAP.md](./ROADMAP.md)** - Feature roadmap and completed work
+- **[ROADMAP.md](./roadmap.md)** - Feature roadmap and completed work
 - **[NEWFEATURES.md](./NEWFEATURES.md)** - Planned features backlog (prioritized)
 - **[STYLEROADMAP.md](./STYLEROADMAP.md)** - UI/UX style improvements roadmap
+- **[AUDIT.md](./AUDIT.md)** - Code audit checklist and plan
 
 ## License
 

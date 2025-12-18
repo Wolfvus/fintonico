@@ -22,16 +22,6 @@ const DEFAULT_EXPENSE_CATEGORIES = [
   'Other',
 ];
 
-const DEFAULT_INCOME_SOURCES = [
-  'Salary',
-  'Freelance',
-  'Investments',
-  'Rental Income',
-  'Business',
-  'Gifts',
-  'Other',
-];
-
 export const SystemConfigSection: React.FC = () => {
   const { systemConfig, configLoading, fetchSystemConfig, updateSystemConfig } = useAdminStore();
   const { isSuperAdmin } = useAuthStore();
@@ -39,9 +29,7 @@ export const SystemConfigSection: React.FC = () => {
   const [defaultCurrency, setDefaultCurrency] = useState('USD');
   const [enabledCurrencies, setEnabledCurrencies] = useState<string[]>(['USD', 'EUR', 'MXN']);
   const [expenseCategories, setExpenseCategories] = useState<string[]>(DEFAULT_EXPENSE_CATEGORIES);
-  const [incomeSources, setIncomeSources] = useState<string[]>(DEFAULT_INCOME_SOURCES);
   const [newCategory, setNewCategory] = useState('');
-  const [newSource, setNewSource] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,12 +45,10 @@ export const SystemConfigSection: React.FC = () => {
       const currencyConfig = systemConfig.find(c => c.key === 'default_currency');
       const enabledConfig = systemConfig.find(c => c.key === 'enabled_currencies');
       const categoriesConfig = systemConfig.find(c => c.key === 'expense_categories');
-      const sourcesConfig = systemConfig.find(c => c.key === 'income_sources');
 
       if (currencyConfig?.value) setDefaultCurrency(currencyConfig.value as string);
       if (enabledConfig?.value) setEnabledCurrencies(enabledConfig.value as string[]);
       if (categoriesConfig?.value) setExpenseCategories(categoriesConfig.value as string[]);
-      if (sourcesConfig?.value) setIncomeSources(sourcesConfig.value as string[]);
     }
   }, [systemConfig]);
 
@@ -75,7 +61,6 @@ export const SystemConfigSection: React.FC = () => {
       await updateSystemConfig('default_currency', defaultCurrency);
       await updateSystemConfig('enabled_currencies', enabledCurrencies);
       await updateSystemConfig('expense_categories', expenseCategories);
-      await updateSystemConfig('income_sources', incomeSources);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -89,7 +74,6 @@ export const SystemConfigSection: React.FC = () => {
     setDefaultCurrency('USD');
     setEnabledCurrencies(['USD', 'EUR', 'MXN']);
     setExpenseCategories(DEFAULT_EXPENSE_CATEGORIES);
-    setIncomeSources(DEFAULT_INCOME_SOURCES);
   };
 
   const toggleCurrency = (code: string) => {
@@ -116,16 +100,6 @@ export const SystemConfigSection: React.FC = () => {
     setExpenseCategories(expenseCategories.filter(c => c !== category));
   };
 
-  const addSource = () => {
-    if (newSource.trim() && !incomeSources.includes(newSource.trim())) {
-      setIncomeSources([...incomeSources, newSource.trim()]);
-      setNewSource('');
-    }
-  };
-
-  const removeSource = (source: string) => {
-    setIncomeSources(incomeSources.filter(s => s !== source));
-  };
 
   if (configLoading) {
     return (
@@ -288,48 +262,6 @@ export const SystemConfigSection: React.FC = () => {
         )}
       </div>
 
-      {/* Income Sources */}
-      <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-        <h4 className="font-medium text-gray-900 dark:text-white">Income Sources</h4>
-
-        <div className="flex flex-wrap gap-2">
-          {incomeSources.map(source => (
-            <span
-              key={source}
-              className="flex items-center gap-1 px-3 py-1.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded-full text-sm"
-            >
-              {source}
-              {canEdit && (
-                <button
-                  onClick={() => removeSource(source)}
-                  className="hover:text-green-900 dark:hover:text-green-100"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </span>
-          ))}
-        </div>
-
-        {canEdit && (
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newSource}
-              onChange={(e) => setNewSource(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && addSource()}
-              placeholder="New source..."
-              className="flex-1 max-w-xs px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-            <button
-              onClick={addSource}
-              className="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-          </div>
-        )}
-      </div>
     </div>
   );
 };
