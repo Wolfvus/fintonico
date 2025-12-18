@@ -294,10 +294,47 @@ This document outlines a systematic approach to auditing the Fintonico codebase 
 
 | Task | Files | Status |
 | --- | --- | --- |
-| Review store persist configurations | All stores with zustand persist | ⬜ |
-| Check data migration logic | Store version migrations | ⬜ |
-| Verify default value handling | Store initial states | ⬜ |
-| Review store reset functions | All stores | ⬜ |
+| Review store persist configurations | All stores with zustand persist | ⚠️ |
+| Check data migration logic | Store version migrations | ⚠️ |
+| Verify default value handling | Store initial states | ✅ |
+| Review store reset functions | All stores | ⚠️ |
+
+**3.1 Findings:**
+
+⚠️ **Persist Configurations (MEDIUM - Inconsistencies):**
+
+| Store | Key | Version | Migration |
+| --- | --- | --- | --- |
+| snapshotStore | `fintonico-snapshots` | 2 | ✅ migrate() |
+| accountStore | `fintonico-accounts` | - | ❌ None |
+| incomeStore | `fintonico-incomes` | - | onRehydrateStorage |
+| expenseStore | `fintonico-expenses` | - | onRehydrateStorage |
+| currencyStore | `fintonico-currency` | - | ❌ None |
+| ledgerStore | `ledger-store` | 1 | Custom storage |
+| ledgerAccountStore | `fintonico-ledger-accounts` | - | ❌ None |
+
+Issues:
+- Inconsistent naming: `ledger-store` vs `fintonico-*` pattern
+- Only 2/7 stores have version numbers
+- Mixed migration patterns (migrate vs onRehydrateStorage)
+
+⚠️ **Data Migration Logic (MEDIUM):**
+- snapshotStore: Proper v1→v2 migration (adds accountSnapshots)
+- incomeStore: Migrates `yearly` → `monthly` frequency in onRehydrateStorage
+- expenseStore: Validates/sanitizes data in onRehydrateStorage
+- Others: No migration - data format changes could cause issues
+
+✅ **Default Value Handling (PASS):**
+- All stores have proper initial state definitions
+- ledgerStore has `createDefaultAccounts()` for seeding
+- Fallback values provided in migrations (e.g., `'MXN'` default)
+
+⚠️ **Store Reset Functions (MEDIUM):**
+- `ledgerStore.clearAllData()`: Clears 5 localStorage keys (cross-store)
+- `currencyStore.resetEnabledCurrencies()`: Resets to defaults
+- `adminStore.clearUserData()` / `clearErrors()`: Partial reset
+- Missing: No centralized reset-all function
+- Issue: clearAllData() manipulates other stores' data directly
 
 ### 3.2 Data Validation
 
@@ -530,6 +567,7 @@ Track audit progress here:
 | 2025-12-17 | Type Safety | 2.1 TS Strictness | 3 PASS, 2 MEDIUM (any usage) | Reduce `any` usage, add proper types |
 | 2025-12-17 | Type Safety | 2.2 API Types | 1 PASS, 2 MEDIUM | Use Database types, fix middleware types |
 | 2025-12-17 | Type Safety | 2.3 Component Props | 3 PASS | All components properly typed |
+| 2025-12-17 | Data Integrity | 3.1 Store Consistency | 1 PASS, 3 MEDIUM | Standardize persist configs, add versions |
 
 ---
 
@@ -548,6 +586,7 @@ Track critical issues requiring immediate attention:
 | SEC-007 | Security | No Content-Security-Policy configured | Medium | Open |
 | TYPE-001 | Type Safety | 80+ uses of `any` type - reduces type safety benefits | Medium | Open |
 | TYPE-002 | Type Safety | `authMiddleware as any` cast in all server routes | Medium | Open |
+| DATA-001 | Data Integrity | Store persist configs inconsistent (naming, versions, migrations) | Medium | Open |
 
 **Severity Levels:**
 - **Critical**: Security vulnerability or data loss risk
@@ -560,10 +599,10 @@ Track critical issues requiring immediate attention:
 ## Audit Summary
 
 **Total Items:** 100+
-**Completed:** 29 (Categories 1, 2) - **Security + Type Safety Audits Complete**
+**Completed:** 33 (Categories 1, 2 + Section 3.1)
 **Critical Issues:** 0
 **High Priority Issues:** 3 (SEC-003, SEC-005, SEC-006)
-**Medium Priority Issues:** 6 (SEC-001, SEC-002, SEC-004, SEC-007, TYPE-001, TYPE-002)
+**Medium Priority Issues:** 7 (SEC-001, SEC-002, SEC-004, SEC-007, TYPE-001, TYPE-002, DATA-001)
 
 ---
 
@@ -842,3 +881,76 @@ interface ListQueryParams extends PaginationParams, DateRangeParams {
 }
 const params = req.query as ListQueryParams;
 ```
+
+---
+
+### Section 3.1 - Store Consistency (2025-12-17)
+
+**Files Reviewed:**
+- `src/stores/snapshotStore.ts`
+- `src/stores/accountStore.ts`
+- `src/stores/incomeStore.ts`
+- `src/stores/expenseStore.ts`
+- `src/stores/currencyStore.ts`
+- `src/stores/ledgerStore.ts`
+- `src/stores/ledgerAccountStore.ts`
+
+**Persist Configuration Summary:**
+
+| Store | localStorage Key | Version | Storage Type |
+| --- | --- | --- | --- |
+| snapshotStore | `fintonico-snapshots` | v2 | Default |
+| accountStore | `fintonico-accounts` | None | Default |
+| incomeStore | `fintonico-incomes` | None | Default |
+| expenseStore | `fintonico-expenses` | None | Default |
+| currencyStore | `fintonico-currency` | None | Default |
+| ledgerStore | `ledger-store` | v1 | Custom (Money serialization) |
+| ledgerAccountStore | `fintonico-ledger-accounts` | None | Default |
+
+**Migration Patterns Found:**
+
+1. **snapshotStore - Proper migrate() function:**
+```typescript
+migrate: (persistedState, version) => {
+  if (version < 2) {
+    state.snapshots = state.snapshots.map(s => ({
+      ...s,
+      accountSnapshots: s.accountSnapshots || [],
+    }));
+  }
+  return state;
+}
+```
+
+2. **expenseStore/incomeStore - onRehydrateStorage:**
+- Validates and sanitizes data on load
+- Filters invalid entries, applies defaults
+- incomeStore migrates `yearly` → `monthly`
+
+3. **ledgerStore - Custom storage:**
+- Serializes Money objects to JSON
+- Reconstructs Money objects on load
+- Uses BigInt for precision
+
+**Reset Function Analysis:**
+
+| Function | Store | Scope |
+| --- | --- | --- |
+| `clearAllData()` | ledgerStore | Clears 5 stores' localStorage |
+| `resetEnabledCurrencies()` | currencyStore | Resets only currencies |
+| `clearUserData()` | adminStore | Clears admin state |
+| `clearErrors()` | adminStore | Clears error states |
+
+**Issue: Cross-Store Manipulation**
+```typescript
+// ledgerStore.ts:302-313
+clearAllData: () => {
+  set({ accounts: [], transactions: [] });
+  localStorage.removeItem('ledger-store');
+  localStorage.removeItem('fintonico-incomes');    // Other store!
+  localStorage.removeItem('fintonico-expenses');   // Other store!
+  localStorage.removeItem('fintonico-snapshots');  // Other store!
+  localStorage.removeItem('fintonico-ledger');
+}
+```
+This bypasses Zustand's state management for other stores.
