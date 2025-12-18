@@ -154,9 +154,33 @@ This document outlines a systematic approach to auditing the Fintonico codebase 
 
 | Task | Files | Status |
 | --- | --- | --- |
-| Review CORS configuration | `server/index.ts` | ⬜ |
-| Check security headers | `server/middleware/*.ts` | ⬜ |
-| Verify CSP policy | `index.html` | ⬜ |
+| Review CORS configuration | `server/index.ts` | ❌ |
+| Check security headers | `server/middleware/*.ts` | ❌ |
+| Verify CSP policy | `index.html` | ⚠️ |
+
+**1.4 Findings:**
+
+❌ **CORS Configuration (HIGH - NEEDS FIX):**
+- `server/index.ts:24`: `app.use(cors())` with NO configuration
+- Allows requests from ANY origin (wildcard `*`)
+- Production should restrict to specific allowed origins
+- Example fix: `cors({ origin: ['https://fintonico.com'], credentials: true })`
+
+❌ **Security Headers (HIGH - NEEDS FIX):**
+- No `helmet` middleware installed or configured
+- Missing critical security headers:
+  - `X-Frame-Options`: Not set (clickjacking vulnerability)
+  - `X-Content-Type-Options`: Not set (MIME sniffing)
+  - `Strict-Transport-Security`: Not set (HTTPS enforcement)
+  - `X-XSS-Protection`: Not set (legacy XSS filter)
+  - `Referrer-Policy`: Not set
+- Recommendation: Install and configure `helmet` middleware
+
+⚠️ **CSP Policy (MEDIUM):**
+- No Content-Security-Policy in `index.html`
+- No CSP header set by server
+- Should define allowed script/style/connect sources
+- Vite dev server has no security headers configured
 
 ---
 
@@ -428,6 +452,7 @@ Track audit progress here:
 | 2025-12-17 | Security | 1.1 Auth & Authorization | 4 PASS, 1 MEDIUM issue (dev mode security) | Ensure DEV_MODE=false in production |
 | 2025-12-17 | Security | 1.2 Input Validation | 4 PASS, 1 MEDIUM issue (file upload limits) | Add file size/type validation |
 | 2025-12-17 | Security | 1.3 Data Exposure | 2 PASS, 2 MEDIUM, 1 HIGH issue (password logging) | Remove console.log in AuthForm.tsx:33 |
+| 2025-12-17 | Security | 1.4 CORS & Headers | 0 PASS, 1 MEDIUM, 2 HIGH issues | Add helmet, configure CORS, add CSP |
 
 ---
 
@@ -438,9 +463,12 @@ Track critical issues requiring immediate attention:
 | ID | Category | Description | Severity | Status |
 | --- | --- | --- | --- | --- |
 | SEC-003 | Security | AuthForm.tsx:33 logs email and password to console | **High** | Open |
+| SEC-005 | Security | CORS allows all origins - no origin restriction configured | **High** | Open |
+| SEC-006 | Security | No security headers (helmet not installed) - clickjacking/MIME sniffing risk | **High** | Open |
 | SEC-001 | Security | Dev mode accepts weak credentials (any email + 1-char password) | Medium | Open |
 | SEC-002 | Security | File uploads lack explicit size limit and MIME type validation | Medium | Open |
 | SEC-004 | Security | Financial data in localStorage is not encrypted | Medium | Open |
+| SEC-007 | Security | No Content-Security-Policy configured | Medium | Open |
 
 **Severity Levels:**
 - **Critical**: Security vulnerability or data loss risk
@@ -453,10 +481,10 @@ Track critical issues requiring immediate attention:
 ## Audit Summary
 
 **Total Items:** 100+
-**Completed:** 15 (Sections 1.1, 1.2, 1.3)
+**Completed:** 18 (Sections 1.1, 1.2, 1.3, 1.4) - **Security Audit Complete**
 **Critical Issues:** 0
-**High Priority Issues:** 1 (SEC-003)
-**Medium Priority Issues:** 3 (SEC-001, SEC-002, SEC-004)
+**High Priority Issues:** 3 (SEC-003, SEC-005, SEC-006)
+**Medium Priority Issues:** 4 (SEC-001, SEC-002, SEC-004, SEC-007)
 
 ---
 
@@ -613,3 +641,65 @@ src/stores/authStore.ts:8     - DEV_TOKEN = 'dev-token-fintonico'
 src/stores/authStore.ts:22    - refresh_token: 'dev-refresh-token'
 ```
 Note: These are only active when DEV_MODE=true
+
+---
+
+### Section 1.4 - CORS & Headers (2025-12-17)
+
+**Files Reviewed:**
+- `server/index.ts`
+- `server/package.json`
+- `index.html`
+- `vite.config.ts`
+
+**CORS Configuration Analysis:**
+```javascript
+// server/index.ts:24
+app.use(cors());  // NO OPTIONS - allows ALL origins!
+```
+
+**Current State:**
+- CORS middleware installed but not configured
+- Default behavior: `Access-Control-Allow-Origin: *`
+- Credentials not enabled
+- All HTTP methods allowed
+
+**Recommended Fix:**
+```javascript
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+```
+
+**Security Headers Missing:**
+
+| Header | Purpose | Risk Without |
+| --- | --- | --- |
+| `X-Frame-Options` | Prevent clickjacking | Page can be embedded in malicious iframe |
+| `X-Content-Type-Options` | Prevent MIME sniffing | Browser may misinterpret file types |
+| `Strict-Transport-Security` | Enforce HTTPS | Downgrade attacks possible |
+| `X-XSS-Protection` | Legacy XSS filter | Older browsers vulnerable |
+| `Referrer-Policy` | Control referrer info | Leaks URLs to third parties |
+| `Content-Security-Policy` | Restrict resource loading | XSS, injection attacks |
+
+**Recommended Fix:**
+```bash
+cd server && npm install helmet
+```
+```javascript
+import helmet from 'helmet';
+app.use(helmet());
+```
+
+**CSP Analysis:**
+- `index.html`: No `<meta http-equiv="Content-Security-Policy">` tag
+- Server: No CSP header set
+- Vite config: No headers configuration
+
+**Recommended CSP (example):**
+```
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.exchangerate-api.com https://*.supabase.co
+```
