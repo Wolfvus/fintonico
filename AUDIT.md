@@ -112,11 +112,43 @@ This document outlines a systematic approach to auditing the Fintonico codebase 
 
 | Task | Files | Status |
 | --- | --- | --- |
-| Check for sensitive data in logs | All files with `console.log` | ⬜ |
-| Review localStorage data security | All stores with `persist` | ⬜ |
-| Verify API response data filtering | `server/routes/*.ts` | ⬜ |
-| Check for credentials in code | All files | ⬜ |
-| Review error message exposure | Error handlers | ⬜ |
+| Check for sensitive data in logs | All files with `console.log` | ❌ |
+| Review localStorage data security | All stores with `persist` | ⚠️ |
+| Verify API response data filtering | `server/routes/*.ts` | ✅ |
+| Check for credentials in code | All files | ⚠️ |
+| Review error message exposure | Error handlers | ✅ |
+
+**1.3 Findings:**
+
+❌ **Sensitive Data in Logs (HIGH - CRITICAL FIX NEEDED):**
+- `AuthForm.tsx:33`: `console.log('Form submitted with:', data);` **LOGS EMAIL AND PASSWORD**
+- This exposes user credentials in browser console
+- IMMEDIATE ACTION: Remove or redact this log statement
+
+⚠️ **localStorage Data Security (MEDIUM):**
+- Financial data stored in localStorage via Zustand persist:
+  - `expense-store`: All expenses with amounts, dates, descriptions
+  - `account-store`: All accounts with balances
+  - `income-store`: All income records
+  - `snapshot-store`: Net worth history
+- Data is NOT encrypted - accessible via browser dev tools
+- Acceptable for local-first app, but users should be aware
+
+✅ **API Response Filtering (PASS):**
+- Error handler returns sanitized responses
+- Unknown errors return generic "Internal server error"
+- No stack traces exposed to clients
+- Supabase error codes mapped to user-friendly messages
+
+⚠️ **Credentials in Code (MEDIUM - Dev Only):**
+- `dev-token-fintonico` hardcoded in authStore.ts:8 and auth.ts:17
+- `dev-refresh-token` hardcoded in authStore.ts:22
+- Only active when DEV_MODE=true (acceptable for development)
+
+✅ **Error Message Exposure (PASS):**
+- `errorHandler.ts` properly sanitizes error responses
+- AppError subclasses provide structured, safe error messages
+- Server-side logging preserved for debugging
 
 ### 1.4 CORS & Headers
 
@@ -395,6 +427,7 @@ Track audit progress here:
 | --- | --- | --- | --- | --- |
 | 2025-12-17 | Security | 1.1 Auth & Authorization | 4 PASS, 1 MEDIUM issue (dev mode security) | Ensure DEV_MODE=false in production |
 | 2025-12-17 | Security | 1.2 Input Validation | 4 PASS, 1 MEDIUM issue (file upload limits) | Add file size/type validation |
+| 2025-12-17 | Security | 1.3 Data Exposure | 2 PASS, 2 MEDIUM, 1 HIGH issue (password logging) | Remove console.log in AuthForm.tsx:33 |
 
 ---
 
@@ -404,8 +437,10 @@ Track critical issues requiring immediate attention:
 
 | ID | Category | Description | Severity | Status |
 | --- | --- | --- | --- | --- |
+| SEC-003 | Security | AuthForm.tsx:33 logs email and password to console | **High** | Open |
 | SEC-001 | Security | Dev mode accepts weak credentials (any email + 1-char password) | Medium | Open |
 | SEC-002 | Security | File uploads lack explicit size limit and MIME type validation | Medium | Open |
+| SEC-004 | Security | Financial data in localStorage is not encrypted | Medium | Open |
 
 **Severity Levels:**
 - **Critical**: Security vulnerability or data loss risk
@@ -418,10 +453,10 @@ Track critical issues requiring immediate attention:
 ## Audit Summary
 
 **Total Items:** 100+
-**Completed:** 10 (Sections 1.1, 1.2)
+**Completed:** 15 (Sections 1.1, 1.2, 1.3)
 **Critical Issues:** 0
-**High Priority Issues:** 0
-**Medium Priority Issues:** 2 (SEC-001, SEC-002)
+**High Priority Issues:** 1 (SEC-003)
+**Medium Priority Issues:** 3 (SEC-001, SEC-002, SEC-004)
 
 ---
 
@@ -529,3 +564,52 @@ Track critical issues requiring immediate attention:
 - All queries use method chaining: `.eq()`, `.in()`, `.gte()`, `.lte()`
 - No string concatenation for query building
 - Example safe pattern: `query.eq('user_id', req.userId)`
+
+---
+
+### Section 1.3 - Data Exposure (2025-12-17)
+
+**Files Reviewed:**
+- `src/components/Auth/AuthForm.tsx`
+- `src/stores/expenseStore.ts`
+- `src/stores/accountStore.ts`
+- `src/stores/incomeStore.ts`
+- `src/stores/snapshotStore.ts`
+- `server/middleware/errorHandler.ts`
+
+**Console Log Analysis:**
+
+| File | Line | Content | Risk |
+| --- | --- | --- | --- |
+| `AuthForm.tsx` | 33 | `console.log('Form submitted with:', data)` | **HIGH - logs password** |
+| `AuthForm.tsx` | 37-43 | Dev flow logs (signup, signin, success) | Low - no sensitive data |
+| `currencyStore.ts` | 131-164 | API URL and rate logs | Low - public data |
+| `ledgerStore.ts` | 303-314 | Clear data confirmation | Low |
+| Various stores | Error handlers | Error logging | Low - expected |
+
+**localStorage Persistence Analysis:**
+
+| Store | Key | Data Stored | Encryption |
+| --- | --- | --- | --- |
+| `expenseStore` | `expense-store` | Expense records | None |
+| `accountStore` | `account-store` | Account balances | None |
+| `incomeStore` | `income-store` | Income records | None |
+| `snapshotStore` | `snapshot-store` | Net worth history | None |
+| `currencyStore` | `currency-store` | Exchange rates | None |
+| `ledgerStore` | `ledger-store` | Transactions | None |
+| `ledgerAccountStore` | `ledger-account-store` | Ledger accounts | None |
+
+**Error Handler Review:**
+- Location: `server/middleware/errorHandler.ts`
+- Proper error class hierarchy (AppError, NotFoundError, etc.)
+- Generic 500 response for unexpected errors
+- Supabase error codes mapped to safe messages
+- No stack traces in client responses
+
+**Hardcoded Credentials Found:**
+```
+server/middleware/auth.ts:17  - DEV_TOKEN = 'dev-token-fintonico'
+src/stores/authStore.ts:8     - DEV_TOKEN = 'dev-token-fintonico'
+src/stores/authStore.ts:22    - refresh_token: 'dev-refresh-token'
+```
+Note: These are only active when DEV_MODE=true
