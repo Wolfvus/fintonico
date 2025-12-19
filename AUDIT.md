@@ -1364,6 +1364,9 @@ Track critical issues requiring immediate attention:
 | 2025-12-18 | TEST-002 | Added 23 tests for expenseStore (addExpense, deleteExpense, getMonthlyTotal, validation) |
 | 2025-12-18 | TEST-002 | Added 22 tests for incomeStore (addIncome, deleteIncome, getMonthlyTotal, validation) |
 | 2025-12-18 | FEATURE | Added currency selector to quick add forms in ExpensePage and IncomePage |
+| 2025-12-18 | CODE-001 | Moved Modal.tsx from common/ to Shared/, removed common/ directory |
+| 2025-12-18 | CODE-002 | Created useMonthNavigation hook to eliminate duplicated month navigation logic |
+| 2025-12-18 | CODE-002 | Refactored Dashboard, ExpensePage, IncomePage, NetWorthPage to use useMonthNavigation |
 
 ---
 

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Settings, RefreshCcw, AlertCircle, ChevronDown } from 'lucide-react';
 import { useCurrencyStore, SUPPORTED_CURRENCIES } from '../../stores/currencyStore';
 import { clearMockData, seedMockData } from '../../utils/resetData';
-import { Modal, modalButtonStyles } from '../common';
+import { Modal, modalButtonStyles } from '../Shared/Modal';
 import { ToggleSwitch } from '../Shared/ToggleSwitch';
 
 interface SettingsModalProps {

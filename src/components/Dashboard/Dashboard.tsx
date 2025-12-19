@@ -7,6 +7,7 @@ import { useIncomeStore } from '../../stores/incomeStore';
 import { TrendingUp, TrendingDown, Wallet, DollarSign, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Landmark, PiggyBank, ArrowUpDown, Scissors, LayoutGrid } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormat';
 import { useDateRange } from '../../hooks/finance/useDateRange';
+import { useMonthNavigation } from '../../hooks/useMonthNavigation';
 import { CurrencyBadge } from '../Shared/CurrencyBadge';
 import { getNetWorthAt, getMoMChange } from '../../selectors/finance';
 import { useSnapshotStore } from '../../stores/snapshotStore';
@@ -30,7 +31,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   
   const [entryFilter, setEntryFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [viewMode, setViewMode] = useState<'month' | 'year' | 'custom'>('month');
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const { selectedDate, navigateMonth, navigateYear, formattedMonth } = useMonthNavigation();
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -243,27 +244,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     return combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [filteredIncomes, filteredExpenses, entryFilter, convertAmount, baseCurrency, formatAmount]);
 
-  // Navigation helpers
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newDate = new Date(selectedDate);
-    if (direction === 'prev') {
-      newDate.setMonth(newDate.getMonth() - 1);
-    } else {
-      newDate.setMonth(newDate.getMonth() + 1);
-    }
-    setSelectedDate(newDate);
-  };
-
-  const navigateYear = (direction: 'prev' | 'next') => {
-    const newDate = new Date(selectedDate);
-    if (direction === 'prev') {
-      newDate.setFullYear(newDate.getFullYear() - 1);
-    } else {
-      newDate.setFullYear(newDate.getFullYear() + 1);
-    }
-    setSelectedDate(newDate);
-  };
-
   // Pagination
   const totalPages = Math.ceil(allTransactions.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -432,7 +412,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                   <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                 </button>
                 <span className="text-sm font-medium text-gray-900 dark:text-white min-w-[120px] text-center">
-                  {selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  {formattedMonth}
                 </span>
                 <button onClick={() => navigateMonth('next')} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
                   <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />

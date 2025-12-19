@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
+import { useMonthNavigation } from '../../hooks/useMonthNavigation';
 import { Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calendar, RefreshCw, Home, ShoppingBag, Sparkles, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, Upload } from 'lucide-react';
 import type { Expense, ExpenseRating } from '../../types';
 import { ImportModal } from '../Shared/ImportModal';
@@ -950,7 +951,7 @@ const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
 export const ExpensePage: React.FC = () => {
   const { expenses, addExpense, deleteExpense } = useExpenseStore();
   const { baseCurrency, enabledCurrencies, formatAmount, convertAmount } = useCurrencyStore();
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const { selectedDate, navigateMonth, formattedMonth } = useMonthNavigation();
 
   // Import modal state
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -1137,17 +1138,6 @@ export const ExpensePage: React.FC = () => {
     });
     return breakdown;
   }, [allMonthlyExpenses, allRecurringExpenses, convertAmount, baseCurrency]);
-
-  // Navigation
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newDate = new Date(selectedDate);
-    newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
-    setSelectedDate(newDate);
-  };
-
-  const getMonthLabel = () => {
-    return selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  };
 
   // Update expense handler
   const handleUpdateExpense = async (id: string, updates: Partial<Expense>) => {
@@ -1405,7 +1395,7 @@ export const ExpensePage: React.FC = () => {
               <div className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
                 <span className="text-sm font-medium text-gray-900 dark:text-white min-w-[130px] text-center">
-                  {getMonthLabel()}
+                  {formattedMonth}
                 </span>
               </div>
               <button

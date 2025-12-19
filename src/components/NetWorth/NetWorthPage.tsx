@@ -3,22 +3,12 @@ import { createPortal } from 'react-dom';
 import { useAccountStore } from '../../stores/accountStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { useSnapshotStore, type AccountSnapshot } from '../../stores/snapshotStore';
+import { useMonthNavigation } from '../../hooks/useMonthNavigation';
 import { TrendingUp, TrendingDown, Plus, Trash2, ChevronDown, ChevronRight, ChevronLeft, Check, EyeOff, Eye, X, Filter, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Upload } from 'lucide-react';
 import type { AccountType, Account } from '../../types';
 import { ImportModal } from '../Shared/ImportModal';
 import { parseAccountXLSX } from '../../utils/xlsx';
 import { NetWorthHistory } from './NetWorthHistory';
-
-// Helper to get month string in YYYY-MM format
-const getMonthString = (date: Date): string => {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-};
-
-// Helper to check if a date is the current month
-const isCurrentMonth = (date: Date): boolean => {
-  const now = new Date();
-  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
-};
 
 // Format number with thousand separators
 const formatNumberWithCommas = (value: number | string): string => {
@@ -1299,10 +1289,10 @@ export const NetWorthPage: React.FC = () => {
   // Import modal state
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
-  // Month selector state
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const isViewingCurrentMonth = isCurrentMonth(selectedDate);
-  const selectedMonthString = getMonthString(selectedDate);
+  // Month selector state (using custom hook)
+  const { selectedDate, setSelectedDate, isCurrentMonth, monthString, formattedMonth } = useMonthNavigation();
+  const isViewingCurrentMonth = isCurrentMonth;
+  const selectedMonthString = monthString;
 
   // Get snapshot for selected month (used when viewing past months)
   const selectedSnapshot = useMemo(() => {
@@ -1345,10 +1335,6 @@ export const NetWorthPage: React.FC = () => {
       return;
     }
     setSelectedDate(newDate);
-  };
-
-  const getMonthLabel = () => {
-    return selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
   // Collapsible states
@@ -1704,7 +1690,7 @@ export const NetWorthPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 <span className="text-lg font-semibold text-gray-900 dark:text-white min-w-[180px] text-center">
-                  {getMonthLabel()}
+                  {formattedMonth}
                 </span>
                 {!isViewingCurrentMonth && (
                   <span className="text-xs bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
@@ -1736,7 +1722,7 @@ export const NetWorthPage: React.FC = () => {
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6 text-center">
           <Calendar className="w-12 h-12 text-amber-500 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-amber-800 dark:text-amber-200 mb-2">
-            No Data for {getMonthLabel()}
+            No Data for {formattedMonth}
           </h3>
           <p className="text-amber-600 dark:text-amber-400 text-sm">
             No snapshot was recorded for this month. Snapshots are automatically created when you visit the app.

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom';
 import { useIncomeStore } from '../../stores/incomeStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
+import { useMonthNavigation } from '../../hooks/useMonthNavigation';
 import { DollarSign, Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Calendar, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, Upload } from 'lucide-react';
 import type { Income } from '../../types';
 import type { IncomeFrequency } from '../../stores/incomeStore';
@@ -787,7 +788,7 @@ const TableHeaderWithFilter: React.FC<TableHeaderWithFilterProps> = ({
 export const IncomePage: React.FC = () => {
   const { incomes, addIncome, deleteIncome } = useIncomeStore();
   const { baseCurrency, enabledCurrencies, formatAmount, convertAmount } = useCurrencyStore();
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const { selectedDate, navigateMonth, formattedMonth } = useMonthNavigation();
 
   // Import modal state
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -895,17 +896,6 @@ export const IncomePage: React.FC = () => {
 
     return { expectedMonthlyIncome: total, recurringCount: recurringEntries.length };
   }, [filteredIncomes, convertAmount, baseCurrency]);
-
-  // Navigation
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newDate = new Date(selectedDate);
-    newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
-    setSelectedDate(newDate);
-  };
-
-  const getMonthLabel = () => {
-    return selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  };
 
   // Update income handler
   const handleUpdateIncome = async (id: string, updates: Partial<Income>) => {
@@ -1093,7 +1083,7 @@ export const IncomePage: React.FC = () => {
                   <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{getMonthLabel()}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{formattedMonth}</p>
                   <p className="text-lg font-bold text-green-600 dark:text-green-400 truncate">
                     {formatAmount(monthlyTotal)}
                   </p>
@@ -1146,7 +1136,7 @@ export const IncomePage: React.FC = () => {
               <div className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
                 <span className="text-sm font-medium text-gray-900 dark:text-white min-w-[130px] text-center">
-                  {getMonthLabel()}
+                  {formattedMonth}
                 </span>
               </div>
               <button
