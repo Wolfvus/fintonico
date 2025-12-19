@@ -958,6 +958,7 @@ export const ExpensePage: React.FC = () => {
   // Quick Add form state
   const [quickRating, setQuickRating] = useState<ExpenseRating>('discretionary');
   const [quickRecurring, setQuickRecurring] = useState(false);
+  const [quickCurrency, setQuickCurrency] = useState(baseCurrency);
 
   // Section collapse states
   const [isRecurringCollapsed, setIsRecurringCollapsed] = useState(false);
@@ -1272,7 +1273,7 @@ export const ExpensePage: React.FC = () => {
                 addExpense({
                   what: whatInput.value.trim(),
                   amount: parseFloat(amountInput.value) || 0,
-                  currency: baseCurrency,
+                  currency: quickCurrency,
                   rating: quickRating,
                   date: getTodayString(),
                   recurring: quickRecurring,
@@ -1293,13 +1294,24 @@ export const ExpensePage: React.FC = () => {
                 placeholder="Description"
                 className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white placeholder-gray-400"
               />
-              <input
-                name="quickAmount"
-                type="number"
-                placeholder="0.00"
-                step="0.01"
-                className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white placeholder-gray-400"
-              />
+              <div className="flex gap-2">
+                <input
+                  name="quickAmount"
+                  type="number"
+                  placeholder="0.00"
+                  step="0.01"
+                  className="flex-1 px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white placeholder-gray-400"
+                />
+                <select
+                  value={quickCurrency}
+                  onChange={(e) => setQuickCurrency(e.target.value)}
+                  className="w-20 px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
+                >
+                  {enabledCurrencies.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
               {/* Category Buttons */}
               <div className="flex gap-1">
                 {RATING_OPTIONS.map((opt) => (

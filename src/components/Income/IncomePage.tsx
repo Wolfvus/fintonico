@@ -794,6 +794,7 @@ export const IncomePage: React.FC = () => {
 
   // Quick Add form state
   const [quickFrequency, setQuickFrequency] = useState<IncomeFrequency>('one-time');
+  const [quickCurrency, setQuickCurrency] = useState(baseCurrency);
 
   // Filter states
   const [sourceFilter, setSourceFilter] = useState('');
@@ -1028,7 +1029,7 @@ export const IncomePage: React.FC = () => {
                 addIncome({
                   source: sourceInput.value.trim(),
                   amount: parseFloat(amountInput.value) || 0,
-                  currency: baseCurrency,
+                  currency: quickCurrency,
                   frequency: quickFrequency,
                   date: getTodayString(),
                 });
@@ -1053,8 +1054,17 @@ export const IncomePage: React.FC = () => {
                   type="number"
                   placeholder="0.00"
                   step="0.01"
-                  className="w-24 px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white placeholder-gray-400"
+                  className="w-20 px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white placeholder-gray-400"
                 />
+                <select
+                  value={quickCurrency}
+                  onChange={(e) => setQuickCurrency(e.target.value)}
+                  className="w-16 px-1 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
+                >
+                  {enabledCurrencies.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
                 <select
                   value={quickFrequency}
                   onChange={(e) => setQuickFrequency(e.target.value as IncomeFrequency)}
