@@ -23,7 +23,7 @@ const convertQuerySchema = z.object({
 // GET /api/rates - Get current exchange rates
 router.get(
   '/',
-  authMiddleware as any,
+  authMiddleware,
   validateQuery(ratesQuerySchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -38,7 +38,7 @@ router.get(
 // POST /api/rates/refresh - Fetch and store fresh rates
 router.post(
   '/refresh',
-  authMiddleware as any,
+  authMiddleware,
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const result = await ratesService.refreshRates();
@@ -52,7 +52,7 @@ router.post(
 // GET /api/rates/convert - Convert amount between currencies
 router.get(
   '/convert',
-  authMiddleware as any,
+  authMiddleware,
   validateQuery(convertQuerySchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -68,7 +68,7 @@ router.get(
 // GET /api/rates/currencies - Get supported currencies
 router.get(
   '/currencies',
-  authMiddleware as any,
+  authMiddleware,
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       res.json({

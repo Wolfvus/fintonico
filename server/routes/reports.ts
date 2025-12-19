@@ -17,7 +17,7 @@ const reportQuerySchema = z.object({
 // GET /api/reports/trial-balance
 router.get(
   '/trial-balance',
-  authMiddleware as any,
+  authMiddleware,
   validateQuery(reportQuerySchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -35,7 +35,7 @@ router.get(
 // GET /api/reports/balance-sheet
 router.get(
   '/balance-sheet',
-  authMiddleware as any,
+  authMiddleware,
   validateQuery(reportQuerySchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -53,7 +53,7 @@ router.get(
 // GET /api/reports/income-statement
 router.get(
   '/income-statement',
-  authMiddleware as any,
+  authMiddleware,
   validateQuery(reportQuerySchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -72,7 +72,7 @@ router.get(
 // GET /api/reports/account-balances
 router.get(
   '/account-balances',
-  authMiddleware as any,
+  authMiddleware,
   validateQuery(reportQuerySchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -90,7 +90,7 @@ router.get(
 // GET /api/reports/net-worth
 router.get(
   '/net-worth',
-  authMiddleware as any,
+  authMiddleware,
   validateQuery(reportQuerySchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -108,7 +108,7 @@ router.get(
 // GET /api/reports/cashflow
 router.get(
   '/cashflow',
-  authMiddleware as any,
+  authMiddleware,
   validateQuery(reportQuerySchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {

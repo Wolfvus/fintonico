@@ -1,9 +1,15 @@
 import type { Request } from 'express';
-import type { User } from '@supabase/supabase-js';
 
+// Re-export express type augmentation
+import './express';
+
+/**
+ * Request with guaranteed authenticated user.
+ * Use this in route handlers that are protected by authMiddleware.
+ */
 export interface AuthenticatedRequest extends Request {
-  user: User;
-  userId: string;
+  user: NonNullable<Request['user']>;
+  userId: NonNullable<Request['userId']>;
 }
 
 export interface ApiError {

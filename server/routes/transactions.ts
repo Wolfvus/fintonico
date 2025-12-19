@@ -46,7 +46,7 @@ const listTransactionsQuerySchema = paginationSchema.merge(dateRangeSchema).exte
 // GET /api/transactions - List transactions
 router.get(
   '/',
-  authMiddleware as any,
+  authMiddleware,
   validateQuery(listTransactionsQuerySchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -61,7 +61,7 @@ router.get(
 // GET /api/transactions/:id - Get single transaction with postings
 router.get(
   '/:id',
-  authMiddleware as any,
+  authMiddleware,
   validateParams(idParamSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -76,7 +76,7 @@ router.get(
 // POST /api/transactions - Create transaction with postings
 router.post(
   '/',
-  authMiddleware as any,
+  authMiddleware,
   validate(createTransactionSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -91,7 +91,7 @@ router.post(
 // PUT /api/transactions/:id - Update transaction
 router.put(
   '/:id',
-  authMiddleware as any,
+  authMiddleware,
   validateParams(idParamSchema),
   validate(updateTransactionSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -111,7 +111,7 @@ router.put(
 // DELETE /api/transactions/:id - Delete transaction
 router.delete(
   '/:id',
-  authMiddleware as any,
+  authMiddleware,
   validateParams(idParamSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {

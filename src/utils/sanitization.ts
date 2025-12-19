@@ -163,6 +163,12 @@ export const validateDate = (input: string): {
 };
 
 /**
+ * Valid currency codes supported by the application
+ */
+export const VALID_CURRENCIES = ['USD', 'MXN', 'EUR', 'BTC', 'ETH'] as const;
+export type ValidCurrency = typeof VALID_CURRENCIES[number];
+
+/**
  * Validate currency code
  */
 export const validateCurrency = (input: string): {
@@ -170,16 +176,14 @@ export const validateCurrency = (input: string): {
   sanitizedValue: string;
   error?: string;
 } => {
-  const validCurrencies = ['USD', 'MXN', 'EUR'];
-  
-  if (!validCurrencies.includes(input)) {
+  if (!VALID_CURRENCIES.includes(input as ValidCurrency)) {
     return {
       isValid: false,
       sanitizedValue: 'USD',
       error: 'Invalid currency code'
     };
   }
-  
+
   return {
     isValid: true,
     sanitizedValue: input
@@ -188,3 +192,177 @@ export const validateCurrency = (input: string): {
 
 
 export const MAX_AMOUNT_VALUE = MAX_AMOUNT;
+
+/**
+ * Valid account types for net worth tracking
+ */
+export const VALID_ACCOUNT_TYPES = [
+  'cash', 'bank', 'exchange', 'investment', 'property',
+  'loan', 'credit-card', 'mortgage', 'other'
+] as const;
+export type ValidAccountType = typeof VALID_ACCOUNT_TYPES[number];
+
+/**
+ * Validate account type
+ */
+export const validateAccountType = (input: string): {
+  isValid: boolean;
+  sanitizedValue: ValidAccountType;
+  error?: string;
+} => {
+  if (!VALID_ACCOUNT_TYPES.includes(input as ValidAccountType)) {
+    return {
+      isValid: false,
+      sanitizedValue: 'other',
+      error: 'Invalid account type'
+    };
+  }
+
+  return {
+    isValid: true,
+    sanitizedValue: input as ValidAccountType
+  };
+};
+
+/**
+ * Validate account name (max 100 characters)
+ */
+export const validateAccountName = (input: string): {
+  isValid: boolean;
+  sanitizedValue: string;
+  error?: string;
+} => {
+  if (!input || typeof input !== 'string') {
+    return {
+      isValid: false,
+      sanitizedValue: '',
+      error: 'Account name is required'
+    };
+  }
+
+  const sanitized = sanitizeText(input).slice(0, 100);
+
+  if (sanitized.length < 1) {
+    return {
+      isValid: false,
+      sanitizedValue: '',
+      error: 'Account name is required'
+    };
+  }
+
+  return {
+    isValid: true,
+    sanitizedValue: sanitized
+  };
+};
+
+/**
+ * Validate account balance (can be negative for liabilities)
+ */
+export const validateBalance = (input: string | number): {
+  isValid: boolean;
+  sanitizedValue: number;
+  error?: string;
+} => {
+  let numValue: number;
+
+  if (typeof input === 'string') {
+    const cleaned = input.replace(/[$,\s]/g, '');
+    numValue = parseFloat(cleaned);
+  } else {
+    numValue = input;
+  }
+
+  if (isNaN(numValue)) {
+    return {
+      isValid: false,
+      sanitizedValue: 0,
+      error: 'Invalid number format'
+    };
+  }
+
+  // Balance can be negative (for liabilities) but has max limit
+  if (Math.abs(numValue) > MAX_AMOUNT) {
+    return {
+      isValid: false,
+      sanitizedValue: 0,
+      error: `Balance cannot exceed $${MAX_AMOUNT.toLocaleString()}`
+    };
+  }
+
+  // Round to 2 decimal places
+  const rounded = Math.round(numValue * 100) / 100;
+
+  return {
+    isValid: true,
+    sanitizedValue: rounded
+  };
+};
+
+/**
+ * Validate optional percentage (0-100)
+ */
+export const validatePercentage = (input: number | undefined): {
+  isValid: boolean;
+  sanitizedValue: number | undefined;
+  error?: string;
+} => {
+  if (input === undefined || input === null) {
+    return { isValid: true, sanitizedValue: undefined };
+  }
+
+  if (typeof input !== 'number' || isNaN(input)) {
+    return {
+      isValid: false,
+      sanitizedValue: undefined,
+      error: 'Invalid percentage format'
+    };
+  }
+
+  if (input < 0 || input > 100) {
+    return {
+      isValid: false,
+      sanitizedValue: undefined,
+      error: 'Percentage must be between 0 and 100'
+    };
+  }
+
+  return {
+    isValid: true,
+    sanitizedValue: Math.round(input * 100) / 100
+  };
+};
+
+/**
+ * Validate optional day of month (1-31)
+ */
+export const validateDayOfMonth = (input: number | undefined): {
+  isValid: boolean;
+  sanitizedValue: number | undefined;
+  error?: string;
+} => {
+  if (input === undefined || input === null) {
+    return { isValid: true, sanitizedValue: undefined };
+  }
+
+  if (typeof input !== 'number' || isNaN(input) || !Number.isInteger(input)) {
+    return {
+      isValid: false,
+      sanitizedValue: undefined,
+      error: 'Invalid day format'
+    };
+  }
+
+  if (input < 1 || input > 31) {
+    return {
+      isValid: false,
+      sanitizedValue: undefined,
+      error: 'Day must be between 1 and 31'
+    };
+  }
+
+  return {
+    isValid: true,
+    sanitizedValue: input
+  };
+};

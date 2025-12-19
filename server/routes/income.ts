@@ -46,7 +46,7 @@ const listIncomeQuerySchema = paginationSchema.merge(dateRangeSchema).extend({
 // GET /api/income - List income entries
 router.get(
   '/',
-  authMiddleware as any,
+  authMiddleware,
   validateQuery(listIncomeQuerySchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -99,7 +99,7 @@ router.get(
 // GET /api/income/:id - Get single income entry
 router.get(
   '/:id',
-  authMiddleware as any,
+  authMiddleware,
   validateParams(idParamSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -127,7 +127,7 @@ router.get(
 // POST /api/income - Create income with optional transaction
 router.post(
   '/',
-  authMiddleware as any,
+  authMiddleware,
   validate(createIncomeSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -218,7 +218,7 @@ router.post(
 // PUT /api/income/:id - Update income
 router.put(
   '/:id',
-  authMiddleware as any,
+  authMiddleware,
   validateParams(idParamSchema),
   validate(updateIncomeSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -268,7 +268,7 @@ router.put(
 // DELETE /api/income/:id - Delete income
 router.delete(
   '/:id',
-  authMiddleware as any,
+  authMiddleware,
   validateParams(idParamSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {

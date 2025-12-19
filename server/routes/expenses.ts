@@ -76,7 +76,7 @@ function categorizeExpenseByKeyword(description: string) {
 // GET /api/expenses - List expenses
 router.get(
   '/',
-  authMiddleware as any,
+  authMiddleware,
   validateQuery(listExpensesQuerySchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -129,7 +129,7 @@ router.get(
 // GET /api/expenses/:id - Get single expense
 router.get(
   '/:id',
-  authMiddleware as any,
+  authMiddleware,
   validateParams(idParamSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -157,7 +157,7 @@ router.get(
 // POST /api/expenses - Create expense with optional transaction
 router.post(
   '/',
-  authMiddleware as any,
+  authMiddleware,
   validate(createExpenseSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -251,7 +251,7 @@ router.post(
 // POST /api/expenses/:id/categorize - AI categorization
 router.post(
   '/:id/categorize',
-  authMiddleware as any,
+  authMiddleware,
   validateParams(idParamSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -301,7 +301,7 @@ router.post(
 // PUT /api/expenses/:id - Update expense
 router.put(
   '/:id',
-  authMiddleware as any,
+  authMiddleware,
   validateParams(idParamSchema),
   validate(updateExpenseSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -352,7 +352,7 @@ router.put(
 // DELETE /api/expenses/:id - Delete expense
 router.delete(
   '/:id',
-  authMiddleware as any,
+  authMiddleware,
   validateParams(idParamSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {

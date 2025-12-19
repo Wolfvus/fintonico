@@ -1,9 +1,12 @@
-import type { Response, NextFunction } from 'express';
-import type { AuthenticatedRequest } from '../types';
+import type { Request, Response, NextFunction, RequestHandler } from 'express';
+import type { User } from '@supabase/supabase-js';
 import { supabaseAdmin } from '../lib/supabase';
 
+// Import type augmentation
+import '../types/express';
+
 // Test user for local development (when DEV_MODE=true)
-const TEST_USER = {
+const TEST_USER: User = {
   id: 'test-user-00000000-0000-0000-0000-000000000001',
   email: 'admin@fintonico.com',
   aud: 'authenticated',
@@ -11,16 +14,28 @@ const TEST_USER = {
   created_at: new Date().toISOString(),
   app_metadata: {},
   user_metadata: {},
+  updated_at: new Date().toISOString(),
+  phone: '',
+  confirmation_sent_at: undefined,
+  confirmed_at: new Date().toISOString(),
+  last_sign_in_at: new Date().toISOString(),
+  factors: undefined,
+  identities: undefined,
+  is_anonymous: false,
 };
 
 const DEV_MODE = process.env.DEV_MODE === 'true' || !process.env.VITE_SUPABASE_URL;
 const DEV_TOKEN = 'dev-token-fintonico';
 
-export async function authMiddleware(
-  req: AuthenticatedRequest,
+/**
+ * Authentication middleware that validates JWT tokens.
+ * Attaches user and userId to the request object.
+ */
+export const authMiddleware: RequestHandler = async (
+  req: Request,
   res: Response,
   next: NextFunction
-): Promise<void> {
+): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -36,7 +51,7 @@ export async function authMiddleware(
 
     // Dev mode: accept hardcoded token
     if (DEV_MODE && token === DEV_TOKEN) {
-      req.user = TEST_USER as any;
+      req.user = TEST_USER;
       req.userId = TEST_USER.id;
       console.log('[DEV MODE] Authenticated as test user');
       next();
@@ -67,4 +82,4 @@ export async function authMiddleware(
       code: 'AUTH_ERROR',
     });
   }
-}
+};

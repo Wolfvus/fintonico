@@ -32,7 +32,7 @@ const listAccountsQuerySchema = paginationSchema.extend({
 // GET /api/accounts - List all accounts for user
 router.get(
   '/',
-  authMiddleware as any,
+  authMiddleware,
   validateQuery(listAccountsQuerySchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -47,7 +47,7 @@ router.get(
 // GET /api/accounts/:id - Get single account
 router.get(
   '/:id',
-  authMiddleware as any,
+  authMiddleware,
   validateParams(idParamSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -62,7 +62,7 @@ router.get(
 // POST /api/accounts - Create account
 router.post(
   '/',
-  authMiddleware as any,
+  authMiddleware,
   validate(createAccountSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -77,7 +77,7 @@ router.post(
 // PUT /api/accounts/:id - Update account
 router.put(
   '/:id',
-  authMiddleware as any,
+  authMiddleware,
   validateParams(idParamSchema),
   validate(updateAccountSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -93,7 +93,7 @@ router.put(
 // DELETE /api/accounts/:id - Delete account
 router.delete(
   '/:id',
-  authMiddleware as any,
+  authMiddleware,
   validateParams(idParamSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -108,7 +108,7 @@ router.delete(
 // GET /api/accounts/:id/balance - Get account balance
 router.get(
   '/:id/balance',
-  authMiddleware as any,
+  authMiddleware,
   validateParams(idParamSchema),
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
