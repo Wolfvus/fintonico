@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useShallow } from 'zustand/react/shallow';
 import { useAccountStore } from '../../stores/accountStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { useSnapshotStore, type AccountSnapshot } from '../../stores/snapshotStore';
@@ -1282,9 +1283,15 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
 
 // Main Component
 export const NetWorthPage: React.FC = () => {
-  const { accounts, addAccount, deleteAccount, updateAccount, toggleExcludeFromTotal } = useAccountStore();
-  const { baseCurrency, convertAmount, formatAmount, enabledCurrencies } = useCurrencyStore();
-  const { getSnapshot } = useSnapshotStore();
+  const { accounts, addAccount, deleteAccount, updateAccount, toggleExcludeFromTotal } = useAccountStore(
+    useShallow((state) => ({ accounts: state.accounts, addAccount: state.addAccount, deleteAccount: state.deleteAccount, updateAccount: state.updateAccount, toggleExcludeFromTotal: state.toggleExcludeFromTotal }))
+  );
+  const { baseCurrency, convertAmount, formatAmount, enabledCurrencies } = useCurrencyStore(
+    useShallow((state) => ({ baseCurrency: state.baseCurrency, convertAmount: state.convertAmount, formatAmount: state.formatAmount, enabledCurrencies: state.enabledCurrencies }))
+  );
+  const { getSnapshot } = useSnapshotStore(
+    useShallow((state) => ({ getSnapshot: state.getSnapshot }))
+  );
 
   // Import modal state
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);

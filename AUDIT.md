@@ -1367,6 +1367,8 @@ Track critical issues requiring immediate attention:
 | 2025-12-18 | CODE-001 | Moved Modal.tsx from common/ to Shared/, removed common/ directory |
 | 2025-12-18 | CODE-002 | Created useMonthNavigation hook to eliminate duplicated month navigation logic |
 | 2025-12-18 | CODE-002 | Refactored Dashboard, ExpensePage, IncomePage, NetWorthPage to use useMonthNavigation |
+| 2025-12-18 | PERF-001 | Added useShallow to store subscriptions in Dashboard, ExpensePage, IncomePage, NetWorthPage |
+| 2025-12-18 | PERF-002 | Configured Vite manual chunks: xlsx (425KB), supabase (189KB), forms (66KB), zustand (0.6KB) |
 
 ---
 

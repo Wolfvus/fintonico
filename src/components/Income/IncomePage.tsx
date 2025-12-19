@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useShallow } from 'zustand/react/shallow';
 import { useIncomeStore } from '../../stores/incomeStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { useMonthNavigation } from '../../hooks/useMonthNavigation';
@@ -786,8 +787,12 @@ const TableHeaderWithFilter: React.FC<TableHeaderWithFilterProps> = ({
 
 // Main Component
 export const IncomePage: React.FC = () => {
-  const { incomes, addIncome, deleteIncome } = useIncomeStore();
-  const { baseCurrency, enabledCurrencies, formatAmount, convertAmount } = useCurrencyStore();
+  const { incomes, addIncome, deleteIncome } = useIncomeStore(
+    useShallow((state) => ({ incomes: state.incomes, addIncome: state.addIncome, deleteIncome: state.deleteIncome }))
+  );
+  const { baseCurrency, enabledCurrencies, formatAmount, convertAmount } = useCurrencyStore(
+    useShallow((state) => ({ baseCurrency: state.baseCurrency, enabledCurrencies: state.enabledCurrencies, formatAmount: state.formatAmount, convertAmount: state.convertAmount }))
+  );
   const { selectedDate, navigateMonth, formattedMonth } = useMonthNavigation();
 
   // Import modal state

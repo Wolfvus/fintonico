@@ -18,7 +18,9 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
-  const { formatAmount, baseCurrency, convertAmount } = useCurrencyStore();
+  const { formatAmount, baseCurrency, convertAmount } = useCurrencyStore(
+    useShallow((state) => ({ formatAmount: state.formatAmount, baseCurrency: state.baseCurrency, convertAmount: state.convertAmount }))
+  );
   const ledgerStore = useLedgerStore();
   const snapshotStore = useSnapshotStore();
   const { expenses } = useExpenseStore(

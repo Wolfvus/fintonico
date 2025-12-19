@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useShallow } from 'zustand/react/shallow';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { useMonthNavigation } from '../../hooks/useMonthNavigation';
@@ -949,8 +950,12 @@ const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
 
 // Main Component
 export const ExpensePage: React.FC = () => {
-  const { expenses, addExpense, deleteExpense } = useExpenseStore();
-  const { baseCurrency, enabledCurrencies, formatAmount, convertAmount } = useCurrencyStore();
+  const { expenses, addExpense, deleteExpense } = useExpenseStore(
+    useShallow((state) => ({ expenses: state.expenses, addExpense: state.addExpense, deleteExpense: state.deleteExpense }))
+  );
+  const { baseCurrency, enabledCurrencies, formatAmount, convertAmount } = useCurrencyStore(
+    useShallow((state) => ({ baseCurrency: state.baseCurrency, enabledCurrencies: state.enabledCurrencies, formatAmount: state.formatAmount, convertAmount: state.convertAmount }))
+  );
   const { selectedDate, navigateMonth, formattedMonth } = useMonthNavigation();
 
   // Import modal state
