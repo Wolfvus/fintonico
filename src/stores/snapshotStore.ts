@@ -5,6 +5,10 @@ import type { AccountNature } from '../domain/ledger';
 import { useAccountStore } from './accountStore';
 import { useCurrencyStore } from './currencyStore';
 import type { AccountType } from '../types';
+import { snapshotService } from '../services/snapshotService';
+
+// Dev mode configuration
+const DEV_MODE = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_DEV_MODE === 'true';
 
 // Per-account snapshot for historical tracking
 export interface AccountSnapshot {
@@ -19,6 +23,7 @@ export interface AccountSnapshot {
 }
 
 export interface NetWorthSnapshot {
+  id?: string;
   monthEndLocal: string; // YYYY-MM format (local month end)
   netWorthBase: number; // Net worth in base currency
   totalsByNature: Record<AccountNature, number>; // Totals by account nature in base currency
@@ -28,10 +33,15 @@ export interface NetWorthSnapshot {
 
 interface SnapshotState {
   snapshots: NetWorthSnapshot[];
+  loading: boolean;
+  error: string | null;
+  initialized: boolean;
+  fetchAll: () => Promise<void>;
   getSnapshot: (monthEnd: string) => NetWorthSnapshot | undefined;
   getHistory: (startMonth?: string, endMonth?: string) => NetWorthSnapshot[];
   createSnapshot: (monthEnd?: string) => Promise<NetWorthSnapshot>;
   ensureCurrentMonthSnapshot: () => Promise<NetWorthSnapshot>;
+  clearError: () => void;
 }
 
 // Utility to get month end date string in YYYY-MM format
@@ -57,6 +67,28 @@ export const useSnapshotStore = create<SnapshotState>()(
   persist(
     (set, get) => ({
       snapshots: [],
+      loading: false,
+      error: null,
+      initialized: false,
+
+      fetchAll: async () => {
+        if (DEV_MODE) {
+          set({ initialized: true });
+          return;
+        }
+
+        set({ loading: true, error: null });
+        try {
+          const snapshots = await snapshotService.getAll();
+          set({ snapshots, loading: false, initialized: true });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to fetch snapshots',
+            loading: false,
+            initialized: true,
+          });
+        }
+      },
 
       getSnapshot: (monthEnd: string) => {
         return get().snapshots.find(s => s.monthEndLocal === monthEnd);
@@ -119,16 +151,49 @@ export const useSnapshotStore = create<SnapshotState>()(
           createdAt: new Date().toISOString()
         };
 
-        // Remove existing snapshot for the same month if it exists
-        const existingSnapshots = get().snapshots.filter(s => s.monthEndLocal !== monthEndString);
+        if (DEV_MODE) {
+          // Remove existing snapshot for the same month if it exists
+          const existingSnapshots = get().snapshots.filter(s => s.monthEndLocal !== monthEndString);
 
-        set({
-          snapshots: [...existingSnapshots, snapshot].sort((a, b) =>
-            a.monthEndLocal.localeCompare(b.monthEndLocal)
-          )
-        });
+          set({
+            snapshots: [...existingSnapshots, snapshot].sort((a, b) =>
+              a.monthEndLocal.localeCompare(b.monthEndLocal)
+            )
+          });
 
-        return snapshot;
+          return snapshot;
+        }
+
+        // Supabase mode
+        set({ loading: true, error: null });
+        try {
+          const savedSnapshot = await snapshotService.create({
+            monthEndLocal: monthEndString,
+            netWorthBase: snapshot.netWorthBase,
+            totalAssets: totalsByNature.asset,
+            totalLiabilities: totalsByNature.liability,
+            baseCurrency,
+            accountSnapshots,
+          });
+
+          // Remove existing snapshot for the same month if it exists locally
+          const existingSnapshots = get().snapshots.filter(s => s.monthEndLocal !== monthEndString);
+
+          set({
+            snapshots: [...existingSnapshots, savedSnapshot].sort((a, b) =>
+              a.monthEndLocal.localeCompare(b.monthEndLocal)
+            ),
+            loading: false,
+          });
+
+          return savedSnapshot;
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to create snapshot',
+            loading: false,
+          });
+          throw error;
+        }
       },
 
       ensureCurrentMonthSnapshot: async () => {
@@ -141,10 +206,13 @@ export const useSnapshotStore = create<SnapshotState>()(
 
         return get().createSnapshot(currentMonthEnd);
       },
+
+      clearError: () => set({ error: null }),
     }),
     {
       name: 'fintonico-snapshots',
       version: 2,
+      partialize: (state) => DEV_MODE ? { snapshots: state.snapshots } : {},
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as { snapshots?: NetWorthSnapshot[] };
 

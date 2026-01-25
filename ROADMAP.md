@@ -1348,7 +1348,7 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-01-24 (Phase 23 Step 2 completed)
+**Last Updated:** 2025-01-24 (Phase 23 Step 3 completed)
 
 ---
 
@@ -1420,17 +1420,25 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 - Proper type mapping between DB rows and app types
 - User authentication checks on all operations
 
-### Step 3: Store Migration
+### Step 3: Store Migration ✅
 
 | Task | Status |
 | --- | --- |
-| Update `expenseStore.ts` to use Supabase service | ⬜ |
-| Update `incomeStore.ts` to use Supabase service | ⬜ |
-| Update `accountStore.ts` to use Supabase service | ⬜ |
-| Update `ledgerAccountStore.ts` to use Supabase service | ⬜ |
-| Update `snapshotStore.ts` to use Supabase service | ⬜ |
-| Add loading states and error handling | ⬜ |
-| Add optimistic updates for better UX | ⬜ |
+| Update `expenseStore.ts` to use Supabase service | ✅ |
+| Update `incomeStore.ts` to use Supabase service | ✅ |
+| Update `accountStore.ts` to use Supabase service | ✅ |
+| Update `ledgerAccountStore.ts` to use Supabase service | ✅ |
+| Update `snapshotStore.ts` to use Supabase service | ✅ |
+| Add loading states and error handling | ✅ |
+| Add optimistic updates for better UX | ✅ (local state updates immediately) |
+
+**Store Updates:**
+- All stores now have `fetchAll()` method to load data from Supabase on app init
+- All stores have `loading`, `error`, `initialized`, and `clearError()` states
+- DEV_MODE fallback: localStorage persistence when Supabase not configured
+- `partialize` ensures only data (not state) is persisted to localStorage
+- Added `bulkImport()` for XLSX import functionality
+- Added `updateExpense/Income` methods for editing
 
 ### Step 4: Authentication Integration
 

@@ -9,13 +9,16 @@ import {
   validatePercentage,
   validateDayOfMonth,
 } from '../utils/sanitization';
+import { netWorthAccountService } from '../services/netWorthAccountService';
+
+// Dev mode configuration
+const DEV_MODE = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_DEV_MODE === 'true';
 
 // Liability account types
 const LIABILITY_TYPES = ['loan', 'credit-card', 'mortgage'];
 
 /**
  * Validate and sanitize account data before storing
- * Throws error if required fields are invalid
  */
 function validateAccountData(account: Omit<Account, 'id'>): Omit<Account, 'id'> {
   const nameResult = validateAccountName(account.name);
@@ -38,7 +41,6 @@ function validateAccountData(account: Omit<Account, 'id'>): Omit<Account, 'id'> 
     throw new Error(balanceResult.error || 'Invalid balance');
   }
 
-  // Validate optional fields
   const yieldResult = validatePercentage(account.estimatedYield);
   if (!yieldResult.isValid) {
     throw new Error(yieldResult.error || 'Invalid yield percentage');
@@ -49,7 +51,6 @@ function validateAccountData(account: Omit<Account, 'id'>): Omit<Account, 'id'> 
     throw new Error(dueDateResult.error || 'Invalid due date');
   }
 
-  // Validate optional payment amounts
   let minPayment: number | undefined;
   let paymentToAvoid: number | undefined;
 
@@ -86,48 +87,41 @@ function validateAccountData(account: Omit<Account, 'id'>): Omit<Account, 'id'> 
   };
 }
 
-// Migration function to convert old formats and ensure all fields exist
-function migrateAccount(account: any): Account {
+// Migration function for old formats
+function migrateAccount(account: Record<string, unknown>): Account {
   let migrated: Account;
 
-  // If account already has the new format (currency + balance fields)
   if (typeof account.currency === 'string' && typeof account.balance === 'number') {
     migrated = account as Account;
-  }
-  // Migrate from old format (balances array)
-  else if (account.balances && Array.isArray(account.balances) && account.balances.length > 0) {
-    const primaryBalance = account.balances[0];
+  } else if (account.balances && Array.isArray(account.balances) && account.balances.length > 0) {
+    const primaryBalance = account.balances[0] as { currency: string; amount: number };
     migrated = {
-      id: account.id,
-      name: account.name,
-      type: account.type,
+      id: account.id as string,
+      name: account.name as string,
+      type: account.type as Account['type'],
       currency: primaryBalance.currency,
       balance: primaryBalance.amount,
-      excludeFromTotal: account.excludeFromTotal,
-      dueDate: account.dueDate,
-      recurringDueDate: account.recurringDueDate,
-      isPaidThisMonth: account.isPaidThisMonth,
-      lastPaidDate: account.lastPaidDate,
-      estimatedYield: account.estimatedYield,
-      lastUpdated: account.lastUpdated,
-      minMonthlyPayment: account.minMonthlyPayment,
-      paymentToAvoidInterest: account.paymentToAvoidInterest,
+      excludeFromTotal: account.excludeFromTotal as boolean | undefined,
+      dueDate: account.dueDate as string | undefined,
+      recurringDueDate: account.recurringDueDate as number | undefined,
+      isPaidThisMonth: account.isPaidThisMonth as boolean | undefined,
+      lastPaidDate: account.lastPaidDate as string | undefined,
+      estimatedYield: account.estimatedYield as number | undefined,
+      lastUpdated: account.lastUpdated as string | undefined,
+      minMonthlyPayment: account.minMonthlyPayment as number | undefined,
+      paymentToAvoidInterest: account.paymentToAvoidInterest as number | undefined,
     };
-  }
-  // Fallback for malformed data
-  else {
+  } else {
     migrated = {
-      id: account.id || crypto.randomUUID(),
-      name: account.name || 'Unknown Account',
-      type: account.type || 'other',
+      id: (account.id as string) || crypto.randomUUID(),
+      name: (account.name as string) || 'Unknown Account',
+      type: (account.type as Account['type']) || 'other',
       currency: 'MXN',
       balance: 0,
     };
   }
 
-  // Ensure liability-specific fields exist for liability accounts
   if (LIABILITY_TYPES.includes(migrated.type)) {
-    // Preserve existing values or default to undefined
     migrated.minMonthlyPayment = migrated.minMonthlyPayment;
     migrated.paymentToAvoidInterest = migrated.paymentToAvoidInterest;
   }
@@ -135,52 +129,118 @@ function migrateAccount(account: any): Account {
   return migrated;
 }
 
-// Define the Store's State and Actions
 interface AccountState {
   accounts: Account[];
-  addAccount: (account: Omit<Account, 'id'>) => Account;
-  deleteAccount: (accountId: string) => void;
-  updateAccount: (accountId: string, updates: Partial<Omit<Account, 'id'>>) => void;
-  toggleExcludeFromTotal: (accountId: string) => void;
+  loading: boolean;
+  error: string | null;
+  initialized: boolean;
+  fetchAll: () => Promise<void>;
+  addAccount: (account: Omit<Account, 'id'>) => Promise<Account>;
+  deleteAccount: (accountId: string) => Promise<void>;
+  updateAccount: (accountId: string, updates: Partial<Omit<Account, 'id'>>) => Promise<Account>;
+  toggleExcludeFromTotal: (accountId: string) => Promise<void>;
+  bulkImport: (accounts: Omit<Account, 'id'>[]) => Promise<Account[]>;
+  clearError: () => void;
 }
 
-// Implement the Zustand Store
 export const useAccountStore = create<AccountState>()(
   persist(
-    (set) => ({
-      // Initial State
+    (set, get) => ({
       accounts: [],
+      loading: false,
+      error: null,
+      initialized: false,
 
-      // addAccount function with validation
-      addAccount: (newAccount) => {
-        // Validate and sanitize input data
+      fetchAll: async () => {
+        if (DEV_MODE) {
+          set({ initialized: true });
+          return;
+        }
+
+        set({ loading: true, error: null });
+        try {
+          const accounts = await netWorthAccountService.getAll();
+          set({ accounts, loading: false, initialized: true });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to fetch accounts',
+            loading: false,
+            initialized: true,
+          });
+        }
+      },
+
+      addAccount: async (newAccount) => {
         const validatedData = validateAccountData(newAccount);
 
-        const completeAccount: Account = {
-          ...validatedData,
-          id: crypto.randomUUID(),
-          lastUpdated: new Date().toISOString().split('T')[0],
-        };
+        if (DEV_MODE) {
+          const completeAccount: Account = {
+            ...validatedData,
+            id: crypto.randomUUID(),
+            lastUpdated: new Date().toISOString().split('T')[0],
+          };
 
-        set((state) => ({
-          accounts: [...state.accounts, completeAccount],
-        }));
+          set((state) => ({
+            accounts: [...state.accounts, completeAccount],
+          }));
 
-        return completeAccount;
+          return completeAccount;
+        }
+
+        set({ loading: true, error: null });
+        try {
+          const completeAccount = await netWorthAccountService.create({
+            name: validatedData.name,
+            type: validatedData.type,
+            currency: validatedData.currency,
+            balance: validatedData.balance,
+            excludeFromTotal: validatedData.excludeFromTotal,
+            dueDate: validatedData.dueDate,
+            recurringDueDate: validatedData.recurringDueDate,
+            estimatedYield: validatedData.estimatedYield,
+            minMonthlyPayment: validatedData.minMonthlyPayment,
+            paymentToAvoidInterest: validatedData.paymentToAvoidInterest,
+          });
+          set((state) => ({
+            accounts: [...state.accounts, completeAccount],
+            loading: false,
+          }));
+          return completeAccount;
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to add account',
+            loading: false,
+          });
+          throw error;
+        }
       },
 
-      // deleteAccount function
-      deleteAccount: (accountId) => {
-        set((state) => ({
-          accounts: state.accounts.filter(account => account.id !== accountId)
-        }));
+      deleteAccount: async (accountId) => {
+        if (DEV_MODE) {
+          set((state) => ({
+            accounts: state.accounts.filter(account => account.id !== accountId)
+          }));
+          return;
+        }
+
+        set({ loading: true, error: null });
+        try {
+          await netWorthAccountService.delete(accountId);
+          set((state) => ({
+            accounts: state.accounts.filter(account => account.id !== accountId),
+            loading: false,
+          }));
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to delete account',
+            loading: false,
+          });
+          throw error;
+        }
       },
 
-      // updateAccount function with validation - accepts partial updates
-      updateAccount: (accountId, updates) => {
+      updateAccount: async (accountId, updates) => {
         const today = new Date().toISOString().split('T')[0];
-
-        // Validate individual fields if they are being updated
         const validatedUpdates: Partial<Omit<Account, 'id'>> = {};
 
         if (updates.name !== undefined) {
@@ -231,7 +291,6 @@ export const useAccountStore = create<AccountState>()(
           validatedUpdates.paymentToAvoidInterest = result.sanitizedValue;
         }
 
-        // Pass through boolean and date fields without validation
         if (updates.excludeFromTotal !== undefined) {
           validatedUpdates.excludeFromTotal = updates.excludeFromTotal;
         }
@@ -245,32 +304,134 @@ export const useAccountStore = create<AccountState>()(
           validatedUpdates.dueDate = updates.dueDate;
         }
 
-        set((state) => ({
-          accounts: state.accounts.map(account =>
-            account.id === accountId
-              ? { ...account, ...validatedUpdates, lastUpdated: today }
-              : account
-          )
-        }));
+        if (DEV_MODE) {
+          set((state) => ({
+            accounts: state.accounts.map(account =>
+              account.id === accountId
+                ? { ...account, ...validatedUpdates, lastUpdated: today }
+                : account
+            )
+          }));
+          const updated = get().accounts.find(a => a.id === accountId);
+          if (!updated) throw new Error('Account not found');
+          return updated;
+        }
+
+        set({ loading: true, error: null });
+        try {
+          const updated = await netWorthAccountService.update(accountId, {
+            ...validatedUpdates,
+            lastUpdated: today,
+          });
+          set((state) => ({
+            accounts: state.accounts.map(account =>
+              account.id === accountId ? updated : account
+            ),
+            loading: false,
+          }));
+          return updated;
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to update account',
+            loading: false,
+          });
+          throw error;
+        }
       },
 
-      // toggleExcludeFromTotal function
-      toggleExcludeFromTotal: (accountId) => {
+      toggleExcludeFromTotal: async (accountId) => {
+        const account = get().accounts.find(a => a.id === accountId);
+        if (!account) throw new Error('Account not found');
+
         const today = new Date().toISOString().split('T')[0];
-        set((state) => ({
-          accounts: state.accounts.map(account =>
-            account.id === accountId
-              ? { ...account, excludeFromTotal: !account.excludeFromTotal, lastUpdated: today }
-              : account
-          )
-        }));
+
+        if (DEV_MODE) {
+          set((state) => ({
+            accounts: state.accounts.map(a =>
+              a.id === accountId
+                ? { ...a, excludeFromTotal: !a.excludeFromTotal, lastUpdated: today }
+                : a
+            )
+          }));
+          return;
+        }
+
+        set({ loading: true, error: null });
+        try {
+          await netWorthAccountService.update(accountId, {
+            excludeFromTotal: !account.excludeFromTotal,
+          });
+          set((state) => ({
+            accounts: state.accounts.map(a =>
+              a.id === accountId
+                ? { ...a, excludeFromTotal: !a.excludeFromTotal, lastUpdated: today }
+                : a
+            ),
+            loading: false,
+          }));
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to toggle exclude',
+            loading: false,
+          });
+          throw error;
+        }
       },
+
+      bulkImport: async (accounts) => {
+        const validatedAccounts = accounts.map(validateAccountData);
+
+        if (DEV_MODE) {
+          const newAccounts: Account[] = validatedAccounts.map(data => ({
+            ...data,
+            id: crypto.randomUUID(),
+            lastUpdated: new Date().toISOString().split('T')[0],
+          }));
+
+          set((state) => ({
+            accounts: [...state.accounts, ...newAccounts],
+          }));
+
+          return newAccounts;
+        }
+
+        set({ loading: true, error: null });
+        try {
+          const newAccounts = await netWorthAccountService.bulkCreate(
+            validatedAccounts.map(data => ({
+              name: data.name,
+              type: data.type,
+              currency: data.currency,
+              balance: data.balance,
+              excludeFromTotal: data.excludeFromTotal,
+              dueDate: data.dueDate,
+              recurringDueDate: data.recurringDueDate,
+              estimatedYield: data.estimatedYield,
+              minMonthlyPayment: data.minMonthlyPayment,
+              paymentToAvoidInterest: data.paymentToAvoidInterest,
+            }))
+          );
+          set((state) => ({
+            accounts: [...state.accounts, ...newAccounts],
+            loading: false,
+          }));
+          return newAccounts;
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to import accounts',
+            loading: false,
+          });
+          throw error;
+        }
+      },
+
+      clearError: () => set({ error: null }),
     }),
     {
       name: 'fintonico-accounts',
-      // Migration on load
+      partialize: (state) => DEV_MODE ? { accounts: state.accounts } : {},
       onRehydrateStorage: () => (state) => {
-        if (state?.accounts) {
+        if (state?.accounts && DEV_MODE) {
           state.accounts = state.accounts.map(migrateAccount);
         }
       },
