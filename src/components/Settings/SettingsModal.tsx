@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Settings, RefreshCcw, AlertCircle, ChevronDown } from 'lucide-react';
+import { Settings, RefreshCcw, AlertCircle, ChevronDown, Cloud } from 'lucide-react';
 import { useCurrencyStore, SUPPORTED_CURRENCIES } from '../../stores/currencyStore';
 import { clearMockData, seedMockData } from '../../utils/resetData';
 import { Modal, modalButtonStyles } from '../Shared/Modal';
 import { ToggleSwitch } from '../Shared/ToggleSwitch';
+import { DataMigration } from './DataMigration';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -295,6 +296,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 ariaLabel="Auto-refresh FX rates at launch"
               />
             </div>
+          </div>
+        </section>
+
+        <section>
+          <h3 className={sectionTitle}>
+            <span className="inline-flex items-center gap-2">
+              <Cloud className="w-4 h-4" />
+              Cloud Sync
+            </span>
+          </h3>
+          <p className={`${sectionDescription} mb-3`}>
+            Migrate your local data to the cloud for multi-device access and backup.
+          </p>
+          <div className="rounded-xl border bg-[var(--color-surface-card)] border-[color:var(--color-border)] p-4">
+            <DataMigration />
           </div>
         </section>
 

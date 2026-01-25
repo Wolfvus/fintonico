@@ -1348,7 +1348,7 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-01-24 (Phase 23 Step 4 completed)
+**Last Updated:** 2025-01-24 (Phase 23 Step 5 completed)
 
 ---
 
@@ -1466,14 +1466,27 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 3. Add your Google OAuth Client ID and Secret
 4. Set redirect URL in Google Cloud Console: `https://xvcmnpezakcmwffcnhmw.supabase.co/auth/v1/callback`
 
-### Step 5: Data Migration Tool
+### Step 5: Data Migration Tool ✅
 
 | Task | Status |
 | --- | --- |
-| Create localStorage → Supabase migration utility | ⬜ |
-| One-click "Upload my data" for existing users | ⬜ |
-| Conflict resolution (if data exists in both) | ⬜ |
-| Migration progress indicator | ⬜ |
+| Create localStorage → Supabase migration utility | ✅ |
+| One-click "Upload my data" for existing users | ✅ |
+| Conflict resolution (if data exists in both) | ✅ |
+| Migration progress indicator | ✅ |
+
+**Files Created:**
+- `src/services/migrationService.ts` - Migration utility with progress tracking
+- `src/components/Settings/DataMigration.tsx` - UI component for migration
+
+**Features:**
+- Reads all localStorage stores (expenses, income, accounts, ledger, snapshots)
+- Checks for existing Supabase data before migration
+- Optional "overwrite" mode for replacing existing cloud data
+- Step-by-step progress indicator showing current entity being migrated
+- Error handling with detailed per-entity error messages
+- "Clear local data" option after successful migration
+- Integrated into Settings modal under "Cloud Sync" section
 
 ### Step 6: Admin Panel Production
 

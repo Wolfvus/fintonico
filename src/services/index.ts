@@ -14,3 +14,5 @@ export { ledgerAccountService } from './ledgerAccountService';
 export type { CreateLedgerAccountData, UpdateLedgerAccountData } from './ledgerAccountService';
 export { snapshotService } from './snapshotService';
 export type { AccountSnapshot, NetWorthSnapshot, CreateSnapshotData } from './snapshotService';
+export { migrationService, readLocalStorageData, checkExistingSupabaseData, migrateToSupabase, clearLocalStorageData } from './migrationService';
+export type { MigrationProgress, MigrationResult, LocalStorageData } from './migrationService';
