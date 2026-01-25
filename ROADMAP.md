@@ -1221,7 +1221,7 @@ interface NetWorthSnapshot {
 
 ---
 
-## Phase 22: XLSX Import (Replace CSV)
+## Phase 22: XLSX Import (Replace CSV) ✅
 
 **Goal:** Replace CSV import with XLSX (Excel) format for easier template usage and better user experience. Excel files support formatting, validation hints, and are more familiar to users.
 
@@ -1318,16 +1318,16 @@ interface NetWorthSnapshot {
 - `parseFileForModal` wrapper converts async XLSX parser to expected interface
 - CSV utility functions preserved in `csv.ts` for potential admin features
 
-### Step 6: Testing & Edge Cases
+### Step 6: Testing & Edge Cases ✅
 
 | Task | Status |
 | --- | --- |
-| Test with Excel-generated files | ⬜ |
-| Test with Numbers-generated files (Mac) | ⬜ |
-| Test with LibreOffice-generated files | ⬜ |
-| Handle files with multiple sheets (use first) | ⬜ |
-| Handle files with merged cells gracefully | ⬜ |
-| Error messages for unsupported formats | ⬜ |
+| Test with Excel-generated files | ✅ |
+| Test with Numbers-generated files (Mac) | ✅ |
+| Test with LibreOffice-generated files | ✅ |
+| Handle files with multiple sheets (use first) | ✅ |
+| Handle files with merged cells gracefully | ✅ |
+| Error messages for unsupported formats | ✅ |
 
 **Files to Modify:**
 - `src/utils/xlsx.ts` (new)
@@ -1348,4 +1348,104 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-12-17 (Phase 22 Steps 1-5 completed)
+**Last Updated:** 2025-01-24 (Phase 22 completed)
+
+---
+
+## Phase 23: Supabase Backend Integration (Planned)
+
+**Goal:** Migrate from localStorage to Supabase database for persistent cloud storage, multi-device sync, and production readiness.
+
+### Current State
+
+**What's working (localStorage):**
+- All CRUD operations for Expenses, Income, Accounts, Ledger Accounts
+- Snapshots and history tracking
+- XLSX import/export
+- Admin panel (mock/dev mode)
+
+**What needs Supabase:**
+- User data persistence across devices
+- Real authentication (not dev mode)
+- Admin panel with real user management
+- Data backup and recovery
+
+### Step 1: Database Schema Review
+
+| Task | Status |
+| --- | --- |
+| Audit existing Supabase schema vs current data types | ⬜ |
+| Create/update `expenses` table | ⬜ |
+| Create/update `incomes` table | ⬜ |
+| Create/update `accounts` (net worth) table | ⬜ |
+| Create/update `ledger_accounts` table | ⬜ |
+| Create/update `net_worth_snapshots` table | ⬜ |
+| Add proper RLS policies for user data isolation | ⬜ |
+
+### Step 2: API Service Layer
+
+| Task | Status |
+| --- | --- |
+| Create `supabaseClient.ts` configuration | ⬜ |
+| Create `expenseService.ts` (CRUD with Supabase) | ⬜ |
+| Create `incomeService.ts` (CRUD with Supabase) | ⬜ |
+| Create `accountService.ts` (CRUD with Supabase) | ⬜ |
+| Create `ledgerAccountService.ts` (CRUD with Supabase) | ⬜ |
+| Create `snapshotService.ts` (CRUD with Supabase) | ⬜ |
+
+### Step 3: Store Migration
+
+| Task | Status |
+| --- | --- |
+| Update `expenseStore.ts` to use Supabase service | ⬜ |
+| Update `incomeStore.ts` to use Supabase service | ⬜ |
+| Update `accountStore.ts` to use Supabase service | ⬜ |
+| Update `ledgerAccountStore.ts` to use Supabase service | ⬜ |
+| Update `snapshotStore.ts` to use Supabase service | ⬜ |
+| Add loading states and error handling | ⬜ |
+| Add optimistic updates for better UX | ⬜ |
+
+### Step 4: Authentication Integration
+
+| Task | Status |
+| --- | --- |
+| Wire up real Supabase Auth (replace dev mode) | ⬜ |
+| Login/Signup pages with proper validation | ⬜ |
+| Password reset flow | ⬜ |
+| Session persistence | ⬜ |
+| Fetch user profile on login | ⬜ |
+
+### Step 5: Data Migration Tool
+
+| Task | Status |
+| --- | --- |
+| Create localStorage → Supabase migration utility | ⬜ |
+| One-click "Upload my data" for existing users | ⬜ |
+| Conflict resolution (if data exists in both) | ⬜ |
+| Migration progress indicator | ⬜ |
+
+### Step 6: Admin Panel Production
+
+| Task | Status |
+| --- | --- |
+| Wire admin service to real Supabase endpoints | ⬜ |
+| User management with real data | ⬜ |
+| View user financial data (read-only) | ⬜ |
+| System config stored in Supabase | ⬜ |
+| Audit log persistence | ⬜ |
+
+### Step 7: Testing & Deployment
+
+| Task | Status |
+| --- | --- |
+| Test all CRUD operations with Supabase | ⬜ |
+| Test RLS policies (user isolation) | ⬜ |
+| Test offline fallback behavior | ⬜ |
+| Performance testing with larger datasets | ⬜ |
+| Deploy to production environment | ⬜ |
+
+**Design Decisions:**
+- Keep localStorage as offline fallback (hybrid approach)
+- Sync on reconnect if offline changes detected
+- RLS ensures users can only access their own data
+- Admin roles bypass RLS for user management
