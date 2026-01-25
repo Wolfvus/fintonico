@@ -214,12 +214,13 @@ CREATE TABLE IF NOT EXISTS public.exchange_rates (
   from_currency TEXT NOT NULL,
   to_currency TEXT NOT NULL,
   rate DECIMAL(20, 10) NOT NULL CHECK (rate > 0),
+  rate_date DATE DEFAULT CURRENT_DATE NOT NULL,
   fetched_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-  UNIQUE(from_currency, to_currency, (fetched_at::date))
+  UNIQUE(from_currency, to_currency, rate_date)
 );
 
 CREATE INDEX idx_exchange_rates_currencies ON public.exchange_rates(from_currency, to_currency);
-CREATE INDEX idx_exchange_rates_date ON public.exchange_rates(fetched_at);
+CREATE INDEX idx_exchange_rates_date ON public.exchange_rates(rate_date);
 
 -- Exchange rates are public (no RLS needed, read by all authenticated users)
 ALTER TABLE public.exchange_rates ENABLE ROW LEVEL SECURITY;

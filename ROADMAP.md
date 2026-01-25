@@ -1348,7 +1348,7 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-01-24 (Phase 22 completed)
+**Last Updated:** 2025-01-24 (Phase 23 Step 1 completed)
 
 ---
 
@@ -1370,17 +1370,28 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 - Admin panel with real user management
 - Data backup and recovery
 
-### Step 1: Database Schema Review
+### Step 1: Database Schema Review ✅
 
 | Task | Status |
 | --- | --- |
-| Audit existing Supabase schema vs current data types | ⬜ |
-| Create/update `expenses` table | ⬜ |
-| Create/update `incomes` table | ⬜ |
-| Create/update `accounts` (net worth) table | ⬜ |
-| Create/update `ledger_accounts` table | ⬜ |
-| Create/update `net_worth_snapshots` table | ⬜ |
-| Add proper RLS policies for user data isolation | ⬜ |
+| Audit existing Supabase schema vs current data types | ✅ |
+| Create/update `expenses` table | ✅ |
+| Create/update `incomes` table | ✅ |
+| Create/update `accounts` (net worth) table | ✅ |
+| Create/update `ledger_accounts` table | ✅ |
+| Create/update `net_worth_snapshots` table | ✅ |
+| Add proper RLS policies for user data isolation | ✅ |
+
+**Migration File:** `supabase/migrations/004_app_schema_sync.sql`
+
+**Changes Made:**
+1. **expenses** - Added `currency`, `recurring`; fixed rating constraint (`non_essential` → `discretionary`)
+2. **income** - Added `amount` (decimal), `frequency` column; migrates from `amount_cents`
+3. **net_worth_accounts** - New table for Account interface (assets/liabilities with balances)
+4. **ledger_accounts** - New table for LedgerAccount interface (Chart of Accounts)
+5. **net_worth_snapshots** - New table for monthly net worth history
+6. **account_snapshots** - New table for per-account breakdown within snapshots
+7. **Helper functions** - `get_account_nature()`, `calculate_user_net_worth()`
 
 ### Step 2: API Service Layer
 
