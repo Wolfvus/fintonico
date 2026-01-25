@@ -13,7 +13,8 @@ import type {
   UpdateUserRequest,
   AdminAction,
 } from '../types/admin';
-import type { Account, Expense, Income } from '../types';
+import type { Account, Expense, Income, LedgerAccount } from '../types';
+import type { NetWorthSnapshot, AccountSnapshot } from '../stores/snapshotStore';
 
 // Dev mode configuration
 const DEV_MODE = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_DEV_MODE === 'true';
@@ -235,7 +236,7 @@ export const adminService = {
     }
 
     const { data, error } = await supabase
-      .from('accounts')
+      .from('net_worth_accounts')
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
@@ -248,11 +249,17 @@ export const adminService = {
     return (data as any[]).map((row) => ({
       id: row.id,
       name: row.name,
-      type: row.type,
+      type: row.account_type,
       currency: row.currency,
-      balance: row.balance,
+      balance: Number(row.balance),
       excludeFromTotal: row.exclude_from_total,
-      lastUpdated: row.updated_at,
+      recurringDueDate: row.recurring_due_date,
+      isPaidThisMonth: row.is_paid_this_month,
+      lastPaidDate: row.last_paid_date,
+      estimatedYield: row.estimated_yield ? Number(row.estimated_yield) : undefined,
+      minMonthlyPayment: row.min_monthly_payment ? Number(row.min_monthly_payment) : undefined,
+      paymentToAvoidInterest: row.payment_to_avoid_interest ? Number(row.payment_to_avoid_interest) : undefined,
+      lastUpdated: row.last_updated,
     }));
   },
 
@@ -280,7 +287,7 @@ export const adminService = {
       rating: row.rating,
       date: row.date,
       created_at: row.created_at,
-      recurring: row.is_recurring,
+      recurring: row.recurring || false,
     }));
   },
 
@@ -303,11 +310,77 @@ export const adminService = {
     return (data as any[]).map((row) => ({
       id: row.id,
       source: row.source,
-      amount: Number(row.amount_cents) / 100,
+      amount: Number(row.amount),
       currency: row.currency,
-      frequency: row.recurrence_interval || 'one-time',
+      frequency: row.frequency || 'one-time',
       date: row.date,
       created_at: row.created_at,
+    }));
+  },
+
+  async getUserLedgerAccounts(userId: string): Promise<LedgerAccount[]> {
+    if (DEV_MODE) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('ledger_accounts')
+      .select('*')
+      .eq('user_id', userId)
+      .order('name', { ascending: true });
+
+    if (error) {
+      throw new Error(`Failed to fetch user ledger accounts: ${error.message}`);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (data as any[]).map((row) => ({
+      id: row.id,
+      name: row.name,
+      accountNumber: row.account_number,
+      clabe: row.clabe,
+      normalBalance: row.normal_balance,
+      isActive: row.is_active,
+    }));
+  },
+
+  async getUserSnapshots(userId: string): Promise<NetWorthSnapshot[]> {
+    if (DEV_MODE) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('net_worth_snapshots')
+      .select('*, account_snapshots(*)')
+      .eq('user_id', userId)
+      .order('month_end_local', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch user snapshots: ${error.message}`);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (data as any[]).map((row) => ({
+      id: row.id,
+      monthEndLocal: row.month_end_local,
+      netWorthBase: Number(row.net_worth_base),
+      totalsByNature: {
+        asset: Number(row.total_assets),
+        liability: Number(row.total_liabilities),
+        income: 0,
+        expense: 0,
+        equity: 0,
+      },
+      accountSnapshots: row.account_snapshots?.map((as: Record<string, unknown>) => ({
+        accountId: as.id as string,
+        balance: Number(as.balance),
+        balanceBase: Number(as.balance_base),
+        accountName: as.account_name as string,
+        accountType: as.account_type as string,
+        currency: as.currency as string,
+        nature: as.nature as 'asset' | 'liability',
+      })) as AccountSnapshot[] || [],
+      createdAt: row.created_at,
     }));
   },
 

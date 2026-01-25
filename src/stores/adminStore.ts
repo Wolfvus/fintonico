@@ -15,7 +15,8 @@ import type {
   UserWithFinancials,
   AdminAction,
 } from '../types/admin';
-import type { Account, Expense, Income } from '../types';
+import type { Account, Expense, Income, LedgerAccount } from '../types';
+import type { NetWorthSnapshot } from './snapshotStore';
 
 interface AdminState {
   // User management
@@ -25,6 +26,8 @@ interface AdminState {
     accounts: Account[];
     expenses: Expense[];
     incomes: Income[];
+    ledgerAccounts: LedgerAccount[];
+    snapshots: NetWorthSnapshot[];
   } | null;
   usersLoading: boolean;
   usersError: string | null;
@@ -218,20 +221,22 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   fetchUserData: async (userId: string) => {
     set({ usersLoading: true, usersError: null });
     try {
-      const [accounts, expenses, incomes] = await Promise.all([
+      const [accounts, expenses, incomes, ledgerAccounts, snapshots] = await Promise.all([
         adminService.getUserAccounts(userId),
         adminService.getUserExpenses(userId),
         adminService.getUserIncomes(userId),
+        adminService.getUserLedgerAccounts(userId),
+        adminService.getUserSnapshots(userId),
       ]);
 
       // Log the action
       await get().logAction('data.view', {
         targetUserId: userId,
-        dataTypes: ['accounts', 'expenses', 'incomes'],
+        dataTypes: ['accounts', 'expenses', 'incomes', 'ledgerAccounts', 'snapshots'],
       });
 
       set({
-        selectedUserData: { accounts, expenses, incomes },
+        selectedUserData: { accounts, expenses, incomes, ledgerAccounts, snapshots },
         usersLoading: false,
       });
     } catch (err) {
@@ -323,10 +328,12 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     if (!user) return null;
 
     try {
-      const [accounts, expenses, incomes] = await Promise.all([
+      const [accounts, expenses, incomes, ledgerAccounts, snapshots] = await Promise.all([
         adminService.getUserAccounts(userId),
         adminService.getUserExpenses(userId),
         adminService.getUserIncomes(userId),
+        adminService.getUserLedgerAccounts(userId),
+        adminService.getUserSnapshots(userId),
       ]);
 
       // Calculate total net worth
@@ -337,6 +344,8 @@ export const useAdminStore = create<AdminState>((set, get) => ({
         accountCount: accounts.length,
         expenseCount: expenses.length,
         incomeCount: incomes.length,
+        ledgerAccountCount: ledgerAccounts.length,
+        snapshotCount: snapshots.length,
         totalNetWorth,
       };
     } catch {

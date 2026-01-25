@@ -46,6 +46,8 @@ export interface UserWithFinancials extends UserProfile {
   accountCount?: number;
   expenseCount?: number;
   incomeCount?: number;
+  ledgerAccountCount?: number;
+  snapshotCount?: number;
   totalNetWorth?: number;
   lastActivity?: string;
 }
@@ -97,4 +99,4 @@ export interface UpdateUserRequest {
 export type AdminSection = 'users' | 'financial-data' | 'system-config';
 
 // Financial data tab identifiers
-export type FinancialDataTab = 'accounts' | 'expenses' | 'incomes';
+export type FinancialDataTab = 'accounts' | 'expenses' | 'incomes' | 'ledger-accounts' | 'snapshots';

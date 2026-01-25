@@ -4,12 +4,13 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Download, Search, BookOpen, Wallet, DollarSign, RefreshCw } from 'lucide-react';
+import { Download, Search, BookOpen, Wallet, DollarSign, RefreshCw, List, Camera } from 'lucide-react';
 import { useAdminStore } from '../../stores/adminStore';
 import type { UserProfile } from '../../types/admin';
-import type { Account, Expense, Income } from '../../types';
+import type { Account, Expense, Income, LedgerAccount } from '../../types';
+import type { NetWorthSnapshot } from '../../stores/snapshotStore';
 
-type DataTab = 'accounts' | 'expenses' | 'incomes';
+type DataTab = 'accounts' | 'expenses' | 'incomes' | 'ledger-accounts' | 'snapshots';
 
 export const FinancialDataSection: React.FC = () => {
   const {
@@ -53,11 +54,15 @@ export const FinancialDataSection: React.FC = () => {
   const userAccounts = selectedUserData?.accounts || [];
   const userExpenses = selectedUserData?.expenses || [];
   const userIncomes = selectedUserData?.incomes || [];
+  const userLedgerAccounts = selectedUserData?.ledgerAccounts || [];
+  const userSnapshots = selectedUserData?.snapshots || [];
 
   const tabs = [
-    { id: 'accounts' as const, label: 'Accounts', icon: BookOpen, count: userAccounts.length },
+    { id: 'accounts' as const, label: 'Net Worth', icon: BookOpen, count: userAccounts.length },
     { id: 'expenses' as const, label: 'Expenses', icon: Wallet, count: userExpenses.length },
     { id: 'incomes' as const, label: 'Incomes', icon: DollarSign, count: userIncomes.length },
+    { id: 'ledger-accounts' as const, label: 'Ledger', icon: List, count: userLedgerAccounts.length },
+    { id: 'snapshots' as const, label: 'Snapshots', icon: Camera, count: userSnapshots.length },
   ];
 
   const exportToCSV = (data: Record<string, unknown>[], filename: string) => {
@@ -93,6 +98,12 @@ export const FinancialDataSection: React.FC = () => {
       case 'incomes':
         exportToCSV(userIncomes as unknown as Record<string, unknown>[], 'incomes');
         break;
+      case 'ledger-accounts':
+        exportToCSV(userLedgerAccounts as unknown as Record<string, unknown>[], 'ledger-accounts');
+        break;
+      case 'snapshots':
+        exportToCSV(userSnapshots as unknown as Record<string, unknown>[], 'snapshots');
+        break;
     }
   };
 
@@ -115,6 +126,15 @@ export const FinancialDataSection: React.FC = () => {
   const filteredIncomes = userIncomes.filter((income: Income) =>
     income.source?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     income.frequency?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredLedgerAccounts = userLedgerAccounts.filter((account: LedgerAccount) =>
+    account.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    account.accountNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredSnapshots = userSnapshots.filter((snapshot: NetWorthSnapshot) =>
+    snapshot.monthEndLocal?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -327,6 +347,104 @@ export const FinancialDataSection: React.FC = () => {
                               +{income.amount?.toLocaleString() ?? '0'}
                             </td>
                             <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{income.currency}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+
+              {/* Ledger Accounts Tab */}
+              {activeTab === 'ledger-accounts' && (
+                <div className="overflow-x-auto">
+                  {filteredLedgerAccounts.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      No ledger accounts found
+                    </div>
+                  ) : (
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200 dark:border-gray-700">
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Name</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Account #</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">CLABE</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Normal Balance</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Active</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredLedgerAccounts.map((account: LedgerAccount) => (
+                          <tr key={account.id} className="border-b border-gray-100 dark:border-gray-800">
+                            <td className="py-3 px-4 text-gray-900 dark:text-white">{account.name}</td>
+                            <td className="py-3 px-4 font-mono text-sm text-gray-600 dark:text-gray-400">
+                              {account.accountNumber || '-'}
+                            </td>
+                            <td className="py-3 px-4 font-mono text-sm text-gray-600 dark:text-gray-400">
+                              {account.clabe || '-'}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                account.normalBalance === 'debit'
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                  : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                              }`}>
+                                {account.normalBalance}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                account.isActive
+                                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                  : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                              }`}>
+                                {account.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+
+              {/* Snapshots Tab */}
+              {activeTab === 'snapshots' && (
+                <div className="overflow-x-auto">
+                  {filteredSnapshots.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      No snapshots found
+                    </div>
+                  ) : (
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200 dark:border-gray-700">
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Month</th>
+                          <th className="text-right py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Net Worth</th>
+                          <th className="text-right py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Assets</th>
+                          <th className="text-right py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Liabilities</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Created</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredSnapshots.map((snapshot: NetWorthSnapshot) => (
+                          <tr key={snapshot.id || snapshot.monthEndLocal} className="border-b border-gray-100 dark:border-gray-800">
+                            <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">
+                              {snapshot.monthEndLocal}
+                            </td>
+                            <td className="py-3 px-4 text-right font-mono text-gray-900 dark:text-white">
+                              {snapshot.netWorthBase?.toLocaleString() ?? '0'}
+                            </td>
+                            <td className="py-3 px-4 text-right font-mono text-green-600 dark:text-green-400">
+                              {snapshot.totalsByNature?.asset?.toLocaleString() ?? '0'}
+                            </td>
+                            <td className="py-3 px-4 text-right font-mono text-red-600 dark:text-red-400">
+                              {snapshot.totalsByNature?.liability?.toLocaleString() ?? '0'}
+                            </td>
+                            <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">
+                              {snapshot.createdAt ? new Date(snapshot.createdAt).toLocaleDateString() : '-'}
+                            </td>
                           </tr>
                         ))}
                       </tbody>

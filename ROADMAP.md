@@ -1348,7 +1348,7 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-01-24 (Phase 23 Step 5 completed)
+**Last Updated:** 2025-01-24 (Phase 23 Step 6 completed)
 
 ---
 
@@ -1488,15 +1488,28 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 - "Clear local data" option after successful migration
 - Integrated into Settings modal under "Cloud Sync" section
 
-### Step 6: Admin Panel Production
+### Step 6: Admin Panel Production ✅
 
 | Task | Status |
 | --- | --- |
-| Wire admin service to real Supabase endpoints | ⬜ |
-| User management with real data | ⬜ |
-| View user financial data (read-only) | ⬜ |
-| System config stored in Supabase | ⬜ |
-| Audit log persistence | ⬜ |
+| Wire admin service to real Supabase endpoints | ✅ |
+| User management with real data | ✅ |
+| View user financial data (read-only) | ✅ |
+| System config stored in Supabase | ✅ |
+| Audit log persistence | ✅ |
+
+**Files Modified:**
+- `src/services/adminService.ts` - Fixed table names, added ledger accounts and snapshots methods
+- `src/stores/adminStore.ts` - Added ledger accounts and snapshots to user data fetching
+- `src/types/admin.ts` - Added ledgerAccountCount, snapshotCount, updated FinancialDataTab
+- `src/components/Admin/FinancialDataSection.tsx` - Added Ledger and Snapshots tabs
+
+**Admin Service Updates:**
+- `getUserAccounts()` now uses `net_worth_accounts` table with all fields
+- `getUserExpenses()` uses correct `recurring` column
+- `getUserIncomes()` uses `amount` and `frequency` columns
+- Added `getUserLedgerAccounts()` method
+- Added `getUserSnapshots()` with nested account_snapshots
 
 ### Step 7: Testing & Deployment
 
