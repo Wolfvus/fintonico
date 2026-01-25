@@ -88,34 +88,38 @@ function validateAccountData(account: Omit<Account, 'id'>): Omit<Account, 'id'> 
 }
 
 // Migration function for old formats
-function migrateAccount(account: Record<string, unknown>): Account {
+function migrateAccount(account: Account | Record<string, unknown>): Account {
+  // Cast to Record for consistent property access
+  const raw = account as Record<string, unknown>;
   let migrated: Account;
 
-  if (typeof account.currency === 'string' && typeof account.balance === 'number') {
+  // If it already has the right shape, just return it
+  if (typeof raw.currency === 'string' && typeof raw.balance === 'number' &&
+      typeof raw.id === 'string' && typeof raw.name === 'string' && typeof raw.type === 'string') {
     migrated = account as Account;
-  } else if (account.balances && Array.isArray(account.balances) && account.balances.length > 0) {
-    const primaryBalance = account.balances[0] as { currency: string; amount: number };
+  } else if (raw.balances && Array.isArray(raw.balances) && raw.balances.length > 0) {
+    const primaryBalance = raw.balances[0] as { currency: string; amount: number };
     migrated = {
-      id: account.id as string,
-      name: account.name as string,
-      type: account.type as Account['type'],
+      id: raw.id as string,
+      name: raw.name as string,
+      type: raw.type as Account['type'],
       currency: primaryBalance.currency,
       balance: primaryBalance.amount,
-      excludeFromTotal: account.excludeFromTotal as boolean | undefined,
-      dueDate: account.dueDate as string | undefined,
-      recurringDueDate: account.recurringDueDate as number | undefined,
-      isPaidThisMonth: account.isPaidThisMonth as boolean | undefined,
-      lastPaidDate: account.lastPaidDate as string | undefined,
-      estimatedYield: account.estimatedYield as number | undefined,
-      lastUpdated: account.lastUpdated as string | undefined,
-      minMonthlyPayment: account.minMonthlyPayment as number | undefined,
-      paymentToAvoidInterest: account.paymentToAvoidInterest as number | undefined,
+      excludeFromTotal: raw.excludeFromTotal as boolean | undefined,
+      dueDate: raw.dueDate as string | undefined,
+      recurringDueDate: raw.recurringDueDate as number | undefined,
+      isPaidThisMonth: raw.isPaidThisMonth as boolean | undefined,
+      lastPaidDate: raw.lastPaidDate as string | undefined,
+      estimatedYield: raw.estimatedYield as number | undefined,
+      lastUpdated: raw.lastUpdated as string | undefined,
+      minMonthlyPayment: raw.minMonthlyPayment as number | undefined,
+      paymentToAvoidInterest: raw.paymentToAvoidInterest as number | undefined,
     };
   } else {
     migrated = {
-      id: (account.id as string) || crypto.randomUUID(),
-      name: (account.name as string) || 'Unknown Account',
-      type: (account.type as Account['type']) || 'other',
+      id: (raw.id as string) || crypto.randomUUID(),
+      name: (raw.name as string) || 'Unknown Account',
+      type: (raw.type as Account['type']) || 'other',
       currency: 'MXN',
       balance: 0,
     };
@@ -432,7 +436,7 @@ export const useAccountStore = create<AccountState>()(
       partialize: (state) => DEV_MODE ? { accounts: state.accounts } : {},
       onRehydrateStorage: () => (state) => {
         if (state?.accounts && DEV_MODE) {
-          state.accounts = state.accounts.map(migrateAccount);
+          state.accounts = state.accounts.map((account) => migrateAccount(account));
         }
       },
     }

@@ -3,9 +3,8 @@
  * API service for income CRUD operations with Supabase
  */
 
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseUntyped } from '../lib/supabase';
 import type { Income, IncomeFrequency } from '../types';
-import type { InsertTables, UpdateTables } from '../types/database';
 
 // Dev mode configuration
 const DEV_MODE = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_DEV_MODE === 'true';
@@ -131,7 +130,7 @@ export const incomeService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const insertData: InsertTables<'income'> = {
+    const insertData = {
       user_id: user.id,
       source: income.source,
       amount: income.amount,
@@ -140,7 +139,7 @@ export const incomeService = {
       date: income.date || new Date().toISOString().split('T')[0],
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('income')
       .insert(insertData)
       .select()
@@ -164,14 +163,14 @@ export const incomeService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const updateData: UpdateTables<'income'> = {};
+    const updateData: Record<string, unknown> = {};
     if (updates.source !== undefined) updateData.source = updates.source;
     if (updates.amount !== undefined) updateData.amount = updates.amount;
     if (updates.currency !== undefined) updateData.currency = updates.currency;
     if (updates.frequency !== undefined) updateData.frequency = updates.frequency;
     if (updates.date !== undefined) updateData.date = updates.date;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('income')
       .update(updateData)
       .eq('id', id)
@@ -219,7 +218,7 @@ export const incomeService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const insertData: InsertTables<'income'>[] = incomes.map(income => ({
+    const insertData = incomes.map(income => ({
       user_id: user.id,
       source: income.source,
       amount: income.amount,
@@ -228,7 +227,7 @@ export const incomeService = {
       date: income.date || new Date().toISOString().split('T')[0],
     }));
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('income')
       .insert(insertData)
       .select();

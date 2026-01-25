@@ -3,10 +3,9 @@
  * API service for net worth snapshot CRUD operations with Supabase
  */
 
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseUntyped } from '../lib/supabase';
 import type { Account, AccountType } from '../types';
-import type { InsertTables } from '../types/database';
-import type { AccountNature } from '../types/database';
+import type { AccountNature } from '../domain/ledger';
 
 // Dev mode configuration
 const DEV_MODE = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_DEV_MODE === 'true';
@@ -19,7 +18,7 @@ export interface AccountSnapshot {
   accountName: string;
   accountType: AccountType;
   currency: string;
-  nature: AccountNature;
+  nature: 'asset' | 'liability'; // Only balance sheet items for account snapshots
 }
 
 export interface NetWorthSnapshot {
@@ -52,6 +51,9 @@ function mapRowToSnapshot(
     totalsByNature: {
       asset: Number(row.total_assets) || 0,
       liability: Number(row.total_liabilities) || 0,
+      income: 0,
+      expense: 0,
+      equity: 0,
     },
     accountSnapshots,
     createdAt: row.created_at as string,
@@ -67,7 +69,7 @@ function mapRowToAccountSnapshot(row: Record<string, unknown>): AccountSnapshot 
     accountName: row.account_name as string,
     accountType: row.account_type as AccountType,
     currency: row.currency as string,
-    nature: row.nature as AccountNature,
+    nature: row.nature as 'asset' | 'liability',
   };
 }
 
@@ -141,7 +143,7 @@ export const snapshotService = {
     if (!user) throw new Error('Not authenticated');
 
     // Get the snapshot
-    const { data: snapshotData, error: snapshotError } = await supabase
+    const { data: snapshotData, error: snapshotError } = await supabaseUntyped
       .from('net_worth_snapshots')
       .select('*')
       .eq('user_id', user.id)
@@ -154,7 +156,7 @@ export const snapshotService = {
     }
 
     // Get account snapshots for this snapshot
-    const { data: accountData, error: accountError } = await supabase
+    const { data: accountData, error: accountError } = await supabaseUntyped
       .from('account_snapshots')
       .select('*')
       .eq('snapshot_id', snapshotData.id);
@@ -179,7 +181,7 @@ export const snapshotService = {
     if (!user) throw new Error('Not authenticated');
 
     // Insert the main snapshot
-    const snapshotInsert: InsertTables<'net_worth_snapshots'> = {
+    const snapshotInsert = {
       user_id: user.id,
       month_end_local: snapshot.monthEndLocal,
       net_worth_base: snapshot.netWorthBase,
@@ -188,7 +190,7 @@ export const snapshotService = {
       base_currency: snapshot.baseCurrency,
     };
 
-    const { data: snapshotData, error: snapshotError } = await supabase
+    const { data: snapshotData, error: snapshotError } = await supabaseUntyped
       .from('net_worth_snapshots')
       .insert(snapshotInsert)
       .select()
@@ -200,7 +202,7 @@ export const snapshotService = {
 
     // Insert account snapshots if provided
     if (snapshot.accountSnapshots && snapshot.accountSnapshots.length > 0) {
-      const accountInserts: InsertTables<'account_snapshots'>[] = snapshot.accountSnapshots.map(as => ({
+      const accountInserts = snapshot.accountSnapshots.map(as => ({
         snapshot_id: snapshotData.id,
         account_id: as.accountId,
         account_name: as.accountName,
@@ -211,7 +213,7 @@ export const snapshotService = {
         balance_base: as.balanceBase,
       }));
 
-      const { error: accountError } = await supabase
+      const { error: accountError } = await supabaseUntyped
         .from('account_snapshots')
         .insert(accountInserts);
 
@@ -243,7 +245,7 @@ export const snapshotService = {
     let totalLiabilities = 0;
     const accountSnapshots: AccountSnapshot[] = [];
 
-    const getAccountNature = (type: AccountType): AccountNature => {
+    const getAccountNature = (type: AccountType): 'asset' | 'liability' => {
       const liabilityTypes: AccountType[] = ['loan', 'credit-card', 'mortgage'];
       return liabilityTypes.includes(type) ? 'liability' : 'asset';
     };

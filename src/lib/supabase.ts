@@ -23,4 +23,8 @@ export const supabase = createClient<Database>(
   }
 );
 
+// Untyped client for operations where TypeScript inference fails
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const supabaseUntyped = supabase as any;
+
 export type { Database };

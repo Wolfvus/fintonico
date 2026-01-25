@@ -3,9 +3,8 @@
  * API service for expense CRUD operations with Supabase
  */
 
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseUntyped } from '../lib/supabase';
 import type { Expense, ExpenseRating } from '../types';
-import type { InsertTables, UpdateTables } from '../types/database';
 
 // Dev mode configuration
 const DEV_MODE = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_DEV_MODE === 'true';
@@ -134,7 +133,7 @@ export const expenseService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const insertData: InsertTables<'expenses'> = {
+    const insertData = {
       user_id: user.id,
       what: expense.what,
       amount: expense.amount,
@@ -144,7 +143,7 @@ export const expenseService = {
       recurring: expense.recurring || false,
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('expenses')
       .insert(insertData)
       .select()
@@ -168,7 +167,7 @@ export const expenseService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const updateData: UpdateTables<'expenses'> = {};
+    const updateData: Record<string, unknown> = {};
     if (updates.what !== undefined) updateData.what = updates.what;
     if (updates.amount !== undefined) updateData.amount = updates.amount;
     if (updates.currency !== undefined) updateData.currency = updates.currency;
@@ -176,7 +175,7 @@ export const expenseService = {
     if (updates.date !== undefined) updateData.date = updates.date;
     if (updates.recurring !== undefined) updateData.recurring = updates.recurring;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('expenses')
       .update(updateData)
       .eq('id', id)
@@ -224,7 +223,7 @@ export const expenseService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const insertData: InsertTables<'expenses'>[] = expenses.map(expense => ({
+    const insertData = expenses.map(expense => ({
       user_id: user.id,
       what: expense.what,
       amount: expense.amount,
@@ -234,7 +233,7 @@ export const expenseService = {
       recurring: expense.recurring || false,
     }));
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('expenses')
       .insert(insertData)
       .select();

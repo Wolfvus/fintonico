@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseUntyped } from '../lib/supabase';
 import type { Expense, Income, Account, LedgerAccount } from '../types';
 import type { NetWorthSnapshot, AccountSnapshot } from '../stores/snapshotStore';
 
@@ -34,20 +34,6 @@ export interface LocalStorageData {
 
 // Read all data from localStorage stores
 export function readLocalStorageData(): LocalStorageData {
-  const parseStore = <T>(key: string, defaultValue: T): T => {
-    try {
-      const stored = localStorage.getItem(key);
-      if (!stored) return defaultValue;
-      const parsed = JSON.parse(stored);
-      // Zustand stores wrap data in a "state" object
-      return parsed.state?.expenses || parsed.state?.incomes || parsed.state?.accounts ||
-             parsed.state?.snapshots || parsed.expenses || parsed.incomes || parsed.accounts ||
-             parsed.snapshots || defaultValue;
-    } catch {
-      return defaultValue;
-    }
-  };
-
   // Parse each store carefully
   let expenses: Expense[] = [];
   let income: Income[] = [];
@@ -212,7 +198,7 @@ export async function migrateToSupabase(
         created_at: e.created_at || new Date().toISOString(),
       }));
 
-      const { error } = await supabase.from('expenses').insert(expenseRows);
+      const { error } = await supabaseUntyped.from('expenses').insert(expenseRows);
       if (error) {
         result.errors.push(`Expenses: ${error.message}`);
       } else {
@@ -235,7 +221,7 @@ export async function migrateToSupabase(
         created_at: i.created_at || new Date().toISOString(),
       }));
 
-      const { error } = await supabase.from('income').insert(incomeRows);
+      const { error } = await supabaseUntyped.from('income').insert(incomeRows);
       if (error) {
         result.errors.push(`Income: ${error.message}`);
       } else {
@@ -264,7 +250,7 @@ export async function migrateToSupabase(
         last_updated: a.lastUpdated || new Date().toISOString().split('T')[0],
       }));
 
-      const { error } = await supabase.from('net_worth_accounts').insert(accountRows);
+      const { error } = await supabaseUntyped.from('net_worth_accounts').insert(accountRows);
       if (error) {
         result.errors.push(`Accounts: ${error.message}`);
       } else {
@@ -286,7 +272,7 @@ export async function migrateToSupabase(
         is_active: l.isActive,
       }));
 
-      const { error } = await supabase.from('ledger_accounts').insert(ledgerRows);
+      const { error } = await supabaseUntyped.from('ledger_accounts').insert(ledgerRows);
       if (error) {
         result.errors.push(`Ledger Accounts: ${error.message}`);
       } else {
@@ -301,7 +287,7 @@ export async function migrateToSupabase(
 
       for (const snapshot of data.snapshots) {
         // Insert snapshot first
-        const { data: insertedSnapshot, error: snapshotError } = await supabase
+        const { data: insertedSnapshot, error: snapshotError } = await supabaseUntyped
           .from('net_worth_snapshots')
           .insert({
             user_id: user.id,
@@ -333,7 +319,7 @@ export async function migrateToSupabase(
             nature: as.nature,
           }));
 
-          const { error: asError } = await supabase.from('account_snapshots').insert(accountSnapshotRows);
+          const { error: asError } = await supabaseUntyped.from('account_snapshots').insert(accountSnapshotRows);
           if (asError) {
             result.errors.push(`Account snapshots for ${snapshot.monthEndLocal}: ${asError.message}`);
           }

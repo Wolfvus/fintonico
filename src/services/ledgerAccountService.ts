@@ -3,9 +3,8 @@
  * API service for Chart of Accounts CRUD operations with Supabase
  */
 
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseUntyped } from '../lib/supabase';
 import type { LedgerAccount, LedgerAccountNormalBalance } from '../types';
-import type { InsertTables, UpdateTables } from '../types/database';
 
 // Dev mode configuration
 const DEV_MODE = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_DEV_MODE === 'true';
@@ -126,7 +125,7 @@ export const ledgerAccountService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const insertData: InsertTables<'ledger_accounts'> = {
+    const insertData = {
       user_id: user.id,
       name: account.name,
       account_number: account.accountNumber || null,
@@ -135,7 +134,7 @@ export const ledgerAccountService = {
       is_active: account.isActive !== false,
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('ledger_accounts')
       .insert(insertData)
       .select()
@@ -159,14 +158,14 @@ export const ledgerAccountService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const updateData: UpdateTables<'ledger_accounts'> = {};
+    const updateData: Record<string, unknown> = {};
     if (updates.name !== undefined) updateData.name = updates.name;
     if (updates.accountNumber !== undefined) updateData.account_number = updates.accountNumber;
     if (updates.clabe !== undefined) updateData.clabe = updates.clabe;
     if (updates.normalBalance !== undefined) updateData.normal_balance = updates.normalBalance;
     if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('ledger_accounts')
       .update(updateData)
       .eq('id', id)
@@ -228,7 +227,7 @@ export const ledgerAccountService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const insertData: InsertTables<'ledger_accounts'>[] = accounts.map(account => ({
+    const insertData = accounts.map(account => ({
       user_id: user.id,
       name: account.name,
       account_number: account.accountNumber || null,
@@ -237,7 +236,7 @@ export const ledgerAccountService = {
       is_active: account.isActive !== false,
     }));
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('ledger_accounts')
       .insert(insertData)
       .select();

@@ -3,9 +3,8 @@
  * API service for net worth account CRUD operations with Supabase
  */
 
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseUntyped } from '../lib/supabase';
 import type { Account, AccountType } from '../types';
-import type { InsertTables, UpdateTables } from '../types/database';
 
 // Dev mode configuration
 const DEV_MODE = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_DEV_MODE === 'true';
@@ -122,7 +121,7 @@ export const netWorthAccountService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const insertData: InsertTables<'net_worth_accounts'> = {
+    const insertData = {
       user_id: user.id,
       name: account.name,
       type: account.type,
@@ -137,7 +136,7 @@ export const netWorthAccountService = {
       last_updated: new Date().toISOString().split('T')[0],
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('net_worth_accounts')
       .insert(insertData)
       .select()
@@ -161,7 +160,7 @@ export const netWorthAccountService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const updateData: UpdateTables<'net_worth_accounts'> = {
+    const updateData: Record<string, unknown> = {
       last_updated: new Date().toISOString().split('T')[0],
     };
 
@@ -178,7 +177,7 @@ export const netWorthAccountService = {
     if (updates.minMonthlyPayment !== undefined) updateData.min_monthly_payment = updates.minMonthlyPayment;
     if (updates.paymentToAvoidInterest !== undefined) updateData.payment_to_avoid_interest = updates.paymentToAvoidInterest;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('net_worth_accounts')
       .update(updateData)
       .eq('id', id)
@@ -254,7 +253,7 @@ export const netWorthAccountService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const insertData: InsertTables<'net_worth_accounts'>[] = accounts.map(account => ({
+    const insertData = accounts.map(account => ({
       user_id: user.id,
       name: account.name,
       type: account.type,
@@ -269,7 +268,7 @@ export const netWorthAccountService = {
       last_updated: new Date().toISOString().split('T')[0],
     }));
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseUntyped
       .from('net_worth_accounts')
       .insert(insertData)
       .select();
