@@ -1348,7 +1348,7 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-01-24 (Phase 23 Step 3 completed)
+**Last Updated:** 2025-01-24 (Phase 23 Step 4 completed)
 
 ---
 
@@ -1440,15 +1440,31 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 - Added `bulkImport()` for XLSX import functionality
 - Added `updateExpense/Income` methods for editing
 
-### Step 4: Authentication Integration
+### Step 4: Authentication Integration ✅
 
 | Task | Status |
 | --- | --- |
-| Wire up real Supabase Auth (replace dev mode) | ⬜ |
-| Login/Signup pages with proper validation | ⬜ |
-| Password reset flow | ⬜ |
-| Session persistence | ⬜ |
-| Fetch user profile on login | ⬜ |
+| Wire up real Supabase Auth (replace dev mode) | ✅ |
+| Google OAuth sign-in | ✅ |
+| Login/Signup pages with proper validation | ✅ |
+| Password reset flow | ✅ |
+| Session persistence | ✅ (via Supabase `persistSession: true`) |
+| Fetch user profile on login | ✅ |
+
+**Auth Updates:**
+- Added `signInWithGoogle()` method using Supabase OAuth
+- Added `resetPassword()` method for password recovery
+- Added `clearError()` helper
+- AuthForm now has Google sign-in button with proper icon
+- AuthForm supports three modes: signin, signup, reset
+- "Forgot password?" link on sign-in form
+- Dev mode indicator when Supabase not configured
+
+**To Enable Google OAuth in Production:**
+1. Go to Supabase Dashboard → Authentication → Providers
+2. Enable Google provider
+3. Add your Google OAuth Client ID and Secret
+4. Set redirect URL in Google Cloud Console: `https://xvcmnpezakcmwffcnhmw.supabase.co/auth/v1/callback`
 
 ### Step 5: Data Migration Tool
 

@@ -45,10 +45,13 @@ interface AuthState {
   error: string | null;
   isDevMode: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   checkUser: () => Promise<void>;
   fetchUserProfile: () => Promise<void>;
+  clearError: () => void;
   // Role helper methods
   getRole: () => UserRole;
   isAdmin: () => boolean;
@@ -107,6 +110,49 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await get().fetchUserProfile();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sign in failed';
+      set({ error: message, loading: false });
+      throw err;
+    }
+  },
+
+  signInWithGoogle: async () => {
+    set({ loading: true, error: null });
+
+    // Dev mode: just sign in as test user
+    if (DEV_MODE) {
+      console.log('[DEV MODE] Google sign-in -> signing in as test user');
+      set({
+        user: DEV_USER,
+        session: DEV_SESSION,
+        userProfile: DEV_USER_PROFILE,
+        loading: false,
+        error: null,
+      });
+      localStorage.setItem('fintonico-dev-session', 'true');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) {
+        set({ error: error.message, loading: false });
+        throw error;
+      }
+
+      // Note: The actual sign-in happens via redirect, so loading stays true
+      // until the redirect completes and checkUser is called
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Google sign in failed';
       set({ error: message, loading: false });
       throw err;
     }
@@ -202,6 +248,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sign out failed';
+      set({ error: message, loading: false });
+      throw err;
+    }
+  },
+
+  resetPassword: async (email: string) => {
+    set({ loading: true, error: null });
+
+    if (DEV_MODE) {
+      console.log('[DEV MODE] Password reset requested for:', email);
+      set({ loading: false });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        set({ error: error.message, loading: false });
+        throw error;
+      }
+
+      set({ loading: false });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Password reset failed';
       set({ error: message, loading: false });
       throw err;
     }
@@ -315,6 +388,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.error('Error fetching user profile:', err);
     }
   },
+
+  clearError: () => set({ error: null }),
 
   // Role helper methods
   getRole: () => {
