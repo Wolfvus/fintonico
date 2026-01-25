@@ -1511,15 +1511,32 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 - Added `getUserLedgerAccounts()` method
 - Added `getUserSnapshots()` with nested account_snapshots
 
-### Step 7: Testing & Deployment
+### Step 7: Vercel Deployment & OAuth Setup
 
 | Task | Status |
 | --- | --- |
+| Create Vercel account and import project | ⬜ |
+| Configure build settings (Vite preset) | ⬜ |
+| Add environment variables in Vercel | ⬜ |
+| Deploy to Vercel | ⬜ |
+| Create Google Cloud project | ⬜ |
+| Configure OAuth consent screen | ⬜ |
+| Create OAuth credentials | ⬜ |
+| Configure Google provider in Supabase | ⬜ |
+| Set Site URL and redirect URLs in Supabase | ⬜ |
+
+**Guide:** See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed instructions.
+
+### Step 8: Testing & Verification
+
+| Task | Status |
+| --- | --- |
+| Test Google OAuth sign in/out | ⬜ |
 | Test all CRUD operations with Supabase | ⬜ |
+| Test data migration from localStorage | ⬜ |
 | Test RLS policies (user isolation) | ⬜ |
-| Test offline fallback behavior | ⬜ |
-| Performance testing with larger datasets | ⬜ |
-| Deploy to production environment | ⬜ |
+| Test multi-device sync | ⬜ |
+| Test admin panel functionality | ⬜ |
 
 **Design Decisions:**
 - Keep localStorage as offline fallback (hybrid approach)
