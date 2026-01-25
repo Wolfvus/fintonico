@@ -1348,7 +1348,7 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 
 ---
 
-**Last Updated:** 2025-01-24 (Phase 23 Step 1 completed)
+**Last Updated:** 2025-01-24 (Phase 23 Step 2 completed)
 
 ---
 
@@ -1393,16 +1393,32 @@ See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvemen
 6. **account_snapshots** - New table for per-account breakdown within snapshots
 7. **Helper functions** - `get_account_nature()`, `calculate_user_net_worth()`
 
-### Step 2: API Service Layer
+### Step 2: API Service Layer ✅
 
 | Task | Status |
 | --- | --- |
-| Create `supabaseClient.ts` configuration | ⬜ |
-| Create `expenseService.ts` (CRUD with Supabase) | ⬜ |
-| Create `incomeService.ts` (CRUD with Supabase) | ⬜ |
-| Create `accountService.ts` (CRUD with Supabase) | ⬜ |
-| Create `ledgerAccountService.ts` (CRUD with Supabase) | ⬜ |
-| Create `snapshotService.ts` (CRUD with Supabase) | ⬜ |
+| Create `supabaseClient.ts` configuration | ✅ (already existed at `src/lib/supabase.ts`) |
+| Create `expenseService.ts` (CRUD with Supabase) | ✅ |
+| Create `incomeService.ts` (CRUD with Supabase) | ✅ |
+| Create `netWorthAccountService.ts` (CRUD with Supabase) | ✅ |
+| Create `ledgerAccountService.ts` (CRUD with Supabase) | ✅ |
+| Create `snapshotService.ts` (CRUD with Supabase) | ✅ |
+
+**Files Created:**
+- `src/services/expenseService.ts` - Expense CRUD with bulk import
+- `src/services/incomeService.ts` - Income CRUD with bulk import
+- `src/services/netWorthAccountService.ts` - Net worth account CRUD
+- `src/services/ledgerAccountService.ts` - Chart of Accounts CRUD
+- `src/services/snapshotService.ts` - Net worth snapshot CRUD
+- `src/services/index.ts` - Central export for all services
+- `src/types/database.ts` - Updated with all new table types
+
+**Service Features:**
+- All services have DEV_MODE flag for localStorage fallback
+- Full CRUD operations (getAll, getById, create, update, delete)
+- Bulk create for imports
+- Proper type mapping between DB rows and app types
+- User authentication checks on all operations
 
 ### Step 3: Store Migration
 
