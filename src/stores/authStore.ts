@@ -8,6 +8,9 @@ import { canImport, canExport, canAccessFeature, type Feature } from '../utils/f
 const DEV_MODE = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_DEV_MODE === 'true';
 export const DEV_TOKEN = 'dev-token-fintonico';
 
+// Admin whitelist: these emails get super_admin + pro automatically
+const ADMIN_EMAILS = ['omargro.mx@gmail.com'];
+
 const DEV_USER: User = {
   id: 'test-user-00000000-0000-0000-0000-000000000001',
   email: 'admin@fintonico.com',
@@ -46,11 +49,9 @@ interface AuthState {
   loading: boolean;
   error: string | null;
   isDevMode: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signInWithMagicLink: (email: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
   checkUser: () => Promise<void>;
   fetchUserProfile: () => Promise<void>;
   clearError: () => void;
@@ -74,31 +75,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
   isDevMode: DEV_MODE,
 
-  signIn: async (email: string, password: string) => {
+  signInWithMagicLink: async (email: string) => {
     set({ loading: true, error: null });
 
-    // Dev mode: accept admin/admin or any valid-looking credentials
+    // Dev mode: sign in instantly
     if (DEV_MODE) {
-      if ((email === 'admin' && password === 'admin') || (email.includes('@') && password.length >= 1)) {
-        console.log('[DEV MODE] Signing in as test user');
-        set({
-          user: DEV_USER,
-          session: DEV_SESSION,
-          userProfile: DEV_USER_PROFILE,
-          loading: false,
-          error: null,
-        });
-        localStorage.setItem('fintonico-dev-session', 'true');
-        return;
-      }
-      set({ error: 'Invalid credentials. Try admin/admin', loading: false });
-      throw new Error('Invalid credentials');
+      console.log('[DEV MODE] Magic link sign-in as test user');
+      set({
+        user: DEV_USER,
+        session: DEV_SESSION,
+        userProfile: DEV_USER_PROFILE,
+        loading: false,
+        error: null,
+      });
+      localStorage.setItem('fintonico-dev-session', 'true');
+      return;
     }
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithOtp({
         email,
-        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}`,
+        },
       });
 
       if (error) {
@@ -106,17 +105,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw error;
       }
 
-      set({
-        user: data.user,
-        session: data.session,
-        loading: false,
-        error: null,
-      });
-
-      // Fetch user profile after successful login
-      await get().fetchUserProfile();
+      // Magic link sent successfully - user clicks link in email to complete sign-in
+      set({ loading: false, error: null });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Sign in failed';
+      const message = err instanceof Error ? err.message : 'Failed to send magic link';
       set({ error: message, loading: false });
       throw err;
     }
@@ -165,62 +157,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  signUp: async (email: string, password: string) => {
-    set({ loading: true, error: null });
-
-    // Dev mode: just sign them in
-    if (DEV_MODE) {
-      console.log('[DEV MODE] Sign up -> signing in as test user');
-      set({
-        user: DEV_USER,
-        session: DEV_SESSION,
-        userProfile: DEV_USER_PROFILE,
-        loading: false,
-        error: null,
-      });
-      localStorage.setItem('fintonico-dev-session', 'true');
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) {
-        set({ error: error.message, loading: false });
-        throw error;
-      }
-
-      // If email confirmation is required, user will be null until confirmed
-      if (data.user && !data.session) {
-        set({
-          user: null,
-          session: null,
-          userProfile: null,
-          loading: false,
-          error: null,
-        });
-        return;
-      }
-
-      set({
-        user: data.user,
-        session: data.session,
-        loading: false,
-        error: null,
-      });
-
-      // Fetch user profile after successful signup
-      await get().fetchUserProfile();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Sign up failed';
-      set({ error: message, loading: false });
-      throw err;
-    }
-  },
-
   signOut: async () => {
     set({ loading: true, error: null });
 
@@ -255,33 +191,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sign out failed';
-      set({ error: message, loading: false });
-      throw err;
-    }
-  },
-
-  resetPassword: async (email: string) => {
-    set({ loading: true, error: null });
-
-    if (DEV_MODE) {
-      console.log('[DEV MODE] Password reset requested for:', email);
-      set({ loading: false });
-      return;
-    }
-
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) {
-        set({ error: error.message, loading: false });
-        throw error;
-      }
-
-      set({ loading: false });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Password reset failed';
       set({ error: message, loading: false });
       throw err;
     }
@@ -355,6 +264,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
+    const isWhitelistedAdmin = ADMIN_EMAILS.includes(user.email || '');
+
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -369,8 +280,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           userProfile: {
             id: user.id,
             email: user.email || '',
-            role: 'user',
-            subscriptionTier: 'freemium',
+            role: isWhitelistedAdmin ? 'super_admin' : 'user',
+            subscriptionTier: isWhitelistedAdmin ? 'pro' : 'freemium',
             isActive: true,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),

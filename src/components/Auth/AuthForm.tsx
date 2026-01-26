@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '../../stores/authStore';
-import { Lock, Mail, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail, AlertCircle, CheckCircle } from 'lucide-react';
 
 // Google icon component
 const GoogleIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -15,65 +15,33 @@ const GoogleIcon: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-const authSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
-
-const resetSchema = z.object({
+const magicLinkSchema = z.object({
   email: z.string().email('Invalid email address'),
 });
 
-type AuthFormData = z.infer<typeof authSchema>;
-type ResetFormData = z.infer<typeof resetSchema>;
-
-type FormMode = 'signin' | 'signup' | 'reset';
+type MagicLinkFormData = z.infer<typeof magicLinkSchema>;
 
 export const AuthForm: React.FC = () => {
-  const [mode, setMode] = useState<FormMode>('signin');
   const [error, setError] = useState<string | null>(null);
-  const [resetSent, setResetSent] = useState(false);
-  const { signIn, signUp, signInWithGoogle, resetPassword, isDevMode } = useAuthStore();
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const { signInWithMagicLink, signInWithGoogle, isDevMode } = useAuthStore();
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset,
-  } = useForm<AuthFormData>({
-    resolver: zodResolver(authSchema),
+  } = useForm<MagicLinkFormData>({
+    resolver: zodResolver(magicLinkSchema),
     defaultValues: {
       email: '',
-      password: '',
     },
   });
 
-  const {
-    register: registerReset,
-    handleSubmit: handleResetSubmit,
-    formState: { errors: resetErrors, isSubmitting: isResetSubmitting },
-  } = useForm<ResetFormData>({
-    resolver: zodResolver(resetSchema),
-  });
-
-  const onSubmit = async (data: AuthFormData) => {
+  const onSubmit = async (data: MagicLinkFormData) => {
     setError(null);
     try {
-      if (mode === 'signup') {
-        await signUp(data.email, data.password);
-      } else {
-        await signIn(data.email, data.password);
-      }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    }
-  };
-
-  const onResetSubmit = async (data: ResetFormData) => {
-    setError(null);
-    try {
-      await resetPassword(data.email);
-      setResetSent(true);
+      await signInWithMagicLink(data.email);
+      setMagicLinkSent(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
@@ -88,103 +56,6 @@ export const AuthForm: React.FC = () => {
     }
   };
 
-  const switchMode = (newMode: FormMode) => {
-    setMode(newMode);
-    setError(null);
-    setResetSent(false);
-    reset();
-  };
-
-  // Password reset form
-  if (mode === 'reset') {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#F2F4F7' }}>
-        <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-8" style={{ borderTop: '4px solid #2FA5A9' }}>
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2" style={{ color: '#1E2A38' }}>FINTONICO</h1>
-            <p className="text-sm" style={{ color: '#1E2A38', opacity: 0.7 }}>
-              Reset Your Password
-            </p>
-          </div>
-
-          {resetSent ? (
-            <div className="text-center">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                <span className="text-sm text-green-700">
-                  Password reset email sent! Check your inbox.
-                </span>
-              </div>
-              <button
-                onClick={() => switchMode('signin')}
-                className="text-sm transition-colors"
-                style={{ color: '#2FA5A9' }}
-              >
-                Back to Sign In
-              </button>
-            </div>
-          ) : (
-            <>
-              <form onSubmit={handleResetSubmit(onResetSubmit)} className="space-y-4">
-                {error && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-500" />
-                    <span className="text-sm text-red-700">{error}</span>
-                  </div>
-                )}
-
-                <p className="text-sm text-gray-600 mb-4">
-                  Enter your email address and we'll send you a link to reset your password.
-                </p>
-
-                <div>
-                  <label className="block text-sm mb-2 font-medium" style={{ color: '#1E2A38' }}>Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#2FA5A9' }} />
-                    <input
-                      {...registerReset('email')}
-                      type="email"
-                      className="w-full pl-10 pr-3 py-2 rounded-lg border bg-white transition-all"
-                      style={{
-                        borderColor: resetErrors.email ? '#DC2626' : '#2FA5A9',
-                        color: '#1E2A38'
-                      }}
-                      placeholder="Enter your email"
-                      autoComplete="email"
-                    />
-                  </div>
-                  {resetErrors.email && (
-                    <p className="text-red-500 text-xs mt-1">{resetErrors.email.message}</p>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isResetSubmitting}
-                  className="w-full py-3 rounded-lg font-semibold text-white transition-all"
-                  style={{ backgroundColor: isResetSubmitting ? '#9CA3AF' : '#2FA5A9' }}
-                >
-                  {isResetSubmitting ? 'Sending...' : 'Send Reset Link'}
-                </button>
-              </form>
-
-              <div className="mt-6 text-center">
-                <button
-                  onClick={() => switchMode('signin')}
-                  className="text-sm transition-colors"
-                  style={{ color: '#2FA5A9' }}
-                >
-                  Back to Sign In
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Main auth form (signin/signup)
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#F2F4F7' }}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-8" style={{ borderTop: '4px solid #2FA5A9' }}>
@@ -224,127 +95,98 @@ export const AuthForm: React.FC = () => {
             <div className="w-full border-t border-gray-200"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">or</span>
+            <span className="px-2 bg-white text-gray-500">or sign in with email</span>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-500" />
-              <span className="text-sm text-red-700">{error}</span>
+        {magicLinkSent ? (
+          <div className="text-center">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-green-800">
+                  Magic link sent!
+                </p>
+                <p className="text-sm text-green-700 mt-1">
+                  Check your email inbox and click the link to sign in. The link expires in 1 hour.
+                </p>
+              </div>
             </div>
-          )}
-
-          {isDevMode && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-              <span className="text-sm text-yellow-700">
-                <strong>Dev Mode:</strong> Use admin/admin or any email with any password
-              </span>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm mb-2 font-medium" style={{ color: '#1E2A38' }}>Email</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#2FA5A9' }} />
-              <input
-                {...register('email')}
-                type="email"
-                className="w-full pl-10 pr-3 py-2 rounded-lg border bg-white transition-all"
-                style={{
-                  borderColor: errors.email ? '#DC2626' : '#2FA5A9',
-                  color: '#1E2A38'
-                }}
-                placeholder="Enter your email"
-                autoComplete="email"
-                onFocus={(e) => e.target.style.boxShadow = '0 0 0 3px rgba(47, 165, 169, 0.1)'}
-                onBlur={(e) => e.target.style.boxShadow = 'none'}
-              />
-            </div>
-            {errors.email && (
-              <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
-            )}
+            <button
+              onClick={() => setMagicLinkSent(false)}
+              className="text-sm transition-colors"
+              style={{ color: '#2FA5A9' }}
+            >
+              Send another link
+            </button>
           </div>
-
-          <div>
-            <label className="block text-sm mb-2 font-medium" style={{ color: '#1E2A38' }}>Password</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#2FA5A9' }} />
-              <input
-                {...register('password')}
-                type="password"
-                className="w-full pl-10 pr-3 py-2 rounded-lg border bg-white transition-all"
-                style={{
-                  borderColor: errors.password ? '#DC2626' : '#2FA5A9',
-                  color: '#1E2A38'
-                }}
-                placeholder="Enter your password"
-                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                onFocus={(e) => e.target.style.boxShadow = '0 0 0 3px rgba(47, 165, 169, 0.1)'}
-                onBlur={(e) => e.target.style.boxShadow = 'none'}
-              />
-            </div>
-            {errors.password && (
-              <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
+        ) : (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-500" />
+                <span className="text-sm text-red-700">{error}</span>
+              </div>
             )}
-          </div>
 
-          {mode === 'signin' && (
-            <div className="text-right">
-              <button
-                type="button"
-                onClick={() => switchMode('reset')}
-                className="text-xs transition-colors"
-                style={{ color: '#6B7280' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#2FA5A9'}
-                onMouseLeave={(e) => e.currentTarget.style.color = '#6B7280'}
-              >
-                Forgot password?
-              </button>
+            {isDevMode && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <span className="text-sm text-yellow-700">
+                  <strong>Dev Mode:</strong> Enter any email to sign in instantly
+                </span>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm mb-2 font-medium" style={{ color: '#1E2A38' }}>Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#2FA5A9' }} />
+                <input
+                  {...register('email')}
+                  type="email"
+                  className="w-full pl-10 pr-3 py-2 rounded-lg border bg-white transition-all"
+                  style={{
+                    borderColor: errors.email ? '#DC2626' : '#2FA5A9',
+                    color: '#1E2A38'
+                  }}
+                  placeholder="Enter your email"
+                  autoComplete="email"
+                  onFocus={(e) => e.target.style.boxShadow = '0 0 0 3px rgba(47, 165, 169, 0.1)'}
+                  onBlur={(e) => e.target.style.boxShadow = 'none'}
+                />
+              </div>
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+              )}
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full py-3 rounded-lg font-semibold text-white transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{
-              backgroundColor: isSubmitting ? '#9CA3AF' : '#2FA5A9',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-            }}
-            onMouseEnter={(e) => {
-              if (!isSubmitting) {
-                e.currentTarget.style.backgroundColor = '#268F92';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isSubmitting) {
-                e.currentTarget.style.backgroundColor = '#2FA5A9';
-              }
-            }}
-          >
-            {isSubmitting
-              ? 'Processing...'
-              : mode === 'signup'
-              ? 'Create Account'
-              : 'Sign In'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-3 rounded-lg font-semibold text-white transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: isSubmitting ? '#9CA3AF' : '#2FA5A9',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+              }}
+              onMouseEnter={(e) => {
+                if (!isSubmitting) {
+                  e.currentTarget.style.backgroundColor = '#268F92';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSubmitting) {
+                  e.currentTarget.style.backgroundColor = '#2FA5A9';
+                }
+              }}
+            >
+              {isSubmitting ? 'Sending...' : 'Send Magic Link'}
+            </button>
 
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => switchMode(mode === 'signup' ? 'signin' : 'signup')}
-            className="text-sm transition-colors"
-            style={{ color: '#2FA5A9' }}
-            onMouseEnter={(e) => e.currentTarget.style.color = '#268F92'}
-            onMouseLeave={(e) => e.currentTarget.style.color = '#2FA5A9'}
-          >
-            {mode === 'signup'
-              ? 'Already have an account? Sign in'
-              : "Don't have an account? Sign up"}
-          </button>
-        </div>
+            <p className="text-xs text-center text-gray-500 mt-2">
+              We'll email you a sign-in link. No password needed.
+            </p>
+          </form>
+        )}
       </div>
     </div>
   );
