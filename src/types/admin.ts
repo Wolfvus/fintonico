@@ -6,12 +6,17 @@
 // User roles for role-based access control
 export type UserRole = 'super_admin' | 'admin' | 'user';
 
+// Subscription tiers for feature gating
+export type SubscriptionTier = 'freemium' | 'pro';
+
 // User profile with role and status
 export interface UserProfile {
   id: string;
   email: string;
   displayName?: string;
   role: UserRole;
+  subscriptionTier: SubscriptionTier;
+  subscriptionUpdatedAt?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -76,6 +81,7 @@ export type AdminAction =
   | 'user.delete'
   | 'user.role_change'
   | 'user.toggle_active'
+  | 'user.tier_change'
   | 'config.update'
   | 'data.view'
   | 'data.export';
@@ -92,6 +98,7 @@ export interface CreateUserRequest {
 export interface UpdateUserRequest {
   displayName?: string;
   role?: UserRole;
+  subscriptionTier?: SubscriptionTier;
   isActive?: boolean;
 }
 

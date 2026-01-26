@@ -8,6 +8,7 @@ import { adminService } from '../services/adminService';
 import type {
   UserProfile,
   UserRole,
+  SubscriptionTier,
   SystemConfig,
   AdminAuditLog,
   CreateUserRequest,
@@ -49,6 +50,7 @@ interface AdminState {
   updateUser: (userId: string, updates: UpdateUserRequest) => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
   setUserRole: (userId: string, role: UserRole) => Promise<void>;
+  setUserTier: (userId: string, tier: SubscriptionTier) => Promise<void>;
   toggleUserActive: (userId: string) => Promise<void>;
   selectUser: (user: UserProfile | null) => void;
 
@@ -189,6 +191,25 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       await get().fetchUsers();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to set user role';
+      set({ usersError: message });
+      throw err;
+    }
+  },
+
+  setUserTier: async (userId: string, tier: SubscriptionTier) => {
+    try {
+      await adminService.setUserTier(userId, tier);
+
+      // Log the action
+      await get().logAction('user.tier_change', {
+        targetUserId: userId,
+        newTier: tier,
+      });
+
+      // Refresh users
+      await get().fetchUsers();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to set user subscription tier';
       set({ usersError: message });
       throw err;
     }

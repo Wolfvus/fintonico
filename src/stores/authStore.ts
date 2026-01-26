@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
-import type { UserProfile, UserRole } from '../types/admin';
+import type { UserProfile, UserRole, SubscriptionTier } from '../types/admin';
+import { canImport, canExport, canAccessFeature, type Feature } from '../utils/featureAccess';
 
 // Dev mode configuration
 const DEV_MODE = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_DEV_MODE === 'true';
@@ -26,12 +27,13 @@ const DEV_SESSION: Session = {
   user: DEV_USER,
 } as Session;
 
-// Dev mode user profile with super_admin role for testing
+// Dev mode user profile with super_admin role and pro tier for testing
 const DEV_USER_PROFILE: UserProfile = {
   id: 'test-user-00000000-0000-0000-0000-000000000001',
   email: 'admin@fintonico.com',
   displayName: 'Dev Admin',
   role: 'super_admin',
+  subscriptionTier: 'pro',
   isActive: true,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -57,6 +59,11 @@ interface AuthState {
   isAdmin: () => boolean;
   isSuperAdmin: () => boolean;
   canAccessAdmin: () => boolean;
+  // Subscription tier helper methods
+  getSubscriptionTier: () => SubscriptionTier;
+  canImport: () => boolean;
+  canExport: () => boolean;
+  canAccessFeature: (feature: Feature) => boolean;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -363,6 +370,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             id: user.id,
             email: user.email || '',
             role: 'user',
+            subscriptionTier: 'freemium',
             isActive: true,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
@@ -379,6 +387,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           email: row.email,
           displayName: row.display_name,
           role: row.role as UserRole,
+          subscriptionTier: (row.subscription_tier as SubscriptionTier) || 'freemium',
+          subscriptionUpdatedAt: row.subscription_updated_at,
           isActive: row.is_active,
           createdAt: row.created_at,
           updatedAt: row.updated_at,
@@ -410,5 +420,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   canAccessAdmin: () => {
     const { userProfile } = get();
     return userProfile?.role === 'admin' || userProfile?.role === 'super_admin';
+  },
+
+  // Subscription tier helper methods
+  getSubscriptionTier: () => {
+    const { userProfile } = get();
+    return userProfile?.subscriptionTier || 'freemium';
+  },
+
+  canImport: () => {
+    const { userProfile } = get();
+    return canImport(userProfile?.subscriptionTier || 'freemium');
+  },
+
+  canExport: () => {
+    const { userProfile } = get();
+    return canExport(userProfile?.subscriptionTier || 'freemium');
+  },
+
+  canAccessFeature: (feature: Feature) => {
+    const { userProfile } = get();
+    return canAccessFeature(userProfile?.subscriptionTier || 'freemium', feature);
   },
 }));

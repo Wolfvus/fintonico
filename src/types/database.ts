@@ -405,7 +405,7 @@ export type Database = {
           fetched_at?: string;
         };
       };
-      // User profiles (from migration 003)
+      // User profiles (from migration 003, updated in 005)
       user_profiles: {
         Row: {
           id: string;
@@ -413,6 +413,8 @@ export type Database = {
           display_name: string | null;
           role: 'super_admin' | 'admin' | 'user';
           is_active: boolean;
+          subscription_tier: 'freemium' | 'pro';
+          subscription_updated_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -422,6 +424,8 @@ export type Database = {
           display_name?: string | null;
           role?: 'super_admin' | 'admin' | 'user';
           is_active?: boolean;
+          subscription_tier?: 'freemium' | 'pro';
+          subscription_updated_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -431,6 +435,8 @@ export type Database = {
           display_name?: string | null;
           role?: 'super_admin' | 'admin' | 'user';
           is_active?: boolean;
+          subscription_tier?: 'freemium' | 'pro';
+          subscription_updated_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -528,6 +534,14 @@ export type Database = {
         Returns: boolean;
       };
       get_user_role: {
+        Args: { p_user_id?: string };
+        Returns: string;
+      };
+      has_pro_tier: {
+        Args: { p_user_id?: string };
+        Returns: boolean;
+      };
+      get_subscription_tier: {
         Args: { p_user_id?: string };
         Returns: string;
       };

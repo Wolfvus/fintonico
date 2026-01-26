@@ -4,10 +4,10 @@
  */
 
 import { useState } from 'react';
-import { X, Save, Shield } from 'lucide-react';
+import { X, Save, Shield, Crown } from 'lucide-react';
 import { useAdminStore } from '../../stores/adminStore';
 import { useAuthStore } from '../../stores/authStore';
-import type { UserProfile, UserRole } from '../../types/admin';
+import type { UserProfile, UserRole, SubscriptionTier } from '../../types/admin';
 
 interface UserDetailModalProps {
   user: UserProfile;
@@ -15,15 +15,17 @@ interface UserDetailModalProps {
 }
 
 export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user, onClose }) => {
-  const { updateUser, setUserRole } = useAdminStore();
+  const { updateUser, setUserRole, setUserTier } = useAdminStore();
   const { isSuperAdmin, user: currentUser } = useAuthStore();
   const [displayName, setDisplayName] = useState(user.displayName || '');
   const [role, setRole] = useState<UserRole>(user.role);
+  const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>(user.subscriptionTier || 'freemium');
   const [isActive, setIsActive] = useState(user.isActive);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const canManageRoles = isSuperAdmin();
+  const canManageTier = isSuperAdmin();
   const isCurrentUser = currentUser?.id === user.id;
 
   const handleSave = async () => {
@@ -40,6 +42,11 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user, onClose 
       // Update role if changed and user has permission
       if (role !== user.role && canManageRoles) {
         await setUserRole(user.id, role);
+      }
+
+      // Update subscription tier if changed and user has permission
+      if (subscriptionTier !== (user.subscriptionTier || 'freemium') && canManageTier) {
+        await setUserTier(user.id, subscriptionTier);
       }
 
       onClose();
@@ -127,6 +134,35 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ user, onClose 
             {!canManageRoles && !isCurrentUser && (
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 Only Super Admins can change roles
+              </p>
+            )}
+          </div>
+
+          {/* Subscription Tier */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <span className="flex items-center gap-1.5">
+                <Crown className="w-4 h-4 text-yellow-500" />
+                Subscription Tier
+              </span>
+            </label>
+            <select
+              value={subscriptionTier}
+              onChange={(e) => setSubscriptionTier(e.target.value as SubscriptionTier)}
+              disabled={!canManageTier}
+              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-900 disabled:cursor-not-allowed"
+            >
+              <option value="freemium">Freemium (Free)</option>
+              <option value="pro">Pro (Premium)</option>
+            </select>
+            {!canManageTier && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Only Super Admins can change subscription tier
+              </p>
+            )}
+            {user.subscriptionUpdatedAt && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Last changed: {new Date(user.subscriptionUpdatedAt).toLocaleString()}
               </p>
             )}
           </div>

@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import type {
   UserProfile,
   UserRole,
+  SubscriptionTier,
   SystemConfig,
   AdminAuditLog,
   CreateUserRequest,
@@ -26,6 +27,7 @@ const MOCK_USERS: UserProfile[] = [
     email: 'admin@fintonico.com',
     displayName: 'Dev Admin',
     role: 'super_admin',
+    subscriptionTier: 'pro',
     isActive: true,
     createdAt: '2025-01-01T00:00:00Z',
     updatedAt: '2025-01-01T00:00:00Z',
@@ -35,6 +37,7 @@ const MOCK_USERS: UserProfile[] = [
     email: 'user@example.com',
     displayName: 'Test User',
     role: 'user',
+    subscriptionTier: 'freemium',
     isActive: true,
     createdAt: '2025-01-15T00:00:00Z',
     updatedAt: '2025-01-15T00:00:00Z',
@@ -74,6 +77,8 @@ export const adminService = {
       email: row.email,
       displayName: row.display_name,
       role: row.role as UserRole,
+      subscriptionTier: (row.subscription_tier as SubscriptionTier) || 'freemium',
+      subscriptionUpdatedAt: row.subscription_updated_at,
       isActive: row.is_active,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
@@ -103,6 +108,8 @@ export const adminService = {
       email: row.email,
       displayName: row.display_name,
       role: row.role as UserRole,
+      subscriptionTier: (row.subscription_tier as SubscriptionTier) || 'freemium',
+      subscriptionUpdatedAt: row.subscription_updated_at,
       isActive: row.is_active,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
@@ -116,6 +123,7 @@ export const adminService = {
         email: request.email,
         displayName: request.displayName,
         role: request.role || 'user',
+        subscriptionTier: 'freemium',
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -169,6 +177,10 @@ export const adminService = {
         ...MOCK_USERS[userIndex],
         ...(updates.displayName !== undefined && { displayName: updates.displayName }),
         ...(updates.role !== undefined && { role: updates.role }),
+        ...(updates.subscriptionTier !== undefined && {
+          subscriptionTier: updates.subscriptionTier,
+          subscriptionUpdatedAt: new Date().toISOString(),
+        }),
         ...(updates.isActive !== undefined && { isActive: updates.isActive }),
         updatedAt: new Date().toISOString(),
       };
@@ -181,6 +193,7 @@ export const adminService = {
       .update({
         ...(updates.displayName !== undefined && { display_name: updates.displayName }),
         ...(updates.role !== undefined && { role: updates.role }),
+        ...(updates.subscriptionTier !== undefined && { subscription_tier: updates.subscriptionTier }),
         ...(updates.isActive !== undefined && { is_active: updates.isActive }),
         updated_at: new Date().toISOString(),
       })
@@ -216,6 +229,10 @@ export const adminService = {
 
   async setUserRole(userId: string, role: UserRole): Promise<UserProfile> {
     return this.updateUser(userId, { role });
+  },
+
+  async setUserTier(userId: string, subscriptionTier: SubscriptionTier): Promise<UserProfile> {
+    return this.updateUser(userId, { subscriptionTier });
   },
 
   async toggleUserActive(userId: string): Promise<UserProfile> {

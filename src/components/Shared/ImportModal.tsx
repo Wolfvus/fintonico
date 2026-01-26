@@ -1,11 +1,12 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Download, Upload, FileText, Check, AlertCircle, Info } from 'lucide-react';
+import { X, Download, Upload, FileText, Check, AlertCircle, Info, Lock } from 'lucide-react';
 import type { XLSXTemplateType } from '../../utils/xlsx';
 import {
   getXLSXTemplateInfo,
   downloadXLSXTemplate,
 } from '../../utils/xlsx';
+import { useAuthStore } from '../../stores/authStore';
 
 export interface ParsedRow {
   data: Record<string, string>;
@@ -43,6 +44,9 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   const [isParsing, setIsParsing] = useState(false);
   const [importResult, setImportResult] = useState<{ success: boolean; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { canImport } = useAuthStore();
+  const userCanImport = canImport();
 
   const templateInfo = getXLSXTemplateInfo(templateType);
 
@@ -215,6 +219,31 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-4">
+          {/* Pro Feature Gate */}
+          {!userCanImport && (
+            <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                  <Lock className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-purple-900 dark:text-purple-100">
+                    Data Import is a Pro Feature
+                  </p>
+                  <p className="mt-1 text-sm text-purple-700 dark:text-purple-300">
+                    Upgrade to Pro to import data from Excel files. You can still view the template format below.
+                  </p>
+                  <button
+                    onClick={handleClose}
+                    className="mt-3 px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+                  >
+                    Contact Us to Upgrade
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Template Tab */}
           {activeTab === 'template' && (
             <div className="space-y-4">
@@ -293,16 +322,18 @@ export const ImportModal: React.FC<ImportModalProps> = ({
             <div className="space-y-4">
               {/* Drop Zone */}
               <div
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onClick={() => !isParsing && fileInputRef.current?.click()}
+                onDrop={userCanImport ? handleDrop : undefined}
+                onDragOver={userCanImport ? handleDragOver : undefined}
+                onDragLeave={userCanImport ? handleDragLeave : undefined}
+                onClick={() => userCanImport && !isParsing && fileInputRef.current?.click()}
                 className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-                  isParsing
-                    ? 'border-gray-300 dark:border-gray-600 cursor-wait'
-                    : isDragging
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 cursor-pointer'
-                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 cursor-pointer'
+                  !userCanImport
+                    ? 'border-gray-300 dark:border-gray-600 cursor-not-allowed opacity-50'
+                    : isParsing
+                      ? 'border-gray-300 dark:border-gray-600 cursor-wait'
+                      : isDragging
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 cursor-pointer'
+                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 cursor-pointer'
                 }`}
               >
                 {isParsing ? (
@@ -511,7 +542,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
             >
               Cancel
             </button>
-            {activeTab === 'preview' && parsedRows.length > 0 && (
+            {activeTab === 'preview' && parsedRows.length > 0 && userCanImport && (
               <button
                 onClick={handleImport}
                 disabled={isImporting || (skipInvalid && validCount === 0)}
@@ -528,7 +559,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 Continue to Upload
               </button>
             )}
-            {activeTab === 'upload' && (
+            {activeTab === 'upload' && userCanImport && (
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isParsing}
