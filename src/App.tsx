@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from './stores/authStore';
 import { useLedgerStore } from './stores/ledgerStore';
 import { useThemeStore } from './stores/themeStore';
@@ -27,7 +27,7 @@ function App() {
   const { user, loading, checkUser, canAccessAdmin } = useAuthStore();
   const { initializeDefaultAccounts } = useLedgerStore();
   const { isDark, toggleTheme, initializeTheme } = useThemeStore();
-  const { ensureCurrentMonthSnapshot } = useSnapshotStore();
+  const dataFetched = useRef(false);
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const saved = localStorage.getItem('fintonico-active-tab');
     const validTabs: TabType[] = ['dashboard', 'expenses', 'income', 'networth', 'accounts', 'admin'];
@@ -55,9 +55,10 @@ function App() {
     initializeTheme();
   }, [checkUser, initializeDefaultAccounts, initializeTheme]);
 
-  // When user is authenticated, fetch all data from Supabase and run user-dependent init
+  // When user is authenticated, fetch all data from Supabase (runs once)
   useEffect(() => {
-    if (user) {
+    if (user && !dataFetched.current) {
+      dataFetched.current = true;
       Promise.allSettled([
         useExpenseStore.getState().fetchAll(),
         useIncomeStore.getState().fetchAll(),
@@ -65,11 +66,10 @@ function App() {
         useLedgerAccountStore.getState().fetchAll(),
         useSnapshotStore.getState().fetchAll(),
       ]).then(() => {
-        // Only ensure snapshot after data is loaded
-        ensureCurrentMonthSnapshot().catch(() => {});
+        useSnapshotStore.getState().ensureCurrentMonthSnapshot().catch(() => {});
       });
     }
-  }, [user, ensureCurrentMonthSnapshot]);
+  }, [user]);
 
   if (loading) {
     return (
