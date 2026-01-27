@@ -3,6 +3,10 @@ import { useAuthStore } from './stores/authStore';
 import { useLedgerStore } from './stores/ledgerStore';
 import { useThemeStore } from './stores/themeStore';
 import { useSnapshotStore } from './stores/snapshotStore';
+import { useExpenseStore } from './stores/expenseStore';
+import { useIncomeStore } from './stores/incomeStore';
+import { useAccountStore } from './stores/accountStore';
+import { useLedgerAccountStore } from './stores/ledgerAccountStore';
 import { checkAndGenerateRecurring } from './utils/recurringUtils';
 import { AuthForm } from './components/Auth/AuthForm';
 import { Dashboard } from './components/Dashboard/Dashboard';
@@ -54,6 +58,17 @@ function App() {
     // Ensure a snapshot exists for the current month (auto-snapshot on first visit)
     ensureCurrentMonthSnapshot();
   }, [checkUser, initializeDefaultAccounts, initializeTheme, ensureCurrentMonthSnapshot]);
+
+  // Fetch all data from Supabase when user is authenticated
+  useEffect(() => {
+    if (user) {
+      useExpenseStore.getState().fetchAll();
+      useIncomeStore.getState().fetchAll();
+      useAccountStore.getState().fetchAll();
+      useLedgerAccountStore.getState().fetchAll();
+      useSnapshotStore.getState().fetchAll();
+    }
+  }, [user]);
 
   if (loading) {
     return (
