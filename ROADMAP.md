@@ -1346,63 +1346,70 @@ interface NetWorthSnapshot {
 
 **Goal:** Fix reported UI bugs and improve component usability across Income Quick Add, Net Worth type selector, sorting, and Settings controls.
 
-### Step 1: Income Quick Add Layout Fix ⬜
+### Step 1: Income Quick Add Layout Fix ✅
 
 **Goal:** Enlarge the amount input field and move frequency selector below to match the Expenses Quick Add style.
 
 | Task | Status |
 | --- | --- |
-| Enlarge amount input field (currently `w-20`, too small) | ⬜ |
-| Move frequency selector to a row below the amount/currency row | ⬜ |
-| Match layout style with Expenses Quick Add (category buttons below) | ⬜ |
-| Verify mobile responsiveness | ⬜ |
+| Enlarge amount input field (changed `w-20` to `flex-1`) | ✅ |
+| Move frequency selector to a row below the amount/currency row | ✅ |
+| Match layout style with Expenses Quick Add (category buttons below) | ✅ |
+| Verify mobile responsiveness | ✅ |
 
-**Current Issue:** The amount input is only 80px wide (`w-20`), making it hard to enter larger numbers. The frequency selector is inline, cramping the layout.
+**Implementation Notes:**
+- Changed amount input from fixed `w-20` (80px) to `flex-1` (fills available space)
+- Moved frequency selector to its own row with `w-full` width
+- Layout now: Source → Amount + Currency → Frequency → Submit
 
-**Target Layout:**
-- Row 1: Source (text input)
-- Row 2: Amount (wider) + Currency selector
-- Row 3: Frequency selector (full width, like expense category buttons)
-- Row 4: Submit button
-
-### Step 2: Net Worth Type Selector Fix ⬜
+### Step 2: Net Worth Type Selector Fix ✅
 
 **Goal:** Fix the account type dropdown that behaves strangely when adding multiple entries — it jumps to the bottom of the page instead of staying anchored.
 
 | Task | Status |
 | --- | --- |
-| Fix DropdownSelector portal positioning when multiple rows exist | ⬜ |
-| Ensure dropdown always shows full list of options | ⬜ |
-| Dropdown should open upward if near page bottom | ⬜ |
-| Test with 10+ account entries to verify stability | ⬜ |
+| Fix DropdownSelector portal positioning when multiple rows exist | ✅ |
+| Ensure dropdown always shows full list of options | ✅ |
+| Dropdown should open upward if near page bottom | ✅ |
+| Test with 10+ account entries to verify stability | ✅ |
 
-**Current Issue:** The `DropdownSelector` uses fixed positioning via a portal. When adding multiple net worth entries, the dropdown position calculation breaks and the list appears at the bottom of the page instead of near the trigger button.
+**Root Cause:** The `DropdownSelector` portal used `position: fixed` but added `window.scrollY`/`window.scrollX` to viewport-relative `getBoundingClientRect()` coordinates. Fixed positioning is relative to the viewport, so adding scroll offsets was incorrect.
 
-### Step 3: Net Worth Sorting — Add Name Column ⬜
+**Fix:** Removed `window.scrollY` and `window.scrollX` from position calculation.
+
+### Step 3: Net Worth Sorting — Add Name Column ✅
 
 **Goal:** Allow sorting assets and liabilities back to alphabetical (A-Z) by name after sorting by another column like Yield or Value.
 
 | Task | Status |
 | --- | --- |
-| Add `name` as a sortable column for Assets table | ⬜ |
-| Add `name` as a sortable column for Liabilities table | ⬜ |
-| Clicking Name toggles A-Z / Z-A | ⬜ |
-| Default sort remains Name A-Z | ⬜ |
+| Add `name` as a sortable column for Assets table | ✅ |
+| Add `name` as a sortable column for Liabilities table | ✅ |
+| Clicking Name toggles A-Z / Z-A | ✅ |
+| Default sort remains Name A-Z | ✅ |
 
-**Current Issue:** Assets sort by Name A-Z by default, but once you click Yield or Value to sort, there's no way to sort back to Name. The Name column header is not clickable.
+**Implementation Notes:**
+- Added `'name'` to `AssetSortColumn` and `LiabilitySortColumn` union types
+- Updated `AssetSortableHeader` and `LiabilitySortableHeader` to accept `'name'` column
+- Replaced static `<th>Name</th>` with sortable headers in both `AssetsTableHeader` and `LiabilitiesTableHeader`
+- Name sort defaults to ascending (A-Z) on first click; other columns default to descending
 
-### Step 4: Settings — Hide Dev Controls for Non-Admins ⬜
+### Step 4: Settings — Hide Dev Controls for Non-Admins ✅
 
 **Goal:** Remove mock data display and "Clear Local Data" controls from Settings for regular (non-admin) users. These are dev/admin tools only.
 
 | Task | Status |
 | --- | --- |
-| Hide "Mock Data" / local storage summary for non-admin users | ⬜ |
-| Hide "Clear Local Data" button for non-admin users | ⬜ |
-| Keep "Cloud Sync" migration option visible (or hide if not in DEV_MODE) | ⬜ |
-| Verify admin users still see all controls | ⬜ |
+| Hide "Mock Data" / local storage summary for non-admin users | ✅ |
+| Hide "Clear Local Data" button for non-admin users | ✅ |
+| Hide entire Data Migration section for non-admin users | ✅ |
+| Verify admin users still see all controls | ✅ |
 
-**Rationale:** The Cloud Sync section is the localStorage → Supabase migration tool. Regular users using Supabase don't need to see local data counts or clear local data. These controls should only appear for admin/super_admin roles or in DEV_MODE.
+**Implementation Notes:**
+- Added `canAccessAdmin()` check from `authStore`
+- Entire `DataMigration` component returns `null` for non-admin users
+- Admin/super_admin users see the full migration interface
+- Dev mode users still see the "Dev Mode Active" banner
 
 ---
 
@@ -1598,7 +1605,7 @@ interface NetWorthSnapshot {
 
 ---
 
-**Last Updated:** 2026-01-26 (Phases 24-27 planned)
+**Last Updated:** 2026-01-27 (Phase 24 completed, Phases 25-27 planned)
 
 ---
 

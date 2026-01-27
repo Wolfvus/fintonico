@@ -1049,7 +1049,7 @@ export const IncomePage: React.FC = () => {
                   type="number"
                   placeholder="0.00"
                   step="0.01"
-                  className="w-20 px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white placeholder-gray-400"
+                  className="flex-1 px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white placeholder-gray-400"
                 />
                 <select
                   value={quickCurrency}
@@ -1060,16 +1060,16 @@ export const IncomePage: React.FC = () => {
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
-                <select
-                  value={quickFrequency}
-                  onChange={(e) => setQuickFrequency(e.target.value as IncomeFrequency)}
-                  className="flex-1 px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
-                >
-                  {FREQUENCY_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
               </div>
+              <select
+                value={quickFrequency}
+                onChange={(e) => setQuickFrequency(e.target.value as IncomeFrequency)}
+                className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
+              >
+                {FREQUENCY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
               <button
                 type="submit"
                 className="w-full py-1.5 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white text-sm font-medium rounded transition-colors"

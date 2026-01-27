@@ -270,8 +270,8 @@ function DropdownSelector<T extends string>({
       }
 
       setDropdownPosition({
-        top: top + window.scrollY,
-        left: left + window.scrollX,
+        top,
+        left,
         width: dropdownWidth,
       });
     }
@@ -872,17 +872,17 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({
 };
 
 // Sort types for account tables
-type AssetSortColumn = 'value' | 'yield' | null;
-type LiabilitySortColumn = 'value' | 'dueDate' | null;
+type AssetSortColumn = 'name' | 'value' | 'yield' | null;
+type LiabilitySortColumn = 'name' | 'value' | 'dueDate' | null;
 type SortDirection = 'asc' | 'desc';
 
 // Sortable Column Header Component for Assets
 interface AssetSortableHeaderProps {
   label: string;
-  column: 'value' | 'yield';
+  column: 'name' | 'value' | 'yield';
   currentSort: AssetSortColumn;
   direction: SortDirection;
-  onSort: (column: 'value' | 'yield') => void;
+  onSort: (column: 'name' | 'value' | 'yield') => void;
   align?: 'left' | 'right';
 }
 
@@ -913,10 +913,10 @@ const AssetSortableHeader: React.FC<AssetSortableHeaderProps> = ({ label, column
 // Sortable Column Header Component for Liabilities
 interface LiabilitySortableHeaderProps {
   label: string;
-  column: 'value' | 'dueDate';
+  column: 'name' | 'value' | 'dueDate';
   currentSort: LiabilitySortColumn;
   direction: SortDirection;
-  onSort: (column: 'value' | 'dueDate') => void;
+  onSort: (column: 'name' | 'value' | 'dueDate') => void;
   align?: 'left' | 'right' | 'center';
 }
 
@@ -962,7 +962,7 @@ interface AssetsTableHeaderProps {
   onToggle: () => void;
   sortColumn: AssetSortColumn;
   sortDirection: SortDirection;
-  onSort: (column: 'value' | 'yield') => void;
+  onSort: (column: 'name' | 'value' | 'yield') => void;
 }
 
 const AssetsTableHeader: React.FC<AssetsTableHeaderProps> = ({
@@ -987,8 +987,15 @@ const AssetsTableHeader: React.FC<AssetsTableHeaderProps> = ({
   return (
     <thead>
       <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-          Name
+        <th className="px-2 py-2">
+          <AssetSortableHeader
+            label="Name"
+            column="name"
+            currentSort={sortColumn}
+            direction={sortDirection}
+            onSort={onSort}
+            align="left"
+          />
         </th>
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
           Type
@@ -1124,7 +1131,7 @@ interface LiabilitiesTableHeaderProps {
   onToggle: () => void;
   sortColumn: LiabilitySortColumn;
   sortDirection: SortDirection;
-  onSort: (column: 'value' | 'dueDate') => void;
+  onSort: (column: 'name' | 'value' | 'dueDate') => void;
 }
 
 const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
@@ -1151,8 +1158,15 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
   return (
     <thead>
       <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-          Name
+        <th className="px-2 py-2">
+          <LiabilitySortableHeader
+            label="Name"
+            column="name"
+            currentSort={sortColumn}
+            direction={sortDirection}
+            onSort={onSort}
+            align="left"
+          />
         </th>
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
           Type
@@ -1384,22 +1398,22 @@ export const NetWorthPage: React.FC = () => {
   };
 
   // Handle sort toggle for assets
-  const handleAssetSort = (column: 'value' | 'yield') => {
+  const handleAssetSort = (column: 'name' | 'value' | 'yield') => {
     if (assetSortColumn === column) {
       setAssetSortDirection(assetSortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setAssetSortColumn(column);
-      setAssetSortDirection('desc');
+      setAssetSortDirection(column === 'name' ? 'asc' : 'desc');
     }
   };
 
   // Handle sort toggle for liabilities
-  const handleLiabilitySort = (column: 'value' | 'dueDate') => {
+  const handleLiabilitySort = (column: 'name' | 'value' | 'dueDate') => {
     if (liabilitySortColumn === column) {
       setLiabilitySortDirection(liabilitySortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setLiabilitySortColumn(column);
-      setLiabilitySortDirection('desc');
+      setLiabilitySortDirection(column === 'name' ? 'asc' : 'desc');
     }
   };
 
@@ -1460,6 +1474,10 @@ export const NetWorthPage: React.FC = () => {
       return true;
     }).sort((a, b) => {
       // Apply custom sort if selected
+      if (assetSortColumn === 'name') {
+        const cmp = a.name.localeCompare(b.name);
+        return assetSortDirection === 'asc' ? cmp : -cmp;
+      }
       if (assetSortColumn === 'value') {
         const valueA = convertAmount(a.balance, a.currency, baseCurrency);
         const valueB = convertAmount(b.balance, b.currency, baseCurrency);
@@ -1502,6 +1520,10 @@ export const NetWorthPage: React.FC = () => {
       return true;
     }).sort((a, b) => {
       // Apply custom sort if selected
+      if (liabilitySortColumn === 'name') {
+        const cmp = a.name.localeCompare(b.name);
+        return liabilitySortDirection === 'asc' ? cmp : -cmp;
+      }
       if (liabilitySortColumn === 'value') {
         // For liabilities, balance is negative - sort by absolute value
         const valueA = Math.abs(convertAmount(a.balance, a.currency, baseCurrency));
