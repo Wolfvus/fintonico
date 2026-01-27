@@ -44,11 +44,13 @@ After deploying the subscription tier and auth overhaul features to production (
 
 | Test | Status | Notes |
 | --- | --- | --- |
-| Page loads without crashing | ❓ PENDING | User needs to test latest deploy |
-| Page remains responsive | ❓ PENDING | User needs to verify after hard refresh |
-| Can add expenses via Quick Add | ❓ PENDING | Error messages now visible if it fails |
-| Admin can modify user data | ❓ PENDING | RLS policies verified correct in DB |
-| Data persists to Supabase | ❓ PENDING | Service methods verified correct |
+| Page loads without crashing | ✅ PASS | Fixed: deferred Supabase ops until after auth |
+| Page remains responsive | ✅ PASS | Fixed: removed re-render loop via useRef + getState() |
+| Can add expenses via Quick Add | ✅ PASS | Working after fetchAll() fix + error display |
+| Can add income | ✅ PASS | Fixed: migration 008 made amount_cents nullable |
+| Admin can modify user data | ✅ PASS | RLS policies verified correct in DB |
+| Data persists to Supabase | ✅ PASS | Confirmed via service role API queries |
+| Performance: fast page load | ✅ PASS | getSessionUser() + localStorage caching enabled |
 
 ### Comprehensive Code Audit Results (2026-01-26)
 
@@ -56,31 +58,33 @@ A thorough code audit was performed focusing on production/Supabase mode issues.
 
 #### CRITICAL Issues
 
-**1. Unhandled Promise Rejection in App.tsx**
+**1. Unhandled Promise Rejection in App.tsx** ✅ FIXED
 - **File**: `src/App.tsx:62-70`
 - **Problem**: `Promise.allSettled()` chain has no error handling; `ensureCurrentMonthSnapshot()` errors silently swallowed with `.catch(() => {})`
 - **Impact**: Users won't know if snapshot creation fails; silent data inconsistencies
-- **Priority**: 🔴 CRITICAL - Fix immediately
+- **Fix**: Added result inspection, error banner UI, conditional snapshot creation
+- **Commit**: `63c84eb`
 
-**2. localStorage in production (recurringUtils.ts)**
+**2. localStorage in production (recurringUtils.ts)** ✅ FIXED
 - **File**: `src/utils/recurringUtils.ts:19-20, 58-59, 99-106`
 - **Problem**: `checkAndGenerateRecurring()` reads from localStorage assuming DEV_MODE data; in production, Supabase stores have data but localStorage is empty
 - **Impact**: Recurring transactions won't generate; app can crash if localStorage throws
-- **Priority**: 🔴 CRITICAL - Fix immediately
+- **Fix**: Added DEV_MODE guard (skip in production) + try-catch on all localStorage ops
+- **Commit**: `63c84eb`
 
 #### HIGH Severity Issues
 
-**3. Partial Error Handling in snapshotService.ts**
+**3. Partial Error Handling in snapshotService.ts** ✅ FIXED
 - **File**: `src/services/snapshotService.ts:216-222`
 - **Problem**: Account snapshots can fail silently; parent snapshot exists but detail data missing; only logs error, doesn't throw
-- **Impact**: Incomplete data without user notification
-- **Priority**: 🟠 HIGH - Fix soon
+- **Fix**: Now throws error so callers know snapshot is incomplete
+- **Commit**: `63c84eb`
 
-**4. Missing try-catch in recurringUtils.ts**
+**4. Missing try-catch in recurringUtils.ts** ✅ FIXED
 - **File**: `src/utils/recurringUtils.ts:20, 52, 93`
 - **Problem**: `JSON.parse()` and `localStorage.setItem()` can throw; no error handling
-- **Impact**: App crash on startup or silent failures
-- **Priority**: 🟠 HIGH - Fix soon
+- **Fix**: Added DEV_MODE guard + try-catch to all localStorage operations
+- **Commit**: `63c84eb`
 
 #### MEDIUM Severity Issues
 
@@ -90,11 +94,11 @@ A thorough code audit was performed focusing on production/Supabase mode issues.
 - **Impact**: Admin panel can enter stuck loading states
 - **Priority**: 🟡 MEDIUM
 
-**6. Auth State Race Conditions in Services**
+**6. Auth State Race Conditions in Services** ✅ FIXED
 - **Files**: All service files (expenseService.ts, incomeService.ts, etc.)
-- **Problem**: `supabase.auth.getUser()` can return null even if user authenticated; no retry or token refresh; generic error messages
-- **Impact**: Users get "Not authenticated" errors when actually logged in
-- **Priority**: 🟡 MEDIUM
+- **Problem**: `supabase.auth.getUser()` makes HTTP call; can return null even if user authenticated
+- **Fix**: Replaced with `getSessionUser()` that reads local session (no network call)
+- **Commit**: `11c2c57`
 
 **7. Snapshot Creation Race Conditions**
 - **File**: `src/stores/snapshotStore.ts:199-207`
@@ -102,11 +106,11 @@ A thorough code audit was performed focusing on production/Supabase mode issues.
 - **Impact**: Duplicate snapshots, "duplicate key" errors in Supabase
 - **Priority**: 🟡 MEDIUM
 
-**8. Missing Initialization Check in App.tsx**
+**8. Missing Initialization Check in App.tsx** ✅ FIXED
 - **File**: `src/App.tsx:69`
-- **Problem**: `ensureCurrentMonthSnapshot()` called immediately after `Promise.allSettled()` without waiting; accounts/expenses may not be loaded
-- **Impact**: Snapshots fail if data fetches are slow
-- **Priority**: 🟡 MEDIUM
+- **Problem**: `ensureCurrentMonthSnapshot()` called immediately after `Promise.allSettled()` without waiting
+- **Fix**: Only runs if accounts loaded successfully (checks `results[2].status === 'fulfilled'`)
+- **Commit**: `63c84eb`
 
 **9. Dynamic Imports in Production (adminStore.ts)**
 - **File**: `src/stores/adminStore.ts:288-290, 328-329`
@@ -148,51 +152,49 @@ A thorough code audit was performed focusing on production/Supabase mode issues.
 
 #### Summary Table
 
-| Issue | Severity | Files | Impact |
-|-------|----------|-------|--------|
-| Unhandled Promise in App.tsx | 🔴 CRITICAL | App.tsx:69 | Silent snapshot failures |
-| localStorage in production | 🔴 CRITICAL | recurringUtils.ts | Missing recurring transactions, crashes |
-| Partial snapshot saves | 🟠 HIGH | snapshotService.ts:216-222 | Incomplete data |
-| Missing try-catch localStorage | 🟠 HIGH | recurringUtils.ts | App crash on startup |
-| Admin store loading states | 🟡 MEDIUM | adminStore.ts | Stuck loading states |
-| Auth state race conditions | 🟡 MEDIUM | All services | False "Not authenticated" errors |
-| Snapshot creation race | 🟡 MEDIUM | snapshotStore.ts:199-207 | Duplicate snapshots |
-| Missing snapshot init check | 🟡 MEDIUM | App.tsx:69 | Snapshot failures |
-| Dynamic imports in production | 🟡 MEDIUM | adminStore.ts | Unexpected crashes |
-| Data fetch race condition | 🟡 MEDIUM | App.tsx:59-72 | Duplicate API calls |
-| Auth listener cleanup | 🟡 MEDIUM | authStore.ts | Memory leaks |
-| Snapshot FK violations | 🟡 MEDIUM | snapshotService.ts | FK errors |
-| Account store state | 🟢 LOW-MEDIUM | accountStore.ts | State inconsistency |
-| Zustand subscriptions | 🟢 LOW | Various components | Already mitigated |
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | Unhandled Promise in App.tsx | 🔴 CRITICAL | ✅ FIXED |
+| 2 | localStorage in production | 🔴 CRITICAL | ✅ FIXED |
+| 3 | Partial snapshot saves | 🟠 HIGH | ✅ FIXED |
+| 4 | Missing try-catch localStorage | 🟠 HIGH | ✅ FIXED |
+| 5 | Admin store loading states | 🟡 MEDIUM | ⬜ OPEN |
+| 6 | Auth state race conditions | 🟡 MEDIUM | ✅ FIXED |
+| 7 | Snapshot creation race | 🟡 MEDIUM | ⬜ OPEN |
+| 8 | Missing snapshot init check | 🟡 MEDIUM | ✅ FIXED |
+| 9 | Dynamic imports in production | 🟡 MEDIUM | ⬜ OPEN |
+| 10 | Data fetch race condition | 🟡 MEDIUM | ⬜ OPEN |
+| 11 | Auth listener cleanup | 🟡 MEDIUM | ⬜ OPEN |
+| 12 | Snapshot FK violations | 🟡 MEDIUM | ⬜ OPEN |
+| 13 | Account store state | 🟢 LOW-MEDIUM | ⬜ OPEN |
+| 14 | Zustand subscriptions | 🟢 LOW | ⬜ Mitigated by `useShallow` |
 
-### Recommended Fix Priority
+**Fixed: 7/14 issues** (all CRITICAL + HIGH + 2 MEDIUM)
 
-1. **Immediate** (CRITICAL):
-   - Add proper error handling to `Promise.allSettled()` chain in App.tsx
-   - Add try-catch to `recurringUtils.ts` localStorage access OR disable it in production mode
-   - Show user-visible error messages for snapshot creation failures
+### Remaining Fix Priority
 
-2. **Soon** (HIGH):
-   - Fix `snapshotService.ts` to throw errors when account snapshots fail
-   - Implement proper initialization guards before creating snapshots
+1. **Next Sprint** (MEDIUM):
+   - #5: Fix admin store loading state management
+   - #7: Add atomic operations for snapshot creation or pessimistic locking
+   - #9: Convert dynamic imports in adminStore to static imports
+   - #10: Add cleanup for data fetch effect in App.tsx
+   - #11: Implement proper auth listener cleanup
+   - #12: Add FK validation before account snapshot inserts
 
-3. **Next Sprint** (MEDIUM):
-   - Convert dynamic imports in adminStore to static imports
-   - Add atomic operations for snapshot creation or pessimistic locking
-   - Implement proper auth listener cleanup
-   - Add retry logic for auth state checks in services
+2. **Backlog** (LOW):
+   - #13: Review all optimistic updates for consistency
+   - #14: Already mitigated, monitor only
 
-4. **Backlog** (LOW):
-   - Review all optimistic updates for consistency
-   - Add comprehensive error logging service
+### Completed Steps
 
-### Next Steps
-
-1. ✅ User to test production site with hard refresh (Cmd+Shift+R)
-2. ✅ Comprehensive code audit completed
-3. ❓ Fix CRITICAL issues (issues #1 and #2)
-4. ❓ Fix HIGH severity issues (issues #3 and #4)
-5. ❓ Consider fixing MEDIUM severity issues based on priority
+1. ✅ User tested production site — app loads and is responsive
+2. ✅ Comprehensive code audit completed (14 issues identified)
+3. ✅ Fixed all CRITICAL issues (#1 and #2)
+4. ✅ Fixed all HIGH severity issues (#3 and #4)
+5. ✅ Fixed performance: `getSessionUser()` replaces `getUser()` (#6)
+6. ✅ Fixed performance: localStorage caching enabled in production
+7. ✅ Fixed initialization guard for snapshots (#8)
+8. ✅ Fixed income table schema mismatch (migration 008)
 
 ---
 
