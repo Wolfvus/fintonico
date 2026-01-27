@@ -27,4 +27,15 @@ export const supabase = createClient<Database>(
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const supabaseUntyped = supabase as any;
 
+/**
+ * Get the current user from the local session (no network request).
+ * Use this instead of supabase.auth.getUser() which makes an HTTP call.
+ * Supabase RLS enforces user isolation via the JWT token already.
+ */
+export async function getSessionUser() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) throw new Error('Not authenticated');
+  return session.user;
+}
+
 export type { Database };

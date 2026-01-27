@@ -3,7 +3,7 @@
  * API service for Chart of Accounts CRUD operations with Supabase
  */
 
-import { supabase, supabaseUntyped } from '../lib/supabase';
+import { supabase, supabaseUntyped, getSessionUser } from '../lib/supabase';
 import type { LedgerAccount, LedgerAccountNormalBalance } from '../types';
 
 // Dev mode configuration
@@ -47,8 +47,7 @@ export const ledgerAccountService = {
       return [];
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const { data, error } = await supabase
       .from('ledger_accounts')
@@ -71,8 +70,7 @@ export const ledgerAccountService = {
       return [];
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const { data, error } = await supabase
       .from('ledger_accounts')
@@ -96,8 +94,7 @@ export const ledgerAccountService = {
       return null;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const { data, error } = await supabase
       .from('ledger_accounts')
@@ -122,8 +119,7 @@ export const ledgerAccountService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const insertData = {
       user_id: user.id,
@@ -155,8 +151,7 @@ export const ledgerAccountService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const updateData: Record<string, unknown> = {};
     if (updates.name !== undefined) updateData.name = updates.name;
@@ -188,8 +183,7 @@ export const ledgerAccountService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const { error } = await supabase
       .from('ledger_accounts')
@@ -224,8 +218,7 @@ export const ledgerAccountService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const insertData = accounts.map(account => ({
       user_id: user.id,

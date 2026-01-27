@@ -237,9 +237,9 @@ export const useIncomeStore = create<IncomeState>()(
     }),
     {
       name: 'fintonico-incomes',
-      partialize: (state) => DEV_MODE ? { incomes: state.incomes } : {},
+      partialize: (state) => ({ incomes: state.incomes }),
       onRehydrateStorage: () => (state) => {
-        if (state?.incomes && DEV_MODE) {
+        if (state?.incomes) {
           state.incomes = state.incomes.filter((income: unknown) => {
             if (typeof income !== 'object' || !income) return false;
             const inc = income as Record<string, unknown>;

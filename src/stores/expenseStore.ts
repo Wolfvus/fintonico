@@ -243,11 +243,9 @@ export const useExpenseStore = create<ExpenseState>()(
     }),
     {
       name: 'fintonico-expenses',
-      // Only persist in DEV_MODE
-      partialize: (state) => DEV_MODE ? { expenses: state.expenses } : {},
-      // Migration from old format
+      partialize: (state) => ({ expenses: state.expenses }),
       onRehydrateStorage: () => (state) => {
-        if (state?.expenses && DEV_MODE) {
+        if (state?.expenses) {
           // Validate and clean up any old data
           state.expenses = state.expenses.filter((expense: unknown) => {
             if (typeof expense !== 'object' || !expense) return false;

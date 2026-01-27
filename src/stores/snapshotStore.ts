@@ -212,7 +212,7 @@ export const useSnapshotStore = create<SnapshotState>()(
     {
       name: 'fintonico-snapshots',
       version: 2,
-      partialize: (state) => DEV_MODE ? { snapshots: state.snapshots } : {},
+      partialize: (state) => ({ snapshots: state.snapshots }),
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as { snapshots?: NetWorthSnapshot[] };
 

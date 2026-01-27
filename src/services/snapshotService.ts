@@ -3,7 +3,7 @@
  * API service for net worth snapshot CRUD operations with Supabase
  */
 
-import { supabase, supabaseUntyped } from '../lib/supabase';
+import { supabase, supabaseUntyped, getSessionUser } from '../lib/supabase';
 import type { Account, AccountType } from '../types';
 import type { AccountNature } from '../domain/ledger';
 
@@ -83,8 +83,7 @@ export const snapshotService = {
       return [];
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const { data, error } = await supabase
       .from('net_worth_snapshots')
@@ -107,8 +106,7 @@ export const snapshotService = {
       return [];
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     let query = supabase
       .from('net_worth_snapshots')
@@ -139,8 +137,7 @@ export const snapshotService = {
       return null;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     // Get the snapshot
     const { data: snapshotData, error: snapshotError } = await supabaseUntyped
@@ -177,8 +174,7 @@ export const snapshotService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     // Insert the main snapshot
     const snapshotInsert = {
@@ -312,8 +308,7 @@ export const snapshotService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     // Account snapshots will be deleted by CASCADE
     const { error } = await supabase

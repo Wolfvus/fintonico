@@ -3,7 +3,7 @@
  * API service for income CRUD operations with Supabase
  */
 
-import { supabase, supabaseUntyped } from '../lib/supabase';
+import { supabase, supabaseUntyped, getSessionUser } from '../lib/supabase';
 import type { Income, IncomeFrequency } from '../types';
 
 // Dev mode configuration
@@ -48,8 +48,7 @@ export const incomeService = {
       return [];
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const { data, error } = await supabase
       .from('income')
@@ -72,8 +71,7 @@ export const incomeService = {
       return [];
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
     const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
@@ -101,8 +99,7 @@ export const incomeService = {
       return null;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const { data, error } = await supabase
       .from('income')
@@ -127,8 +124,7 @@ export const incomeService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const insertData = {
       user_id: user.id,
@@ -160,8 +156,7 @@ export const incomeService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const updateData: Record<string, unknown> = {};
     if (updates.source !== undefined) updateData.source = updates.source;
@@ -193,8 +188,7 @@ export const incomeService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const { error } = await supabase
       .from('income')
@@ -215,8 +209,7 @@ export const incomeService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const insertData = incomes.map(income => ({
       user_id: user.id,

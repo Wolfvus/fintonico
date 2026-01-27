@@ -433,9 +433,9 @@ export const useAccountStore = create<AccountState>()(
     }),
     {
       name: 'fintonico-accounts',
-      partialize: (state) => DEV_MODE ? { accounts: state.accounts } : {},
+      partialize: (state) => ({ accounts: state.accounts }),
       onRehydrateStorage: () => (state) => {
-        if (state?.accounts && DEV_MODE) {
+        if (state?.accounts) {
           state.accounts = state.accounts.map((account) => migrateAccount(account));
         }
       },

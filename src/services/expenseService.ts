@@ -3,7 +3,7 @@
  * API service for expense CRUD operations with Supabase
  */
 
-import { supabase, supabaseUntyped } from '../lib/supabase';
+import { supabase, supabaseUntyped, getSessionUser } from '../lib/supabase';
 import type { Expense, ExpenseRating } from '../types';
 
 // Dev mode configuration
@@ -51,8 +51,7 @@ export const expenseService = {
       return [];
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const { data, error } = await supabase
       .from('expenses')
@@ -75,8 +74,7 @@ export const expenseService = {
       return [];
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
     const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
@@ -104,8 +102,7 @@ export const expenseService = {
       return null;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const { data, error } = await supabase
       .from('expenses')
@@ -130,8 +127,7 @@ export const expenseService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const insertData = {
       user_id: user.id,
@@ -164,8 +160,7 @@ export const expenseService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const updateData: Record<string, unknown> = {};
     if (updates.what !== undefined) updateData.what = updates.what;
@@ -198,8 +193,7 @@ export const expenseService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const { error } = await supabase
       .from('expenses')
@@ -220,8 +214,7 @@ export const expenseService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const insertData = expenses.map(expense => ({
       user_id: user.id,

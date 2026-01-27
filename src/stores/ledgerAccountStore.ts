@@ -219,7 +219,7 @@ export const useLedgerAccountStore = create<LedgerAccountState>()(
     }),
     {
       name: 'fintonico-ledger-accounts',
-      partialize: (state) => DEV_MODE ? { accounts: state.accounts } : {},
+      partialize: (state) => ({ accounts: state.accounts }),
     }
   )
 );

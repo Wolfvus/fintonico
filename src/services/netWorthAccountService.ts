@@ -3,7 +3,7 @@
  * API service for net worth account CRUD operations with Supabase
  */
 
-import { supabase, supabaseUntyped } from '../lib/supabase';
+import { supabase, supabaseUntyped, getSessionUser } from '../lib/supabase';
 import type { Account, AccountType } from '../types';
 
 // Dev mode configuration
@@ -68,8 +68,7 @@ export const netWorthAccountService = {
       return [];
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const { data, error } = await supabase
       .from('net_worth_accounts')
@@ -92,8 +91,7 @@ export const netWorthAccountService = {
       return null;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const { data, error } = await supabase
       .from('net_worth_accounts')
@@ -118,8 +116,7 @@ export const netWorthAccountService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const insertData = {
       user_id: user.id,
@@ -157,8 +154,7 @@ export const netWorthAccountService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const updateData: Record<string, unknown> = {
       last_updated: new Date().toISOString().split('T')[0],
@@ -200,8 +196,7 @@ export const netWorthAccountService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const { error } = await supabase
       .from('net_worth_accounts')
@@ -250,8 +245,7 @@ export const netWorthAccountService = {
       throw new Error('DEV_MODE: Use localStorage store instead');
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const user = await getSessionUser();
 
     const insertData = accounts.map(account => ({
       user_id: user.id,
