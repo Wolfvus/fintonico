@@ -47,28 +47,29 @@ function App() {
     localStorage.setItem('fintonico-active-tab', activeTab);
   }, [activeTab]);
 
+  // Initialize non-auth things on mount
   useEffect(() => {
     checkUser();
-    // Initialize ledger with default chart of accounts
     initializeDefaultAccounts();
-    // Check and generate recurring transactions on app load
     checkAndGenerateRecurring();
-    // Initialize theme from localStorage or system preference
     initializeTheme();
-    // Ensure a snapshot exists for the current month (auto-snapshot on first visit)
-    ensureCurrentMonthSnapshot();
-  }, [checkUser, initializeDefaultAccounts, initializeTheme, ensureCurrentMonthSnapshot]);
+  }, [checkUser, initializeDefaultAccounts, initializeTheme]);
 
-  // Fetch all data from Supabase when user is authenticated
+  // When user is authenticated, fetch all data from Supabase and run user-dependent init
   useEffect(() => {
     if (user) {
-      useExpenseStore.getState().fetchAll();
-      useIncomeStore.getState().fetchAll();
-      useAccountStore.getState().fetchAll();
-      useLedgerAccountStore.getState().fetchAll();
-      useSnapshotStore.getState().fetchAll();
+      Promise.allSettled([
+        useExpenseStore.getState().fetchAll(),
+        useIncomeStore.getState().fetchAll(),
+        useAccountStore.getState().fetchAll(),
+        useLedgerAccountStore.getState().fetchAll(),
+        useSnapshotStore.getState().fetchAll(),
+      ]).then(() => {
+        // Only ensure snapshot after data is loaded
+        ensureCurrentMonthSnapshot().catch(() => {});
+      });
     }
-  }, [user]);
+  }, [user, ensureCurrentMonthSnapshot]);
 
   if (loading) {
     return (
