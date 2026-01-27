@@ -3,7 +3,13 @@
 -- Solution: Use SECURITY DEFINER functions to check roles without triggering RLS
 
 -- ============================================
--- 1. Create helper functions (bypass RLS)
+-- 1. Drop old function signatures that conflict (from migration 003)
+-- ============================================
+DROP FUNCTION IF EXISTS public.is_admin(UUID);
+DROP FUNCTION IF EXISTS public.is_super_admin(UUID);
+
+-- ============================================
+-- 2. Create helper functions (bypass RLS, no parameters)
 -- ============================================
 
 -- Function to get current user's role without triggering RLS
@@ -56,13 +62,18 @@ GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_super_admin() TO authenticated;
 
 -- ============================================
--- 2. Fix user_profiles policies (remove self-referencing queries)
+-- 3. Fix user_profiles policies (remove self-referencing queries)
 -- ============================================
 
--- Drop ALL existing policies on user_profiles to start clean
+-- Drop ALL existing policies on user_profiles to start clean (both old and new names)
 DROP POLICY IF EXISTS "Users can view their own profile or admins can view all" ON public.user_profiles;
+DROP POLICY IF EXISTS "Users can view own profile" ON public.user_profiles;
+DROP POLICY IF EXISTS "Admins can view all profiles" ON public.user_profiles;
 DROP POLICY IF EXISTS "Users can update their own profile" ON public.user_profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.user_profiles;
+DROP POLICY IF EXISTS "Super admins can update any profile" ON public.user_profiles;
 DROP POLICY IF EXISTS "Users can create their own profile" ON public.user_profiles;
+DROP POLICY IF EXISTS "Allow profile creation" ON public.user_profiles;
 DROP POLICY IF EXISTS "Super admins can delete profiles" ON public.user_profiles;
 DROP POLICY IF EXISTS "super_admin_can_update_subscription" ON public.user_profiles;
 
@@ -100,7 +111,7 @@ CREATE POLICY "Super admins can delete profiles"
   USING (public.is_super_admin());
 
 -- ============================================
--- 3. Fix admin policies on DATA tables (use functions instead of subqueries)
+-- 4. Fix admin policies on DATA tables (use functions instead of subqueries)
 -- ============================================
 
 -- Fix expenses admin policy
@@ -140,7 +151,7 @@ CREATE POLICY "Admins can view all income"
   USING (public.is_admin());
 
 -- ============================================
--- 4. Fix admin audit log policies
+-- 5. Fix admin audit log policies
 -- ============================================
 DROP POLICY IF EXISTS "Super admins can view audit log" ON public.admin_audit_log;
 CREATE POLICY "Super admins can view audit log"
@@ -156,7 +167,7 @@ CREATE POLICY "Admins can log their own actions"
   );
 
 -- ============================================
--- 5. Fix system_config policies
+-- 6. Fix system_config policies
 -- ============================================
 DROP POLICY IF EXISTS "Admins can view system config" ON public.system_config;
 CREATE POLICY "Admins can view system config"
