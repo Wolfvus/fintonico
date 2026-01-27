@@ -589,7 +589,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
           placeholder="0.00"
           align="right"
           disabled={isDisabled}
-          className={isLiability ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}
+          className={isLiability ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'}
         />
       </td>
 
@@ -606,7 +606,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
             placeholder="-"
             align="right"
             disabled={isDisabled}
-            className="text-orange-600 dark:text-orange-400"
+            className="text-orange-700 dark:text-orange-400"
           />
         </td>
       )}
@@ -624,7 +624,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
             placeholder="-"
             align="right"
             disabled={isDisabled}
-            className="text-yellow-600 dark:text-yellow-400"
+            className="text-yellow-700 dark:text-yellow-400"
           />
         </td>
       )}
@@ -651,7 +651,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
       {!isLiability && (
         <td className="py-1 px-1 w-24 border-l border-gray-200 dark:border-gray-700">
           <div className={`px-2 py-1.5 text-sm text-right ${
-            monthlyReturn > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
+            monthlyReturn > 0 ? 'text-green-700 dark:text-green-400' : 'text-gray-400'
           }`}>
             {monthlyReturn > 0 ? formatNumberWithCommas(monthlyReturn) : '-'}
           </div>
@@ -662,7 +662,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
       {!isLiability && (
         <td className="py-1 px-1 w-28 border-l border-gray-200 dark:border-gray-700">
           <div className={`px-2 py-1.5 text-sm text-right ${
-            yearlyReturn > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
+            yearlyReturn > 0 ? 'text-green-700 dark:text-green-400' : 'text-gray-400'
           }`}>
             {yearlyReturn > 0 ? formatNumberWithCommas(yearlyReturn) : '-'}
           </div>
@@ -861,7 +861,7 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({
         <button
           onClick={handleAdd}
           disabled={!name.trim()}
-          className="p-1.5 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/20 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-1.5 text-green-700 hover:bg-green-100 dark:hover:bg-green-900/20 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="Save"
         >
           <Plus className="w-4 h-4" />
@@ -894,7 +894,7 @@ const AssetSortableHeader: React.FC<AssetSortableHeaderProps> = ({ label, column
       onClick={() => onSort(column)}
       className={`flex items-center gap-1 text-xs font-medium transition-colors w-full ${
         align === 'right' ? 'justify-end' : 'justify-start'
-      } ${isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+      } ${isActive ? 'text-green-700 dark:text-green-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
     >
       <span>{label}</span>
       {isActive ? (
@@ -928,7 +928,7 @@ const LiabilitySortableHeader: React.FC<LiabilitySortableHeaderProps> = ({ label
       onClick={() => onSort(column)}
       className={`flex items-center gap-1 text-xs font-medium transition-colors w-full ${
         align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : 'justify-start'
-      } ${isActive ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+      } ${isActive ? 'text-red-700 dark:text-red-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
     >
       <span>{label}</span>
       {isActive ? (
@@ -1040,7 +1040,7 @@ const AssetsTableHeader: React.FC<AssetsTableHeaderProps> = ({
             onClick={(e) => { e.stopPropagation(); onToggle(); }}
             className={`p-1.5 rounded-md transition-colors ${
               hasActiveFilters
-                ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
+                ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
                 : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
             title="Toggle filters"
@@ -1214,7 +1214,7 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
             onClick={(e) => { e.stopPropagation(); onToggle(); }}
             className={`p-1.5 rounded-md transition-colors ${
               hasActiveFilters
-                ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30'
+                ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30'
                 : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
             title="Toggle filters"
@@ -1776,7 +1776,7 @@ export const NetWorthPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
             <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Assets</h3>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+            <p className="text-2xl font-bold text-green-700 dark:text-green-400">
               {formatAmount(totalAssets)}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
@@ -1786,7 +1786,7 @@ export const NetWorthPage: React.FC = () => {
 
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
             <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Liabilities</h3>
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+            <p className="text-2xl font-bold text-red-700 dark:text-red-400">
               {formatAmount(totalLiabilities)}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
@@ -1802,7 +1802,7 @@ export const NetWorthPage: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
             <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Net Worth</h3>
             <p className={`text-2xl font-bold ${
-              netWorth >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+              netWorth >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
             }`}>
               {formatAmount(netWorth)}
             </p>
@@ -1834,7 +1834,7 @@ export const NetWorthPage: React.FC = () => {
           ) : (
             <ChevronDown className="w-5 h-5 text-gray-400" />
           )}
-          <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+          <TrendingUp className="w-5 h-5 text-green-700 dark:text-green-400" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left">Assets</h2>
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {assetAccounts.length} {hasAssetFilters ? `of ${allAssetAccounts.length}` : ''} accounts
@@ -1903,7 +1903,7 @@ export const NetWorthPage: React.FC = () => {
           ) : (
             <ChevronDown className="w-5 h-5 text-gray-400" />
           )}
-          <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
+          <TrendingDown className="w-5 h-5 text-red-700 dark:text-red-400" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left">Liabilities</h2>
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {liabilityAccounts.length} {hasLiabilityFilters ? `of ${allLiabilityAccounts.length}` : ''} accounts
@@ -1979,12 +1979,12 @@ export const NetWorthPage: React.FC = () => {
           </p>
           <div className="flex gap-6 justify-center text-sm">
             <div className="text-center">
-              <TrendingUp className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
+              <TrendingUp className="w-8 h-8 text-green-700 dark:text-green-400 mx-auto mb-2" />
               <p className="font-medium text-gray-900 dark:text-white">Assets</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Cash, Bank, Investments</p>
             </div>
             <div className="text-center">
-              <TrendingDown className="w-8 h-8 text-red-600 dark:text-red-400 mx-auto mb-2" />
+              <TrendingDown className="w-8 h-8 text-red-700 dark:text-red-400 mx-auto mb-2" />
               <p className="font-medium text-gray-900 dark:text-white">Liabilities</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Credit Cards, Loans</p>
             </div>

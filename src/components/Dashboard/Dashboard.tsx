@@ -284,9 +284,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     emptyState: "text-center py-8 text-gray-500 dark:text-gray-400 text-sm",
     dateDisplay: "text-sm font-semibold text-gray-900 dark:text-white text-center",
     amountLarge: "text-lg font-bold",
-    amountGreen: "text-lg font-bold text-green-600 dark:text-green-400",
-    amountRed: "text-lg font-bold text-red-600 dark:text-red-400",
-    amountYellow: "text-lg font-bold text-yellow-600 dark:text-yellow-400"
+    amountGreen: "text-lg font-bold text-green-700 dark:text-green-400",
+    amountRed: "text-lg font-bold text-red-700 dark:text-red-400",
+    amountYellow: "text-lg font-bold text-yellow-700 dark:text-yellow-400"
   };
 
   return (
@@ -310,7 +310,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400 text-left">Net Worth</p>
                 <div className="flex items-center gap-2">
                   <p className={`text-2xl font-bold ${
-                    netWorth >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'
+                    netWorth >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-700 dark:text-red-400'
                   }`}>
                     {formatAmount(netWorth)}
                   </p>
@@ -330,17 +330,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             {/* Assets/Liabilities Row */}
             <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-center gap-2">
-                <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <TrendingUp className="w-4 h-4 text-green-700 dark:text-green-400" />
                 <div className="text-center">
                   <p className="text-xs text-gray-500 dark:text-gray-400">Assets</p>
-                  <p className="text-base font-semibold text-green-600 dark:text-green-400">{formatAmount(totalAssets)}</p>
+                  <p className="text-base font-semibold text-green-700 dark:text-green-400">{formatAmount(totalAssets)}</p>
                 </div>
               </div>
               <div className="flex items-center justify-center gap-2">
-                <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
+                <TrendingDown className="w-4 h-4 text-red-700 dark:text-red-400" />
                 <div className="text-center">
                   <p className="text-xs text-gray-500 dark:text-gray-400">Liabilities</p>
-                  <p className="text-base font-semibold text-red-600 dark:text-red-400">{formatAmount(totalLiabilities)}</p>
+                  <p className="text-base font-semibold text-red-700 dark:text-red-400">{formatAmount(totalLiabilities)}</p>
                 </div>
               </div>
             </div>
@@ -357,7 +357,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 text-left">Total Net Worth</p>
               <div className="flex items-center gap-2">
                 <p className={`text-3xl font-bold ${
-                  netWorth >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'
+                  netWorth >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-700 dark:text-red-400'
                 }`}>
                   {formatAmount(netWorth)}
                 </p>
@@ -375,17 +375,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             </button>
             <div className="flex gap-8">
               <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <TrendingUp className="w-5 h-5 text-green-700 dark:text-green-400" />
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Total Assets</p>
-                  <p className="text-lg font-semibold text-green-600 dark:text-green-400">{formatAmount(totalAssets)}</p>
+                  <p className="text-lg font-semibold text-green-700 dark:text-green-400">{formatAmount(totalAssets)}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
+                <TrendingDown className="w-5 h-5 text-red-700 dark:text-red-400" />
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Total Liabilities</p>
-                  <p className="text-lg font-semibold text-red-600 dark:text-red-400">{formatAmount(totalLiabilities)}</p>
+                  <p className="text-lg font-semibold text-red-700 dark:text-red-400">{formatAmount(totalLiabilities)}</p>
                 </div>
               </div>
             </div>
@@ -454,7 +454,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               <ArrowUpDown className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />
               <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Cash Flow</p>
             </div>
-            <p className={`text-base font-bold ${monthlyCashFlow >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+            <p className={`text-base font-bold ${monthlyCashFlow >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
               {formatAmount(monthlyCashFlow)}
             </p>
           </div>
@@ -465,7 +465,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               <PiggyBank className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />
               <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Savings</p>
             </div>
-            <p className={`text-base font-bold ${savingsRate >= 20 ? 'text-green-600 dark:text-green-400' : savingsRate >= 10 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
+            <p className={`text-base font-bold ${savingsRate >= 20 ? 'text-green-700 dark:text-green-400' : savingsRate >= 10 ? 'text-yellow-700 dark:text-yellow-400' : 'text-red-700 dark:text-red-400'}`}>
               {savingsRate.toFixed(1)}%
             </p>
           </div>
@@ -477,7 +477,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <DollarSign className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />
                 <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Income</p>
               </div>
-              <p className="text-base font-bold text-green-600 dark:text-green-400">{formatAmount(periodIncome)}</p>
+              <p className="text-base font-bold text-green-700 dark:text-green-400">{formatAmount(periodIncome)}</p>
             </div>
           </button>
 
@@ -488,7 +488,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <Wallet className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />
                 <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Expenses</p>
               </div>
-              <p className="text-base font-bold text-red-600 dark:text-red-400">{formatAmount(totalMonthlyExpenses)}</p>
+              <p className="text-base font-bold text-red-700 dark:text-red-400">{formatAmount(totalMonthlyExpenses)}</p>
             </div>
           </button>
         </div>
@@ -570,8 +570,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                               <td className="py-2 px-4 text-right">
                                 <span className={`text-sm font-medium ${
                                   transaction.type === 'income'
-                                    ? 'text-green-600 dark:text-green-400'
-                                    : 'text-red-600 dark:text-red-400'
+                                    ? 'text-green-700 dark:text-green-400'
+                                    : 'text-red-700 dark:text-red-400'
                                 }`}>
                                   {transaction.formattedAmount}
                                 </span>
@@ -734,9 +734,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                       {/* Category amounts */}
                       <div className="w-full mt-4 space-y-2">
                         {([
-                          { key: 'essential', color: 'text-green-600 dark:text-green-400', label: 'Essential' },
-                          { key: 'discretionary', color: 'text-yellow-600 dark:text-yellow-400', label: 'Discretionary' },
-                          { key: 'luxury', color: 'text-red-600 dark:text-red-400', label: 'Luxury' },
+                          { key: 'essential', color: 'text-green-700 dark:text-green-400', label: 'Essential' },
+                          { key: 'discretionary', color: 'text-yellow-700 dark:text-yellow-400', label: 'Discretionary' },
+                          { key: 'luxury', color: 'text-red-700 dark:text-red-400', label: 'Luxury' },
                         ] as const).map(({ key, color, label }) => {
                           const value = expensesByRating[key] || 0;
                           return value > 0 ? (
@@ -768,12 +768,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                   {/* Savings Potential */}
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <Scissors className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                      <Scissors className="w-4 h-4 text-yellow-700 dark:text-yellow-400" />
                       <p className="text-xs font-medium text-gray-900 dark:text-white">Savings Potential</p>
                     </div>
                     {nonEssentialTotal > 0 ? (
                       <>
-                        <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
+                        <p className="text-lg font-bold text-yellow-700 dark:text-yellow-400">
                           {formatAmount(nonEssentialTotal)}
                         </p>
                         <p className={styles.sectionLabel}>

@@ -387,11 +387,11 @@ export const ImportModal: React.FC<ImportModalProps> = ({
               {/* Parse Errors */}
               {parseErrors.length > 0 && (
                 <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400 mb-2">
+                  <div className="flex items-center gap-2 text-red-700 dark:text-red-400 mb-2">
                     <AlertCircle className="w-4 h-4" />
                     <span className="text-sm font-medium">Parse Errors</span>
                   </div>
-                  <ul className="text-xs text-red-600 dark:text-red-400 space-y-1">
+                  <ul className="text-xs text-red-700 dark:text-red-400 space-y-1">
                     {parseErrors.map((error, idx) => (
                       <li key={idx}>• {error}</li>
                     ))}
@@ -405,11 +405,11 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                   <span className="text-gray-600 dark:text-gray-400">
                     Total: {parsedRows.length} rows
                   </span>
-                  <span className="text-green-600 dark:text-green-400">
+                  <span className="text-green-700 dark:text-green-400">
                     Valid: {validCount}
                   </span>
                   {invalidCount > 0 && (
-                    <span className="text-red-600 dark:text-red-400">
+                    <span className="text-red-700 dark:text-red-400">
                       Invalid: {invalidCount}
                     </span>
                   )}
@@ -503,8 +503,8 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 }`}>
                   <div className={`flex items-center gap-2 ${
                     importResult.success
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-red-600 dark:text-red-400'
+                      ? 'text-green-700 dark:text-green-400'
+                      : 'text-red-700 dark:text-red-400'
                   }`}>
                     {importResult.success ? (
                       <Check className="w-4 h-4" />

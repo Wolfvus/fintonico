@@ -105,7 +105,7 @@ export const ExpenseForm: React.FC = () => {
   return (
     <div className={formStyles.card}>
       <div className="flex items-center gap-2 mb-6">
-        <Plus className="w-5 h-5 text-red-600 dark:text-red-400" />
+        <Plus className="w-5 h-5 text-red-700 dark:text-red-400" />
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add Expense</h2>
       </div>
 

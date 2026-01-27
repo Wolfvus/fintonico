@@ -1413,64 +1413,84 @@ interface NetWorthSnapshot {
 
 ---
 
-## Phase 25: Light Mode & Style Overhaul
+## Phase 25: Light Mode & Style Overhaul ✅
 
 **Goal:** Improve light mode readability and visual contrast. Create a style reference document. The current light mode uses white backgrounds that make green/red amount text hard to read.
 
-### Step 1: Create style.md Reference ⬜
+### Step 1: Create style.md Reference ✅
 
 **Goal:** Replace `STYLEROADMAP.md` with `style.md` — a concise reference document summarizing the app's design system.
 
 | Task | Status |
 | --- | --- |
-| Document color palette (primary teal, accent gold, navy, surfaces) | ⬜ |
-| Document dark mode colors | ⬜ |
-| Document light mode colors (current + updated) | ⬜ |
-| Document typography scale and font choices | ⬜ |
-| Document spacing system and component patterns | ⬜ |
-| Document semantic colors (success green, error red, warning yellow) | ⬜ |
-| Delete `STYLEROADMAP.md` after `style.md` is complete | ⬜ |
+| Document color palette (primary teal, accent gold, navy, surfaces) | ✅ |
+| Document dark mode colors | ✅ |
+| Document light mode colors (current + updated) | ✅ |
+| Document typography scale and font choices | ✅ |
+| Document spacing system and component patterns | ✅ |
+| Document semantic colors (success green, error red, warning yellow) | ✅ |
+| Delete `STYLEROADMAP.md` after `style.md` is complete | ✅ |
 
 **File Changes:**
-- Create: `style.md`
-- Delete: `STYLEROADMAP.md`
+- Created: `style.md`
+- Deleted: `STYLEROADMAP.md`
 
-### Step 2: Light Mode Navbar & Menu ⬜
+### Step 2: Light Mode Navbar & Menu ✅
 
 **Goal:** Change the light mode navbar and sidebar from white/gray to a light blue tone for better visual hierarchy and readability.
 
 | Task | Status |
 | --- | --- |
-| Change sidebar background to light blue (e.g., `bg-blue-50` or `bg-slate-100`) | ⬜ |
-| Change mobile header to matching light blue | ⬜ |
-| Ensure nav icons and text contrast on light blue background | ⬜ |
-| Active nav item should remain clearly distinguishable | ⬜ |
-| Update `style.md` with new nav colors | ⬜ |
+| Change sidebar background to light blue (`#DBEAFE` blue-100) | ✅ |
+| Change mobile header to matching light blue | ✅ |
+| Ensure nav icons and text contrast on light blue background | ✅ |
+| Active nav item should remain clearly distinguishable | ✅ |
+| Update `style.md` with new nav colors | ✅ |
 
-### Step 3: Light Mode Amount Contrast ⬜
+**Implementation Notes:**
+- Created `--color-nav-bg` CSS custom property in `index.css`
+- Light mode: `#DBEAFE` (blue-100) — soft blue that provides visual hierarchy
+- Dark mode: `#334155` (slate-700) — matches elevated surface
+- `.nav-sidebar` class uses `var(--color-nav-bg)` for theme-aware background
+
+### Step 3: Light Mode Amount Contrast ✅
 
 **Goal:** Improve readability of green (income/assets) and red (expense/liabilities) amounts on light backgrounds.
 
 | Task | Status |
 | --- | --- |
-| Darken green amount text for light mode (e.g., `text-green-700` instead of `text-green-500`) | ⬜ |
-| Darken red amount text for light mode (e.g., `text-red-700` instead of `text-red-500`) | ⬜ |
-| Check contrast ratio meets WCAG AA (4.5:1 minimum) | ⬜ |
-| Test on white and light blue backgrounds | ⬜ |
-| Update summary cards, table cells, and dashboard amounts | ⬜ |
-| Update `style.md` with finalized amount colors | ⬜ |
+| Darken green amount text (`text-green-600` → `text-green-700`) | ✅ |
+| Darken red amount text (`text-red-600` → `text-red-700`) | ✅ |
+| Check contrast ratio meets WCAG AA (4.5:1 minimum) | ✅ |
+| Test on white and light blue backgrounds | ✅ |
+| Update summary cards, table cells, and dashboard amounts | ✅ |
+| Update `style.md` with finalized amount colors | ✅ |
 
-### Step 4: Overall Light Mode Polish ⬜
+**Implementation Notes:**
+- Replaced all `text-green-600` → `text-green-700` across 14+ .tsx files (90+ occurrences)
+- Replaced all `text-red-600` → `text-red-700` across 14+ .tsx files (90+ occurrences)
+- `text-green-700` (#15803d) on white: ~5.3:1 contrast (passes WCAG AA 4.5:1)
+- `text-red-700` (#b91c1c) on white: ~5.7:1 contrast (passes WCAG AA 4.5:1)
+
+### Step 4: Overall Light Mode Polish ✅
 
 **Goal:** Ensure consistent, readable light mode across all pages.
 
 | Task | Status |
 | --- | --- |
-| Review all pages in light mode | ⬜ |
-| Fix any remaining low-contrast elements | ⬜ |
-| Ensure cards/surfaces have subtle separation (borders or shadows) | ⬜ |
-| Verify filter dropdowns and modals are readable | ⬜ |
-| Test on both mobile and desktop | ⬜ |
+| Review all pages in light mode | ✅ |
+| Fix remaining low-contrast elements (yellow-600, orange-600) | ✅ |
+| Ensure cards/surfaces have subtle separation (borders or shadows) | ✅ |
+| Verify filter dropdowns and modals are readable | ✅ |
+| Test on both mobile and desktop | ✅ |
+
+**Implementation Notes:**
+- Replaced `text-yellow-600` → `text-yellow-700` (9 occurrences across 5 files)
+- Replaced `text-orange-600` → `text-orange-700` (1 occurrence)
+- `text-yellow-700` (#a16207) on white: ~4.9:1 contrast (passes WCAG AA)
+- `text-orange-700` (#c2410c) on white: ~4.5:1 contrast (passes WCAG AA)
+- Blue-600 and purple-600 already pass WCAG AA (4.6:1+), left unchanged
+- Updated `style.md` with discretionary/warning and min payment color entries
 
 ---
 
@@ -1605,7 +1625,7 @@ interface NetWorthSnapshot {
 
 ---
 
-**Last Updated:** 2026-01-27 (Phase 24 completed, Phases 25-27 planned)
+**Last Updated:** 2026-01-27 (Phase 25 completed, Phases 26-27 planned)
 
 ---
 

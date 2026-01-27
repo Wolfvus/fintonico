@@ -465,9 +465,9 @@ export const NetWorthHistory: React.FC = () => {
                 : 'bg-red-50 dark:bg-red-900/20'
             }`}>
               {periodChange.change >= 0 ? (
-                <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <TrendingUp className="w-5 h-5 text-green-700 dark:text-green-400" />
               ) : (
-                <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
+                <TrendingDown className="w-5 h-5 text-red-700 dark:text-red-400" />
               )}
               <span className={`font-medium ${
                 periodChange.change >= 0
@@ -546,22 +546,22 @@ export const NetWorthHistory: React.FC = () => {
                         <td className={`py-2 px-3 text-right font-medium ${
                           snapshot.netWorthBase >= 0
                             ? 'text-blue-600 dark:text-blue-400'
-                            : 'text-red-600 dark:text-red-400'
+                            : 'text-red-700 dark:text-red-400'
                         }`}>
                           {formatAmount(snapshot.netWorthBase)}
                         </td>
-                        <td className="py-2 px-3 text-right text-green-600 dark:text-green-400">
+                        <td className="py-2 px-3 text-right text-green-700 dark:text-green-400">
                           {formatAmount(snapshot.totalsByNature.asset)}
                         </td>
-                        <td className="py-2 px-3 text-right text-red-600 dark:text-red-400">
+                        <td className="py-2 px-3 text-right text-red-700 dark:text-red-400">
                           {formatAmount(snapshot.totalsByNature.liability)}
                         </td>
                         <td className="py-2 px-3 text-right">
                           {change !== null ? (
                             <span className={`inline-flex items-center gap-1 ${
                               change >= 0
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-red-600 dark:text-red-400'
+                                ? 'text-green-700 dark:text-green-400'
+                                : 'text-red-700 dark:text-red-400'
                             }`}>
                               {change >= 0 ? (
                                 <TrendingUp className="w-3 h-3" />

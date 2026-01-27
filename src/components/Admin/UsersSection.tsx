@@ -140,12 +140,12 @@ export const UsersSection: React.FC = () => {
                 </td>
                 <td className="py-3 px-4">
                   {user.isActive ? (
-                    <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                    <span className="flex items-center gap-1 text-green-700 dark:text-green-400">
                       <CheckCircle className="w-4 h-4" />
                       <span className="text-sm">Active</span>
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
+                    <span className="flex items-center gap-1 text-red-700 dark:text-red-400">
                       <XCircle className="w-4 h-4" />
                       <span className="text-sm">Inactive</span>
                     </span>
@@ -166,7 +166,7 @@ export const UsersSection: React.FC = () => {
                     {canManageUsers && (
                       <button
                         onClick={() => setShowDeleteConfirm(user.id)}
-                        className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
+                        className="p-2 text-gray-500 hover:text-red-700 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
                         title="Delete user"
                       >
                         <Trash2 className="w-4 h-4" />

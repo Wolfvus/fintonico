@@ -46,6 +46,9 @@
     --color-info: #3B82F6;
     --color-info-bg: #EFF6FF;
 
+    /* Navigation */
+    --color-nav-bg: #DBEAFE;          /* blue-100 - light blue sidebar/header */
+
     /* Focus ring */
     --color-focus-ring: rgba(13, 148, 136, 0.25);
   }
@@ -78,6 +81,9 @@
     --color-error-bg: rgba(239, 68, 68, 0.15);
     --color-warning-bg: rgba(245, 158, 11, 0.15);
     --color-info-bg: rgba(59, 130, 246, 0.15);
+
+    /* Navigation (Dark Mode) */
+    --color-nav-bg: #334155;           /* slate-700 - same as elevated */
 
     /* Focus ring (Dark Mode) */
     --color-focus-ring: rgba(20, 184, 166, 0.3);
@@ -269,7 +275,7 @@
      Navigation Components
      ======================================== */
   .nav-sidebar {
-    background-color: var(--color-surface-elevated);
+    background-color: var(--color-nav-bg);
     border-color: var(--color-border);
   }
 

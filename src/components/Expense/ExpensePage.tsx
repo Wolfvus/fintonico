@@ -29,9 +29,9 @@ const getTodayString = (): string => {
 
 // Rating options with colors - 3 categories
 const RATING_OPTIONS: { value: ExpenseRating; label: string; color: string; bgColor: string; icon: React.FC<{ className?: string }> }[] = [
-  { value: 'essential', label: 'Essential', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30', icon: Home },
-  { value: 'discretionary', label: 'Discretionary', color: 'text-yellow-600 dark:text-yellow-400', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30', icon: ShoppingBag },
-  { value: 'luxury', label: 'Luxury', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', icon: Sparkles },
+  { value: 'essential', label: 'Essential', color: 'text-green-700 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30', icon: Home },
+  { value: 'discretionary', label: 'Discretionary', color: 'text-yellow-700 dark:text-yellow-400', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30', icon: ShoppingBag },
+  { value: 'luxury', label: 'Luxury', color: 'text-red-700 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', icon: Sparkles },
 ];
 
 // Editable Cell Component
@@ -513,7 +513,7 @@ const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
                   isSelectedDay(day)
                     ? 'bg-red-500 text-white'
                     : isToday(day)
-                    ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                    ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                     : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
                 }`}
               >
@@ -583,7 +583,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
           type="currency"
           placeholder="0.00"
           align="right"
-          className="text-red-600 dark:text-red-400 font-medium"
+          className="text-red-700 dark:text-red-400 font-medium"
         />
       </td>
 
@@ -662,7 +662,7 @@ const SortableHeader: React.FC<SortableHeaderProps> = ({ label, column, currentS
       onClick={() => onSort(column)}
       className={`flex items-center gap-1 text-xs font-medium transition-colors w-full ${
         align === 'right' ? 'justify-end' : 'justify-start'
-      } ${isActive ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+      } ${isActive ? 'text-red-700 dark:text-red-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
     >
       <span>{label}</span>
       {isActive ? (
@@ -749,7 +749,7 @@ const MonthlyTableHeader: React.FC<MonthlyTableHeaderProps> = ({
             onClick={onToggle}
             className={`p-1.5 rounded-md transition-colors ${
               hasActiveFilters
-                ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30'
+                ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30'
                 : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
             title="Toggle filters"
@@ -884,7 +884,7 @@ const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
             onClick={onToggle}
             className={`p-1.5 rounded-md transition-colors ${
               hasActiveFilters
-                ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30'
+                ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30'
                 : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
             title="Toggle filters"
@@ -1286,11 +1286,11 @@ export const ExpensePage: React.FC = () => {
               }
             }} className="space-y-2">
               <div className="flex items-center gap-2 mb-1">
-                <Plus className="w-4 h-4 text-red-600 dark:text-red-400" />
+                <Plus className="w-4 h-4 text-red-700 dark:text-red-400" />
                 <span className="text-sm font-medium text-gray-900 dark:text-white">Quick Add</span>
               </div>
               {(quickAddError || storeError) && (
-                <div className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded px-2 py-1" onClick={() => { setQuickAddError(null); clearError(); }}>
+                <div className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded px-2 py-1" onClick={() => { setQuickAddError(null); clearError(); }}>
                   {quickAddError || storeError} (tap to dismiss)
                 </div>
               )}
@@ -1364,7 +1364,7 @@ export const ExpensePage: React.FC = () => {
             {/* Monthly Total */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 border border-gray-200 dark:border-gray-700">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Monthly</p>
-              <p className="text-lg font-bold text-red-600 dark:text-red-400 truncate">
+              <p className="text-lg font-bold text-red-700 dark:text-red-400 truncate">
                 {formatAmount(monthlyTotal)}
               </p>
               <p className="text-xs text-gray-400 dark:text-gray-500">
@@ -1504,7 +1504,7 @@ export const ExpensePage: React.FC = () => {
           ) : (
             <ChevronDown className="w-5 h-5 text-gray-400" />
           )}
-          <Calendar className="w-5 h-5 text-red-600 dark:text-red-400" />
+          <Calendar className="w-5 h-5 text-red-700 dark:text-red-400" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left">Monthly Expenses</h2>
           <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">
             {formatAmount(monthlyTotal)}

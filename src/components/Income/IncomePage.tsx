@@ -503,7 +503,7 @@ const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
                   isSelectedDay(day)
                     ? 'bg-green-500 text-white'
                     : isToday(day)
-                    ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                     : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
                 }`}
               >
@@ -569,7 +569,7 @@ const IncomeRow: React.FC<IncomeRowProps> = ({
           type="currency"
           placeholder="0.00"
           align="right"
-          className="text-green-600 dark:text-green-400 font-medium"
+          className="text-green-700 dark:text-green-400 font-medium"
         />
       </td>
 
@@ -634,7 +634,7 @@ const SortableHeader: React.FC<SortableHeaderProps> = ({ label, column, currentS
       onClick={() => onSort(column)}
       className={`flex items-center gap-1 text-xs font-medium transition-colors w-full ${
         align === 'right' ? 'justify-end' : 'justify-start'
-      } ${isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+      } ${isActive ? 'text-green-700 dark:text-green-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
     >
       <span>{label}</span>
       {isActive ? (
@@ -721,7 +721,7 @@ const TableHeaderWithFilter: React.FC<TableHeaderWithFilterProps> = ({
             onClick={onToggle}
             className={`p-1.5 rounded-md transition-colors ${
               hasActiveFilters
-                ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
+                ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
                 : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
             title="Toggle filters"
@@ -1034,7 +1034,7 @@ export const IncomePage: React.FC = () => {
               }
             }} className="space-y-2">
               <div className="flex items-center gap-2 mb-1">
-                <Plus className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <Plus className="w-4 h-4 text-green-700 dark:text-green-400" />
                 <span className="text-sm font-medium text-gray-900 dark:text-white">Quick Add</span>
               </div>
               <input
@@ -1085,11 +1085,11 @@ export const IncomePage: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                  <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  <DollarSign className="w-4 h-4 text-green-700 dark:text-green-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-gray-500 dark:text-gray-400">{formattedMonth}</p>
-                  <p className="text-lg font-bold text-green-600 dark:text-green-400 truncate">
+                  <p className="text-lg font-bold text-green-700 dark:text-green-400 truncate">
                     {formatAmount(monthlyTotal)}
                   </p>
                   <p className="text-xs text-gray-400 dark:text-gray-500">{filteredIncomes.length} entries</p>

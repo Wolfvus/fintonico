@@ -105,7 +105,7 @@ export const IncomeForm: React.FC = () => {
   return (
     <div className={formStyles.card}>
       <div className="flex items-center gap-2 mb-6">
-        <Plus className="w-5 h-5 text-green-600 dark:text-green-400" />
+        <Plus className="w-5 h-5 text-green-700 dark:text-green-400" />
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add Income</h2>
       </div>
 
@@ -151,7 +151,7 @@ export const IncomeForm: React.FC = () => {
                 className="w-full flex items-center justify-between px-3 py-2.5 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <selectedFrequency.icon className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  <selectedFrequency.icon className="w-4 h-4 text-green-700 dark:text-green-400" />
                   <span className="text-sm">{selectedFrequency.label}</span>
                 </div>
                 <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showFrequencyDropdown ? 'rotate-180' : ''}`} />
@@ -171,7 +171,7 @@ export const IncomeForm: React.FC = () => {
                         frequency === option.value ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'text-gray-700 dark:text-gray-300'
                       }`}
                     >
-                      <option.icon className={`w-4 h-4 ${frequency === option.value ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`} />
+                      <option.icon className={`w-4 h-4 ${frequency === option.value ? 'text-green-700 dark:text-green-400' : 'text-gray-400'}`} />
                       {option.label}
                     </button>
                   ))}

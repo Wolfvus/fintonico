@@ -301,7 +301,7 @@ export const FinancialDataSection: React.FC = () => {
                                 {expense.rating}
                               </span>
                             </td>
-                            <td className="py-3 px-4 text-right font-mono text-red-600 dark:text-red-400">
+                            <td className="py-3 px-4 text-right font-mono text-red-700 dark:text-red-400">
                               -{expense.amount?.toLocaleString() ?? '0'}
                             </td>
                             <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{expense.currency}</td>
@@ -343,7 +343,7 @@ export const FinancialDataSection: React.FC = () => {
                                 {income.frequency}
                               </span>
                             </td>
-                            <td className="py-3 px-4 text-right font-mono text-green-600 dark:text-green-400">
+                            <td className="py-3 px-4 text-right font-mono text-green-700 dark:text-green-400">
                               +{income.amount?.toLocaleString() ?? '0'}
                             </td>
                             <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{income.currency}</td>
@@ -436,10 +436,10 @@ export const FinancialDataSection: React.FC = () => {
                             <td className="py-3 px-4 text-right font-mono text-gray-900 dark:text-white">
                               {snapshot.netWorthBase?.toLocaleString() ?? '0'}
                             </td>
-                            <td className="py-3 px-4 text-right font-mono text-green-600 dark:text-green-400">
+                            <td className="py-3 px-4 text-right font-mono text-green-700 dark:text-green-400">
                               {snapshot.totalsByNature?.asset?.toLocaleString() ?? '0'}
                             </td>
-                            <td className="py-3 px-4 text-right font-mono text-red-600 dark:text-red-400">
+                            <td className="py-3 px-4 text-right font-mono text-red-700 dark:text-red-400">
                               {snapshot.totalsByNature?.liability?.toLocaleString() ?? '0'}
                             </td>
                             <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">

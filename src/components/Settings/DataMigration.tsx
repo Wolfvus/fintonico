@@ -99,7 +99,7 @@ export const DataMigration: React.FC<Props> = ({ onMigrationComplete }) => {
           <AlertCircle className="w-5 h-5" />
           <span className="font-medium">Dev Mode Active</span>
         </div>
-        <p className="text-sm text-yellow-600 dark:text-yellow-500 mt-2">
+        <p className="text-sm text-yellow-700 dark:text-yellow-500 mt-2">
           Data migration is not available in dev mode. Configure Supabase environment variables to enable cloud sync.
         </p>
       </div>
@@ -265,7 +265,7 @@ export const DataMigration: React.FC<Props> = ({ onMigrationComplete }) => {
             </span>
           </div>
           {migrationResult.errors.length > 0 && (
-            <ul className="mt-2 text-sm text-red-600 dark:text-red-400 list-disc list-inside">
+            <ul className="mt-2 text-sm text-red-700 dark:text-red-400 list-disc list-inside">
               {migrationResult.errors.map((err, i) => (
                 <li key={i}>{err}</li>
               ))}
@@ -326,7 +326,7 @@ export const DataMigration: React.FC<Props> = ({ onMigrationComplete }) => {
               ) : (
                 <button
                   onClick={() => setShowClearConfirm(true)}
-                  className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                  className="flex items-center gap-2 text-sm text-red-700 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
                 >
                   <Trash2 className="w-4 h-4" />
                   Clear local data (already migrated)
