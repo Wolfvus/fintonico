@@ -1494,53 +1494,90 @@ interface NetWorthSnapshot {
 
 ---
 
-## Phase 26: Admin Panel Rework
+## Phase 26: Admin Panel Rework ✅
 
-**Goal:** Rebuild the admin panel to pull real users from Supabase Auth and manage them directly, replacing the current mock/limited implementation.
+**Goal:** Rework admin panel to use real Supabase data only (remove DEV_MODE mock data), remove broken user create/delete (requires service role key), add user summary stats, tier column, and Audit Log viewer tab.
 
-### Step 1: Pull Users from Supabase Auth ⬜
+**Decision:** Users self-register via magic link / Google OAuth. Admin only manages existing user profiles (role, tier, active status).
 
-**Goal:** Fetch the actual list of registered users from Supabase Auth admin API.
-
-| Task | Status |
-| --- | --- |
-| Use Supabase Admin API to list all auth users | ⬜ |
-| Display user list with email, created_at, last_sign_in | ⬜ |
-| Join with `user_profiles` table for role and subscription data | ⬜ |
-| Pagination for large user lists | ⬜ |
-| Search/filter by email or name | ⬜ |
-
-### Step 2: User Profile Management ⬜
-
-**Goal:** Allow admins to view and edit user profiles, roles, and subscription tiers.
+### Step 1: Update Types ✅
 
 | Task | Status |
 | --- | --- |
-| View user profile details (email, role, tier, created date) | ⬜ |
-| Edit user role (super_admin, admin, user) — super_admin only | ⬜ |
-| Edit subscription tier (freemium, pro) — super_admin only | ⬜ |
-| Disable/enable user accounts | ⬜ |
-| All changes logged to audit table | ⬜ |
+| Remove `CreateUserRequest` interface | ✅ |
+| Remove `user.create` and `user.delete` from `AdminAction` | ✅ |
+| Add `audit-log` to `AdminSection` type | ✅ |
+| Add `UserCounts` interface | ✅ |
 
-### Step 3: User Financial Data Overview ⬜
-
-**Goal:** Read-only view of any user's financial data for support/debugging.
+### Step 2: Clean Up Admin Service ✅
 
 | Task | Status |
 | --- | --- |
-| View user's expenses, income, accounts, ledger, snapshots | ⬜ |
-| Summary cards (total accounts, total expenses, etc.) | ⬜ |
-| Data export per user (CSV/XLSX) | ⬜ |
+| Delete `DEV_MODE` constant and `MOCK_USERS` / `MOCK_SYSTEM_CONFIG` arrays | ✅ |
+| Remove all `if (DEV_MODE)` blocks (~20) | ✅ |
+| Delete `createUser()` and `deleteUser()` methods | ✅ |
+| Add `getUserCounts()` method | ✅ |
 
-### Step 4: Admin Audit Log Viewer ⬜
-
-**Goal:** View admin action history.
+### Step 3: Update Admin Store ✅
 
 | Task | Status |
 | --- | --- |
-| Display audit log entries with filters | ⬜ |
-| Filter by admin user, action type, date range | ⬜ |
-| Paginated log view | ⬜ |
+| Remove `createUser` / `deleteUser` from state & implementation | ✅ |
+| Add `userCounts` and `auditError` to state | ✅ |
+| Update `fetchUsers()` to compute and set `userCounts` | ✅ |
+| Update `fetchAuditLog()` to accept `action` filter and set `auditError` | ✅ |
+
+### Step 4: Update UsersSection ✅
+
+| Task | Status |
+| --- | --- |
+| Remove Create User button, delete button, delete confirmation | ✅ |
+| Add `getTierBadge()` helper (Crown icon for pro) | ✅ |
+| Add summary cards row (Total, By Role, By Tier, Active/Inactive) | ✅ |
+| Add Tier column to user table | ✅ |
+
+### Step 5: Delete CreateUserModal ✅
+
+| Task | Status |
+| --- | --- |
+| Delete `CreateUserModal.tsx` file | ✅ |
+
+### Step 6: Build AuditLogSection ✅
+
+| Task | Status |
+| --- | --- |
+| Create `AuditLogSection.tsx` with audit log table | ✅ |
+| Filter dropdown by action type | ✅ |
+| Limit selector (25, 50, 100) | ✅ |
+| Refresh button | ✅ |
+| Loading/empty/error states | ✅ |
+| Resolve UUIDs to emails via users array | ✅ |
+| Expandable JSON details per row | ✅ |
+
+### Step 7: Update AdminPage ✅
+
+| Task | Status |
+| --- | --- |
+| Add ClipboardList icon and AuditLogSection import | ✅ |
+| Add 4th tab: Audit Log | ✅ |
+| Add conditional render for AuditLogSection | ✅ |
+
+### Step 8: Polish FinancialDataSection ✅
+
+| Task | Status |
+| --- | --- |
+| Add summary cards above tabs (Accounts, Expenses, Incomes, Ledger, Snapshots) | ✅ |
+| Color-coded cards per data type | ✅ |
+
+**Files Changed:**
+- `src/types/admin.ts` — Modified (removed CreateUserRequest, added UserCounts, audit-log section)
+- `src/services/adminService.ts` — Modified (removed DEV_MODE, mocks, createUser, deleteUser; added getUserCounts)
+- `src/stores/adminStore.ts` — Modified (removed createUser/deleteUser, added userCounts/auditError)
+- `src/components/Admin/UsersSection.tsx` — Modified (summary cards, tier column, removed create/delete)
+- `src/components/Admin/CreateUserModal.tsx` — **Deleted**
+- `src/components/Admin/AuditLogSection.tsx` — **Created**
+- `src/components/Admin/AdminPage.tsx` — Modified (added Audit Log tab)
+- `src/components/Admin/FinancialDataSection.tsx` — Modified (added summary cards)
 
 ---
 
@@ -1625,7 +1662,7 @@ interface NetWorthSnapshot {
 
 ---
 
-**Last Updated:** 2026-01-27 (Phase 25 completed, Phases 26-27 planned)
+**Last Updated:** 2026-01-27 (Phase 26 completed, Phase 27 planned)
 
 ---
 

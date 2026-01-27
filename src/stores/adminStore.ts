@@ -11,10 +11,10 @@ import type {
   SubscriptionTier,
   SystemConfig,
   AdminAuditLog,
-  CreateUserRequest,
   UpdateUserRequest,
   UserWithFinancials,
   AdminAction,
+  UserCounts,
 } from '../types/admin';
 import type { Account, Expense, Income, LedgerAccount } from '../types';
 import type { NetWorthSnapshot } from './snapshotStore';
@@ -32,6 +32,7 @@ interface AdminState {
   } | null;
   usersLoading: boolean;
   usersError: string | null;
+  userCounts: UserCounts | null;
 
   // System config
   systemConfig: SystemConfig[];
@@ -41,14 +42,13 @@ interface AdminState {
   // Audit log
   auditLog: AdminAuditLog[];
   auditLoading: boolean;
+  auditError: string | null;
 
   // Actions
   // User management
   fetchUsers: () => Promise<void>;
   fetchUser: (userId: string) => Promise<UserProfile | null>;
-  createUser: (request: CreateUserRequest) => Promise<UserProfile>;
   updateUser: (userId: string, updates: UpdateUserRequest) => Promise<void>;
-  deleteUser: (userId: string) => Promise<void>;
   setUserRole: (userId: string, role: UserRole) => Promise<void>;
   setUserTier: (userId: string, tier: SubscriptionTier) => Promise<void>;
   toggleUserActive: (userId: string) => Promise<void>;
@@ -64,7 +64,7 @@ interface AdminState {
   getConfigValue: <T>(key: string) => T | undefined;
 
   // Audit
-  fetchAuditLog: (options?: { limit?: number }) => Promise<void>;
+  fetchAuditLog: (options?: { action?: string; limit?: number }) => Promise<void>;
   logAction: (action: AdminAction, details?: Record<string, unknown>) => Promise<void>;
 
   // Utilities
@@ -79,6 +79,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   selectedUserData: null,
   usersLoading: false,
   usersError: null,
+  userCounts: null,
 
   systemConfig: [],
   configLoading: false,
@@ -86,13 +87,26 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
   auditLog: [],
   auditLoading: false,
+  auditError: null,
 
   // User management actions
   fetchUsers: async () => {
     set({ usersLoading: true, usersError: null });
     try {
       const users = await adminService.getUsers();
-      set({ users, usersLoading: false });
+
+      // Compute counts from fetched users
+      const userCounts: UserCounts = {
+        total: users.length,
+        byRole: { super_admin: 0, admin: 0, user: 0 },
+        byTier: { freemium: 0, pro: 0 },
+      };
+      for (const u of users) {
+        userCounts.byRole[u.role]++;
+        userCounts.byTier[u.subscriptionTier]++;
+      }
+
+      set({ users, userCounts, usersLoading: false });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch users';
       set({ usersError: message, usersLoading: false });
@@ -105,29 +119,6 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     } catch (err) {
       console.error('Failed to fetch user:', err);
       return null;
-    }
-  },
-
-  createUser: async (request: CreateUserRequest) => {
-    set({ usersLoading: true, usersError: null });
-    try {
-      const newUser = await adminService.createUser(request);
-
-      // Log the action
-      await get().logAction('user.create', {
-        targetUserId: newUser.id,
-        email: newUser.email,
-        role: newUser.role,
-      });
-
-      // Refresh users list
-      await get().fetchUsers();
-
-      return newUser;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create user';
-      set({ usersError: message, usersLoading: false });
-      throw err;
     }
   },
 
@@ -150,28 +141,6 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       }));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update user';
-      set({ usersError: message, usersLoading: false });
-      throw err;
-    }
-  },
-
-  deleteUser: async (userId: string) => {
-    set({ usersLoading: true, usersError: null });
-    try {
-      await adminService.deleteUser(userId);
-
-      // Log the action
-      await get().logAction('user.delete', { targetUserId: userId });
-
-      // Update local state
-      set((state) => ({
-        users: state.users.filter((u) => u.id !== userId),
-        selectedUser: state.selectedUser?.id === userId ? null : state.selectedUser,
-        selectedUserData: state.selectedUser?.id === userId ? null : state.selectedUserData,
-        usersLoading: false,
-      }));
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete user';
       set({ usersError: message, usersLoading: false });
       throw err;
     }
@@ -312,14 +281,17 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   },
 
   // Audit log actions
-  fetchAuditLog: async (options?: { limit?: number }) => {
-    set({ auditLoading: true });
+  fetchAuditLog: async (options?: { action?: string; limit?: number }) => {
+    set({ auditLoading: true, auditError: null });
     try {
-      const log = await adminService.getAuditLog({ limit: options?.limit || 100 });
+      const log = await adminService.getAuditLog({
+        action: options?.action,
+        limit: options?.limit || 100,
+      });
       set({ auditLog: log, auditLoading: false });
     } catch (err) {
-      console.error('Failed to fetch audit log:', err);
-      set({ auditLoading: false });
+      const message = err instanceof Error ? err.message : 'Failed to fetch audit log';
+      set({ auditError: message, auditLoading: false });
     }
   },
 
@@ -341,7 +313,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
   // Utilities
   clearErrors: () => {
-    set({ usersError: null, configError: null });
+    set({ usersError: null, configError: null, auditError: null });
   },
 
   getUserWithFinancials: async (userId: string): Promise<UserWithFinancials | null> => {

@@ -76,23 +76,13 @@ export interface SystemConfigValues {
 
 // Admin action types for audit logging
 export type AdminAction =
-  | 'user.create'
   | 'user.update'
-  | 'user.delete'
   | 'user.role_change'
   | 'user.toggle_active'
   | 'user.tier_change'
   | 'config.update'
   | 'data.view'
   | 'data.export';
-
-// Create user request
-export interface CreateUserRequest {
-  email: string;
-  password: string;
-  displayName?: string;
-  role?: UserRole;
-}
 
 // Update user request
 export interface UpdateUserRequest {
@@ -103,7 +93,14 @@ export interface UpdateUserRequest {
 }
 
 // Admin panel section identifiers
-export type AdminSection = 'users' | 'financial-data' | 'system-config';
+export type AdminSection = 'users' | 'financial-data' | 'system-config' | 'audit-log';
 
 // Financial data tab identifiers
 export type FinancialDataTab = 'accounts' | 'expenses' | 'incomes' | 'ledger-accounts' | 'snapshots';
+
+// User counts summary
+export interface UserCounts {
+  total: number;
+  byRole: Record<UserRole, number>;
+  byTier: Record<SubscriptionTier, number>;
+}

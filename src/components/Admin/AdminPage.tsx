@@ -1,14 +1,15 @@
 /**
  * Admin Page
- * Main admin panel with sub-navigation for Users, Financial Data, and System Config
+ * Main admin panel with sub-navigation for Users, Financial Data, System Config, and Audit Log
  */
 
 import { useState } from 'react';
-import { Users, Database, Settings, Shield } from 'lucide-react';
+import { Users, Database, Settings, Shield, ClipboardList } from 'lucide-react';
 import type { AdminSection } from '../../types/admin';
 import { UsersSection } from './UsersSection';
 import { FinancialDataSection } from './FinancialDataSection';
 import { SystemConfigSection } from './SystemConfigSection';
+import { AuditLogSection } from './AuditLogSection';
 
 export const AdminPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<AdminSection>('users');
@@ -17,6 +18,7 @@ export const AdminPage: React.FC = () => {
     { id: 'users' as const, label: 'Users', icon: Users },
     { id: 'financial-data' as const, label: 'Financial Data', icon: Database },
     { id: 'system-config' as const, label: 'System Config', icon: Settings },
+    { id: 'audit-log' as const, label: 'Audit Log', icon: ClipboardList },
   ];
 
   return (
@@ -62,6 +64,10 @@ export const AdminPage: React.FC = () => {
 
         {activeSection === 'system-config' && (
           <SystemConfigSection />
+        )}
+
+        {activeSection === 'audit-log' && (
+          <AuditLogSection />
         )}
       </div>
     </div>
