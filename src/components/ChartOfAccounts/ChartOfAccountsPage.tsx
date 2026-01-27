@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLedgerAccountStore } from '../../stores/ledgerAccountStore';
 import { CreditCard, Plus, Trash2, ChevronDown, Copy, Check, X, Upload } from 'lucide-react';
 import type { LedgerAccount, LedgerAccountNormalBalance } from '../../types';
@@ -176,12 +177,13 @@ interface AccountTypeDropdownProps {
 }
 
 const AccountTypeDropdown: React.FC<AccountTypeDropdownProps> = ({ value, onChange, disabled }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const options: { value: LedgerAccountNormalBalance; label: string; color: string }[] = [
-    { value: 'debit', label: 'Debit', color: 'text-blue-600 dark:text-blue-400' },
-    { value: 'credit', label: 'Credit', color: 'text-purple-600 dark:text-purple-400' },
+    { value: 'debit', label: t('accounts.debit'), color: 'text-blue-600 dark:text-blue-400' },
+    { value: 'credit', label: t('accounts.credit'), color: 'text-purple-600 dark:text-purple-400' },
   ];
 
   const selectedOption = options.find((opt) => opt.value === value);
@@ -347,6 +349,7 @@ interface AddAccountRowProps {
 }
 
 const AddAccountRow: React.FC<AddAccountRowProps> = ({ onAdd }) => {
+  const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [name, setName] = useState('');
   const [clabe, setClabe] = useState('');
@@ -397,7 +400,7 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({ onAdd }) => {
             className="flex items-center gap-2 px-2 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors w-full"
           >
             <Plus className="w-4 h-4" />
-            Add account reference
+            {t('accounts.addAccountRef')}
           </button>
         </td>
       </tr>
@@ -476,23 +479,25 @@ const AccountsTableHeader: React.FC<AccountsTableHeaderProps> = ({
   hasActiveFilters,
   onClearFilters,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <thead className="sticky top-0 z-10">
       <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 w-40">
-          Name
+          {t('accounts.nameHeader')}
         </th>
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 w-44 border-l border-gray-200 dark:border-gray-700">
-          Account/Card #
+          {t('accounts.accountCardHeader')}
         </th>
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 w-52 border-l border-gray-200 dark:border-gray-700">
-          CLABE
+          {t('accounts.clabeHeader')}
         </th>
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 w-24 border-l border-gray-200 dark:border-gray-700">
-          Type
+          {t('accounts.typeHeader')}
         </th>
         <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 w-16 border-l border-gray-200 dark:border-gray-700">
-          Active
+          {t('accounts.activeHeader')}
         </th>
         <th className="w-10 border-l border-gray-200 dark:border-gray-700"></th>
       </tr>
@@ -503,7 +508,7 @@ const AccountsTableHeader: React.FC<AccountsTableHeaderProps> = ({
             type="text"
             value={nameFilter}
             onChange={(e) => setNameFilter(e.target.value)}
-            placeholder="Search..."
+            placeholder={t('accounts.search')}
             className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-gray-900 dark:text-white placeholder-gray-400 w-full"
           />
         </td>
@@ -516,8 +521,8 @@ const AccountsTableHeader: React.FC<AccountsTableHeaderProps> = ({
             className="px-1 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-teal-500 text-gray-900 dark:text-white w-full"
           >
             <option value="">All</option>
-            <option value="debit">Debit</option>
-            <option value="credit">Credit</option>
+            <option value="debit">{t('accounts.debit')}</option>
+            <option value="credit">{t('accounts.credit')}</option>
           </select>
         </td>
         <td className="py-2 px-1 border-l border-gray-200 dark:border-gray-700"></td>
@@ -539,6 +544,7 @@ const AccountsTableHeader: React.FC<AccountsTableHeaderProps> = ({
 
 // Main Component
 export const ChartOfAccountsPage: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const { accounts, addAccount, deleteAccount, updateAccount, toggleActive } = useLedgerAccountStore();
 
   // Import modal state
@@ -651,9 +657,9 @@ export const ChartOfAccountsPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             <div>
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Account References</h1>
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{t('accounts.title')}</h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Quick reference for your bank accounts, CLABEs and card numbers. {activeCount} active of {accounts.length} total.
+                {t('accounts.description', { active: activeCount, total: accounts.length })}
               </p>
             </div>
           </div>
@@ -663,7 +669,7 @@ export const ChartOfAccountsPage: React.FC = () => {
             title="Import accounts from CSV"
           >
             <Upload className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Import CSV</span>
+            <span className="hidden sm:inline">{t('accounts.importCSV')}</span>
           </button>
         </div>
       </div>
@@ -702,11 +708,10 @@ export const ChartOfAccountsPage: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
           <CreditCard className="w-12 h-12 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            Add Your Account References
+            {t('accounts.emptyTitle')}
           </h3>
           <p className="text-gray-500 dark:text-gray-400 mb-4 max-w-md mx-auto">
-            Store your bank account numbers and CLABEs for quick reference.
-            Hover over any entry to copy it to your clipboard.
+            {t('accounts.emptyDescription')}
           </p>
         </div>
       )}

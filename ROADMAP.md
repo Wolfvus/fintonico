@@ -1581,72 +1581,73 @@ interface NetWorthSnapshot {
 
 ---
 
-## Phase 27: Internationalization (i18n)
+## Phase 27: Internationalization (i18n) ✅
 
 **Goal:** Add multilanguage support starting with Spanish. This is a full-app effort touching every UI string.
 
-### Step 1: i18n Framework Setup ⬜
+### Step 1: i18n Framework Setup ✅
 
 **Goal:** Install and configure an i18n library.
 
 | Task | Status |
 | --- | --- |
-| Install `react-i18next` and `i18next` | ⬜ |
-| Configure i18n with language detection | ⬜ |
-| Set up translation file structure (`locales/en.json`, `locales/es.json`) | ⬜ |
-| Create i18n provider wrapper in App.tsx | ⬜ |
-| Default language: English | ⬜ |
+| Install `react-i18next`, `i18next`, and `i18next-browser-languagedetector` | ✅ |
+| Configure i18n with language detection (localStorage key: `fintonico-language`) | ✅ |
+| Inline English & Spanish translations in `src/i18n.ts` (single-file approach) | ✅ |
+| Side-effect import in `main.tsx` initializes i18n before React renders | ✅ |
+| Default language: English, fallback: English | ✅ |
 
-### Step 2: Extract UI Strings ⬜
+### Step 2: Extract UI Strings ✅
 
 **Goal:** Replace all hardcoded strings with translation keys.
 
 | Task | Status |
 | --- | --- |
-| Extract Navigation labels | ⬜ |
-| Extract Dashboard text | ⬜ |
-| Extract Income page text | ⬜ |
-| Extract Expenses page text | ⬜ |
-| Extract Net Worth page text | ⬜ |
-| Extract Chart of Accounts page text | ⬜ |
-| Extract Settings modal text | ⬜ |
-| Extract Auth forms text | ⬜ |
-| Extract Admin panel text | ⬜ |
-| Extract error messages and validation text | ⬜ |
-| Extract import/export labels | ⬜ |
+| Extract Navigation labels | ✅ |
+| Extract Dashboard text (~40 keys) | ✅ |
+| Extract Income page text (~25 keys) | ✅ |
+| Extract Expenses page text (~30 keys) | ✅ |
+| Extract Net Worth page text (~50 keys) | ✅ |
+| Extract Net Worth History text (~20 keys) | ✅ |
+| Extract Chart of Accounts page text (~20 keys) | ✅ |
+| Extract Settings modal text (~30 keys) | ✅ |
+| Extract Auth forms text (~15 keys) | ✅ |
+| Extract Data Migration text (~22 keys) | ✅ |
+| Extract Import Modal text (~30 keys) | ✅ |
+| Admin panel intentionally kept English-only | ✅ |
 
-### Step 3: Spanish Translation ⬜
+### Step 3: Spanish Translation ✅
 
 **Goal:** Complete Spanish translation for all extracted strings.
 
 | Task | Status |
 | --- | --- |
-| Translate all `locales/en.json` keys to `locales/es.json` | ⬜ |
-| Review financial terminology in Spanish | ⬜ |
-| Review button labels and form placeholders | ⬜ |
-| Review error messages | ⬜ |
+| Translate all keys to Spanish (inline in `src/i18n.ts`) | ✅ |
+| Review financial terminology (Latin American Spanish) | ✅ |
+| Review button labels and form placeholders | ✅ |
+| Review error messages | ✅ |
 
-### Step 4: Language Selector in Settings ⬜
+### Step 4: Language Selector in Settings ✅
 
 **Goal:** Allow users to switch language from the Settings modal.
 
 | Task | Status |
 | --- | --- |
-| Add language selector dropdown in Settings | ⬜ |
-| Options: English, Español | ⬜ |
-| Persist language choice (localStorage or user profile) | ⬜ |
-| Apply language change without page reload | ⬜ |
+| Add language selector dropdown in Settings (top section) | ✅ |
+| Options: English, Español | ✅ |
+| Persist language choice via `i18next-browser-languagedetector` (localStorage) | ✅ |
+| Apply language change without page reload (`i18next.changeLanguage()`) | ✅ |
 
-### Step 5: Date & Number Format Localization ⬜
+### Step 5: Date & Number Format Localization ✅
 
 **Goal:** Format dates and numbers according to the selected locale.
 
 | Task | Status |
 | --- | --- |
-| Date format: `MM/DD/YYYY` (en) vs `DD/MM/YYYY` (es) | ⬜ |
-| Number format: `1,234.56` (en) vs `1.234,56` (es) | ⬜ |
-| Currency display respects locale | ⬜ |
-| Month names in date selectors | ⬜ |
+| `formatDate()` uses `Intl.DateTimeFormat` with `i18n.language` | ✅ |
+| Number formatting uses `toLocaleString(i18n.language)` | ✅ |
+| Currency display respects locale | ✅ |
+| Month names in date selectors use current locale | ✅ |
 
 ---
 
@@ -1662,7 +1663,7 @@ interface NetWorthSnapshot {
 
 ---
 
-**Last Updated:** 2026-01-27 (Phase 26 completed, Phase 27 planned)
+**Last Updated:** 2026-01-27 (Phase 27 completed — i18n English/Spanish)
 
 ---
 

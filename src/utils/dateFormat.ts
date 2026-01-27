@@ -1,14 +1,15 @@
+import i18n from '../i18n';
+
 export const formatDate = (dateString: string): string => {
   // Parse the date as local time to avoid timezone issues
   const [year, month, day] = dateString.split('-').map(Number);
   const date = new Date(year, month - 1, day); // month is 0-indexed
-  
-  const dayNum = date.getDate();
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const monthName = months[date.getMonth()];
-  const yearShort = date.getFullYear().toString().slice(-2);
-  
-  return `${dayNum}/${monthName}/${yearShort}`;
+
+  return date.toLocaleDateString(i18n.language, {
+    day: 'numeric',
+    month: 'short',
+    year: '2-digit',
+  });
 };
 
 export const getTodayLocalString = (): string => {

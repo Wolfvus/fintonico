@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from './stores/authStore';
 import { useLedgerStore } from './stores/ledgerStore';
 import { useThemeStore } from './stores/themeStore';
@@ -24,6 +25,7 @@ import { Settings as SettingsIcon } from 'lucide-react';
 type TabType = 'dashboard' | 'expenses' | 'income' | 'networth' | 'accounts' | 'admin';
 
 function App() {
+  const { t, i18n } = useTranslation();
   const { user, loading, checkUser, canAccessAdmin } = useAuthStore();
   const { initializeDefaultAccounts } = useLedgerStore();
   const { isDark, toggleTheme, initializeTheme } = useThemeStore();
@@ -95,7 +97,7 @@ function App() {
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-surface-bg)' }}>
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-3 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-primary)' }}></div>
-          <span className="text-primary">Loading...</span>
+          <span className="text-primary">{t('loading')}...</span>
         </div>
       </div>
     );
@@ -124,8 +126,8 @@ function App() {
       <div className="hidden lg:block fixed top-0 left-16 right-0 z-30 nav-sidebar border-b" style={{ borderColor: 'var(--color-border)' }}>
         <div className="flex items-center justify-between px-6 py-3 gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-primary">FINTONICO</span>
-            <span className="text-xs text-muted flex items-center">• The Ultimate Personal Finance Dashboard</span>
+            <span className="text-sm font-medium text-primary">{t('app.brand')}</span>
+            <span className="text-xs text-muted flex items-center">• {t('app.tagline')}</span>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -133,7 +135,7 @@ function App() {
               className="h-8 px-3 flex items-center rounded-lg transition-colors btn-secondary"
             >
               <span className="text-sm font-medium">
-                {new Date().toLocaleDateString('en-US', {
+                {new Date().toLocaleDateString(i18n.language, {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric'

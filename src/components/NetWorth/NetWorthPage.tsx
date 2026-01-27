@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { useAccountStore } from '../../stores/accountStore';
@@ -12,10 +13,10 @@ import { parseAccountXLSX } from '../../utils/xlsx';
 import { NetWorthHistory } from './NetWorthHistory';
 
 // Format number with thousand separators
-const formatNumberWithCommas = (value: number | string): string => {
+const formatNumberWithCommas = (value: number | string, locale?: string): string => {
   const num = typeof value === 'string' ? parseFloat(value) : value;
   if (isNaN(num)) return '';
-  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return num.toLocaleString(locale || 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 // Parse formatted number back to raw number
@@ -25,26 +26,26 @@ const parseFormattedNumber = (value: string): number => {
 };
 
 // Format date for display (compact format: Dec 11)
-const formatDateCompact = (dateStr: string | undefined): string => {
+const formatDateCompact = (dateStr: string | undefined, locale?: string): string => {
   if (!dateStr) return '-';
   const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString(locale || 'en-US', { month: 'short', day: 'numeric' });
 };
 
-// Account type configurations
-const ASSET_TYPES: { value: AccountType; label: string; icon: string }[] = [
-  { value: 'cash', label: 'Cash', icon: '💵' },
-  { value: 'bank', label: 'Bank', icon: '🏦' },
-  { value: 'exchange', label: 'Exchange', icon: '₿' },
-  { value: 'investment', label: 'Investment', icon: '📈' },
-  { value: 'property', label: 'Property', icon: '🏠' },
-  { value: 'other', label: 'Other', icon: '💼' },
+// Account type configurations - labels are i18n keys, resolved at render time
+const ASSET_TYPE_KEYS: { value: AccountType; labelKey: string; icon: string }[] = [
+  { value: 'cash', labelKey: 'netWorth.cash', icon: '💵' },
+  { value: 'bank', labelKey: 'netWorth.bank', icon: '🏦' },
+  { value: 'exchange', labelKey: 'netWorth.exchange', icon: '₿' },
+  { value: 'investment', labelKey: 'netWorth.investment', icon: '📈' },
+  { value: 'property', labelKey: 'netWorth.property', icon: '🏠' },
+  { value: 'other', labelKey: 'netWorth.other', icon: '💼' },
 ];
 
-const LIABILITY_TYPES: { value: AccountType; label: string; icon: string }[] = [
-  { value: 'credit-card', label: 'Credit Card', icon: '💳' },
-  { value: 'loan', label: 'Loan', icon: '🏦' },
-  { value: 'mortgage', label: 'Mortgage', icon: '🏠' },
+const LIABILITY_TYPE_KEYS: { value: AccountType; labelKey: string; icon: string }[] = [
+  { value: 'credit-card', labelKey: 'netWorth.creditCard', icon: '💳' },
+  { value: 'loan', labelKey: 'netWorth.loan', icon: '🏦' },
+  { value: 'mortgage', labelKey: 'netWorth.mortgage', icon: '🏠' },
 ];
 
 // Editable Cell Component
@@ -333,6 +334,7 @@ interface DayOfMonthSelectorProps {
 }
 
 const DayOfMonthSelector: React.FC<DayOfMonthSelectorProps> = ({ value, onChange, disabled }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -417,7 +419,7 @@ const DayOfMonthSelector: React.FC<DayOfMonthSelectorProps> = ({ value, onChange
             zIndex: 9999,
           }}
         >
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 px-1">Payment due day</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 px-1">{t('netWorth.paymentDueDay')}</div>
           <div className="grid grid-cols-7 gap-1">
             {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
               <button
@@ -443,7 +445,7 @@ const DayOfMonthSelector: React.FC<DayOfMonthSelectorProps> = ({ value, onChange
             }}
             className="w-full mt-2 px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
           >
-            Clear
+            {t('netWorth.clear')}
           </button>
         </div>,
         document.body
@@ -746,6 +748,7 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({
   enabledCurrencies,
   colSpan,
 }) => {
+  const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [name, setName] = useState('');
   const [type, setType] = useState<AccountType>(typeOptions[0].value);
@@ -800,7 +803,7 @@ const AddAccountRow: React.FC<AddAccountRowProps> = ({
             className="flex items-center gap-2 px-2 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors w-full"
           >
             <Plus className="w-4 h-4" />
-            Add {isLiability ? 'liability' : 'asset'}
+            {isLiability ? t('netWorth.addLiability') : t('netWorth.addAsset')}
           </button>
         </td>
       </tr>
@@ -984,12 +987,13 @@ const AssetsTableHeader: React.FC<AssetsTableHeaderProps> = ({
   sortDirection,
   onSort,
 }) => {
+  const { t } = useTranslation();
   return (
     <thead>
       <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
         <th className="px-2 py-2">
           <AssetSortableHeader
-            label="Name"
+            label={t('netWorth.nameHeader')}
             column="name"
             currentSort={sortColumn}
             direction={sortDirection}
@@ -998,14 +1002,14 @@ const AssetsTableHeader: React.FC<AssetsTableHeaderProps> = ({
           />
         </th>
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
-          Type
+          {t('netWorth.typeHeader')}
         </th>
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
-          Currency
+          {t('netWorth.currencyHeader')}
         </th>
         <th className="px-2 py-2 border-l border-gray-300 dark:border-gray-600 w-32">
           <AssetSortableHeader
-            label="Value"
+            label={t('netWorth.valueHeader')}
             column="value"
             currentSort={sortColumn}
             direction={sortDirection}
@@ -1015,7 +1019,7 @@ const AssetsTableHeader: React.FC<AssetsTableHeaderProps> = ({
         </th>
         <th className="px-2 py-2 border-l border-gray-300 dark:border-gray-600 w-20">
           <AssetSortableHeader
-            label="Yield"
+            label={t('netWorth.yieldHeader')}
             column="yield"
             currentSort={sortColumn}
             direction={sortDirection}
@@ -1024,16 +1028,16 @@ const AssetsTableHeader: React.FC<AssetsTableHeaderProps> = ({
           />
         </th>
         <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
-          /Month
+          {t('netWorth.monthHeader')}
         </th>
         <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-28">
-          /Year
+          {t('netWorth.yearHeader')}
         </th>
         <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-16">
-          Updated
+          {t('netWorth.updatedHeader')}
         </th>
         <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-10">
-          Excl
+          {t('netWorth.exclHeader')}
         </th>
         <th className="w-10 border-l border-gray-200 dark:border-gray-700">
           <button
@@ -1058,7 +1062,7 @@ const AssetsTableHeader: React.FC<AssetsTableHeaderProps> = ({
                 type="text"
                 value={nameFilter}
                 onChange={(e) => setNameFilter(e.target.value)}
-                placeholder="Search name..."
+                placeholder={t('netWorth.searchName')}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-gray-900 dark:text-white placeholder-gray-400 w-40"
               />
               {/* Type Filter */}
@@ -1067,9 +1071,9 @@ const AssetsTableHeader: React.FC<AssetsTableHeaderProps> = ({
                 onChange={(e) => setTypeFilter(e.target.value)}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
               >
-                <option value="">All Types</option>
-                {typeOptions.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
+                <option value="">{t('netWorth.allTypes')}</option>
+                {typeOptions.map((to) => (
+                  <option key={to.value} value={to.value}>{to.label}</option>
                 ))}
               </select>
               {/* Currency Filter */}
@@ -1078,7 +1082,7 @@ const AssetsTableHeader: React.FC<AssetsTableHeaderProps> = ({
                 onChange={(e) => setCurrencyFilter(e.target.value)}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
               >
-                <option value="">All Currencies</option>
+                <option value="">{t('netWorth.allCurrencies')}</option>
                 {enabledCurrencies.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
@@ -1089,9 +1093,9 @@ const AssetsTableHeader: React.FC<AssetsTableHeaderProps> = ({
                 onChange={(e) => setExcludedFilter(e.target.value)}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
               >
-                <option value="">All Status</option>
-                <option value="included">Included</option>
-                <option value="excluded">Excluded</option>
+                <option value="">{t('netWorth.allStatus')}</option>
+                <option value="included">{t('netWorth.included')}</option>
+                <option value="excluded">{t('netWorth.excludedFilter')}</option>
               </select>
               {/* Clear Button */}
               {hasActiveFilters && (
@@ -1100,7 +1104,7 @@ const AssetsTableHeader: React.FC<AssetsTableHeaderProps> = ({
                   className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                 >
                   <X className="w-3 h-3" />
-                  Clear
+                  {t('netWorth.clear')}
                 </button>
               )}
             </div>
@@ -1155,12 +1159,13 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
   sortDirection,
   onSort,
 }) => {
+  const { t } = useTranslation();
   return (
     <thead>
       <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
         <th className="px-2 py-2">
           <LiabilitySortableHeader
-            label="Name"
+            label={t('netWorth.nameHeader')}
             column="name"
             currentSort={sortColumn}
             direction={sortDirection}
@@ -1169,14 +1174,14 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
           />
         </th>
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
-          Type
+          {t('netWorth.typeHeader')}
         </th>
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
-          Currency
+          {t('netWorth.currencyHeader')}
         </th>
         <th className="px-2 py-2 border-l border-gray-300 dark:border-gray-600 w-28">
           <LiabilitySortableHeader
-            label="Balance"
+            label={t('netWorth.balanceHeader')}
             column="value"
             currentSort={sortColumn}
             direction={sortDirection}
@@ -1185,14 +1190,14 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
           />
         </th>
         <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
-          Min Pay
+          {t('netWorth.minPayHeader')}
         </th>
         <th className="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24" title="Payment to avoid interest">
-          No Interest
+          {t('netWorth.noInterestHeader')}
         </th>
         <th className="px-2 py-2 border-l border-gray-300 dark:border-gray-600 w-16">
           <LiabilitySortableHeader
-            label="Due"
+            label={t('netWorth.dueHeader')}
             column="dueDate"
             currentSort={sortColumn}
             direction={sortDirection}
@@ -1201,13 +1206,13 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
           />
         </th>
         <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-12">
-          Paid
+          {t('netWorth.paidHeader')}
         </th>
         <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-16">
-          Updated
+          {t('netWorth.updatedHeader')}
         </th>
         <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-10">
-          Excl
+          {t('netWorth.exclHeader')}
         </th>
         <th className="w-10 border-l border-gray-200 dark:border-gray-700">
           <button
@@ -1232,7 +1237,7 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
                 type="text"
                 value={nameFilter}
                 onChange={(e) => setNameFilter(e.target.value)}
-                placeholder="Search name..."
+                placeholder={t('netWorth.searchName')}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-900 dark:text-white placeholder-gray-400 w-40"
               />
               {/* Type Filter */}
@@ -1241,9 +1246,9 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
                 onChange={(e) => setTypeFilter(e.target.value)}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
               >
-                <option value="">All Types</option>
-                {typeOptions.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
+                <option value="">{t('netWorth.allTypes')}</option>
+                {typeOptions.map((to) => (
+                  <option key={to.value} value={to.value}>{to.label}</option>
                 ))}
               </select>
               {/* Currency Filter */}
@@ -1252,7 +1257,7 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
                 onChange={(e) => setCurrencyFilter(e.target.value)}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
               >
-                <option value="">All Currencies</option>
+                <option value="">{t('netWorth.allCurrencies')}</option>
                 {enabledCurrencies.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
@@ -1263,9 +1268,9 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
                 onChange={(e) => setPaidFilter(e.target.value)}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
               >
-                <option value="">All Paid Status</option>
-                <option value="paid">Paid</option>
-                <option value="unpaid">Unpaid</option>
+                <option value="">{t('netWorth.allPaidStatus')}</option>
+                <option value="paid">{t('netWorth.paid')}</option>
+                <option value="unpaid">{t('netWorth.unpaidFilter')}</option>
               </select>
               {/* Excluded Filter */}
               <select
@@ -1273,9 +1278,9 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
                 onChange={(e) => setExcludedFilter(e.target.value)}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
               >
-                <option value="">All Status</option>
-                <option value="included">Included</option>
-                <option value="excluded">Excluded</option>
+                <option value="">{t('netWorth.allStatus')}</option>
+                <option value="included">{t('netWorth.included')}</option>
+                <option value="excluded">{t('netWorth.excludedFilter')}</option>
               </select>
               {/* Clear Button */}
               {hasActiveFilters && (
@@ -1284,7 +1289,7 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
                   className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                 >
                   <X className="w-3 h-3" />
-                  Clear
+                  {t('netWorth.clear')}
                 </button>
               )}
             </div>
@@ -1297,6 +1302,8 @@ const LiabilitiesTableHeader: React.FC<LiabilitiesTableHeaderProps> = ({
 
 // Main Component
 export const NetWorthPage: React.FC = () => {
+  const { t, i18n } = useTranslation();
+
   const { accounts, addAccount, deleteAccount, updateAccount, toggleExcludeFromTotal } = useAccountStore(
     useShallow((state) => ({ accounts: state.accounts, addAccount: state.addAccount, deleteAccount: state.deleteAccount, updateAccount: state.updateAccount, toggleExcludeFromTotal: state.toggleExcludeFromTotal }))
   );
@@ -1307,11 +1314,19 @@ export const NetWorthPage: React.FC = () => {
     useShallow((state) => ({ getSnapshot: state.getSnapshot }))
   );
 
+  // Resolved type options with translated labels
+  const ASSET_TYPES = useMemo(() => ASSET_TYPE_KEYS.map(k => ({ value: k.value, label: t(k.labelKey), icon: k.icon })), [t]);
+  const LIABILITY_TYPES = useMemo(() => LIABILITY_TYPE_KEYS.map(k => ({ value: k.value, label: t(k.labelKey), icon: k.icon })), [t]);
+
   // Import modal state
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Month selector state (using custom hook)
-  const { selectedDate, setSelectedDate, isCurrentMonth, monthString, formattedMonth } = useMonthNavigation();
+  const { selectedDate, setSelectedDate, isCurrentMonth, monthString } = useMonthNavigation();
+  // Use i18n locale for month formatting
+  const formattedMonth = useMemo(() => {
+    return selectedDate.toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' });
+  }, [selectedDate, i18n.language]);
   const isViewingCurrentMonth = isCurrentMonth;
   const selectedMonthString = monthString;
 
@@ -1698,12 +1713,12 @@ export const NetWorthPage: React.FC = () => {
                   title="Import accounts from CSV"
                 >
                   <Upload className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Import CSV</span>
+                  <span className="hidden sm:inline">{t('netWorth.importCSV')}</span>
                 </button>
               ) : (
                 <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                   <Eye className="w-4 h-4" />
-                  <span className="text-sm font-medium">View Only</span>
+                  <span className="text-sm font-medium">{t('netWorth.viewOnly')}</span>
                 </div>
               )}
             </div>
@@ -1723,7 +1738,7 @@ export const NetWorthPage: React.FC = () => {
                 </span>
                 {!isViewingCurrentMonth && (
                   <span className="text-xs bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
-                    Historical
+                    {t('netWorth.historical')}
                   </span>
                 )}
               </div>
@@ -1751,10 +1766,10 @@ export const NetWorthPage: React.FC = () => {
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6 text-center">
           <Calendar className="w-12 h-12 text-amber-500 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-amber-800 dark:text-amber-200 mb-2">
-            No Data for {formattedMonth}
+            {t('netWorth.noDataTitle', { month: formattedMonth })}
           </h3>
           <p className="text-amber-600 dark:text-amber-400 text-sm">
-            No snapshot was recorded for this month. Snapshots are automatically created when you visit the app.
+            {t('netWorth.noDataDescription')}
           </p>
         </div>
       )}
@@ -1763,10 +1778,10 @@ export const NetWorthPage: React.FC = () => {
       {!isViewingCurrentMonth && selectedSnapshot && (!selectedSnapshot.accountSnapshots || selectedSnapshot.accountSnapshots.length === 0) && (
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-center">
           <p className="text-blue-700 dark:text-blue-300 text-sm">
-            This snapshot was created before account-level tracking was available. Only totals are shown above.
+            {t('netWorth.legacySnapshot')}
             <br />
             <span className="text-blue-500 dark:text-blue-400 text-xs">
-              Future snapshots will include detailed account breakdowns.
+              {t('netWorth.legacySnapshotNote')}
             </span>
           </p>
         </div>
@@ -1775,50 +1790,50 @@ export const NetWorthPage: React.FC = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Assets</h3>
+            <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('netWorth.totalAssets')}</h3>
             <p className="text-2xl font-bold text-green-700 dark:text-green-400">
               {formatAmount(totalAssets)}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              {allAssetAccounts.filter(a => !a.excludeFromTotal).length} of {allAssetAccounts.length} accounts
+              {allAssetAccounts.filter(a => !a.excludeFromTotal).length} {t('netWorth.of')} {allAssetAccounts.length} {t('netWorth.accounts')}
             </p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Liabilities</h3>
+            <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('netWorth.totalLiabilities')}</h3>
             <p className="text-2xl font-bold text-red-700 dark:text-red-400">
               {formatAmount(totalLiabilities)}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              {allLiabilityAccounts.filter(a => !a.excludeFromTotal).length} of {allLiabilityAccounts.length} accounts
+              {allLiabilityAccounts.filter(a => !a.excludeFromTotal).length} {t('netWorth.of')} {allLiabilityAccounts.length} {t('netWorth.accounts')}
               {unpaidCount > 0 && (
                 <span className="ml-2 text-amber-600 dark:text-amber-400">
-                  ({unpaidCount} unpaid)
+                  ({unpaidCount} {t('netWorth.unpaid')})
                 </span>
               )}
             </p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Net Worth</h3>
+            <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('netWorth.netWorth')}</h3>
             <p className={`text-2xl font-bold ${
               netWorth >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
             }`}>
               {formatAmount(netWorth)}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              {excludedCount > 0 && `${excludedCount} excluded`}
+              {excludedCount > 0 && `${excludedCount} ${t('netWorth.excluded')}`}
             </p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">Est. Investment Returns</h3>
+            <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('netWorth.estInvestmentReturns')}</h3>
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {formatAmount(totalYearlyReturn)}
-              <span className="text-sm font-normal text-gray-400 dark:text-gray-500">/yr</span>
+              <span className="text-sm font-normal text-gray-400 dark:text-gray-500">{t('netWorth.perYear')}</span>
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              {formatAmount(totalMonthlyReturn)}/mo
+              {formatAmount(totalMonthlyReturn)}{t('netWorth.perMonth')}
             </p>
           </div>
       </div>
@@ -1835,9 +1850,9 @@ export const NetWorthPage: React.FC = () => {
             <ChevronDown className="w-5 h-5 text-gray-400" />
           )}
           <TrendingUp className="w-5 h-5 text-green-700 dark:text-green-400" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left">Assets</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left">{t('netWorth.assets')}</h2>
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            {assetAccounts.length} {hasAssetFilters ? `of ${allAssetAccounts.length}` : ''} accounts
+            {assetAccounts.length} {hasAssetFilters ? `${t('netWorth.of')} ${allAssetAccounts.length}` : ''} {t('netWorth.accounts')}
           </span>
         </button>
 
@@ -1854,7 +1869,7 @@ export const NetWorthPage: React.FC = () => {
                 excludedFilter={assetExcludedFilter}
                 setExcludedFilter={setAssetExcludedFilter}
                 enabledCurrencies={enabledCurrencies}
-                typeOptions={ASSET_TYPES.map(t => ({ value: t.value, label: t.label }))}
+                typeOptions={ASSET_TYPES.map(at => ({ value: at.value, label: at.label }))}
                 hasActiveFilters={hasAssetFilters}
                 onClearFilters={clearAssetFilters}
                 isOpen={isAssetFilterOpen}
@@ -1904,9 +1919,9 @@ export const NetWorthPage: React.FC = () => {
             <ChevronDown className="w-5 h-5 text-gray-400" />
           )}
           <TrendingDown className="w-5 h-5 text-red-700 dark:text-red-400" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left">Liabilities</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left">{t('netWorth.liabilities')}</h2>
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            {liabilityAccounts.length} {hasLiabilityFilters ? `of ${allLiabilityAccounts.length}` : ''} accounts
+            {liabilityAccounts.length} {hasLiabilityFilters ? `${t('netWorth.of')} ${allLiabilityAccounts.length}` : ''} {t('netWorth.accounts')}
           </span>
         </button>
 
@@ -1925,7 +1940,7 @@ export const NetWorthPage: React.FC = () => {
                   excludedFilter={liabilityExcludedFilter}
                   setExcludedFilter={setLiabilityExcludedFilter}
                   enabledCurrencies={enabledCurrencies}
-                  typeOptions={LIABILITY_TYPES.map(t => ({ value: t.value, label: t.label }))}
+                  typeOptions={LIABILITY_TYPES.map(lt => ({ value: lt.value, label: lt.label }))}
                   hasActiveFilters={hasLiabilityFilters}
                   onClearFilters={clearLiabilityFilters}
                   isOpen={isLiabilityFilterOpen}
@@ -1972,21 +1987,21 @@ export const NetWorthPage: React.FC = () => {
       {accounts.length === 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            Start Tracking Your Net Worth
+            {t('netWorth.startTracking')}
           </h3>
           <p className="text-gray-500 dark:text-gray-400 mb-4">
-            Click "Add asset" or "Add liability" in the tables above to get started.
+            {t('netWorth.startTrackingDesc')}
           </p>
           <div className="flex gap-6 justify-center text-sm">
             <div className="text-center">
               <TrendingUp className="w-8 h-8 text-green-700 dark:text-green-400 mx-auto mb-2" />
-              <p className="font-medium text-gray-900 dark:text-white">Assets</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Cash, Bank, Investments</p>
+              <p className="font-medium text-gray-900 dark:text-white">{t('netWorth.assets')}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('netWorth.assetsDesc')}</p>
             </div>
             <div className="text-center">
               <TrendingDown className="w-8 h-8 text-red-700 dark:text-red-400 mx-auto mb-2" />
-              <p className="font-medium text-gray-900 dark:text-white">Liabilities</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Credit Cards, Loans</p>
+              <p className="font-medium text-gray-900 dark:text-white">{t('netWorth.liabilities')}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('netWorth.liabilitiesDesc')}</p>
             </div>
           </div>
         </div>

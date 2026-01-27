@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -22,6 +23,7 @@ const magicLinkSchema = z.object({
 type MagicLinkFormData = z.infer<typeof magicLinkSchema>;
 
 export const AuthForm: React.FC = () => {
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const { signInWithMagicLink, signInWithGoogle, isDevMode } = useAuthStore();
@@ -43,7 +45,7 @@ export const AuthForm: React.FC = () => {
       await signInWithMagicLink(data.email);
       setMagicLinkSent(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : t('auth.error'));
     }
   };
 
@@ -52,7 +54,7 @@ export const AuthForm: React.FC = () => {
     try {
       await signInWithGoogle();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Google sign in failed');
+      setError(err instanceof Error ? err.message : t('auth.googleError'));
     }
   };
 
@@ -60,9 +62,9 @@ export const AuthForm: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#F2F4F7' }}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-8" style={{ borderTop: '4px solid #2FA5A9' }}>
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2" style={{ color: '#1E2A38' }}>FINTONICO</h1>
+          <h1 className="text-3xl font-bold mb-2" style={{ color: '#1E2A38' }}>{t('auth.brand')}</h1>
           <p className="text-sm" style={{ color: '#1E2A38', opacity: 0.7 }}>
-            Personal Finance Audit System
+            {t('auth.tagline')}
           </p>
         </div>
 
@@ -86,7 +88,7 @@ export const AuthForm: React.FC = () => {
           }}
         >
           <GoogleIcon className="w-5 h-5" />
-          Continue with Google
+          {t('auth.continueWithGoogle')}
         </button>
 
         {/* Divider */}
@@ -95,7 +97,7 @@ export const AuthForm: React.FC = () => {
             <div className="w-full border-t border-gray-200"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">or sign in with email</span>
+            <span className="px-2 bg-white text-gray-500">{t('auth.orSignInWithEmail')}</span>
           </div>
         </div>
 
@@ -105,10 +107,10 @@ export const AuthForm: React.FC = () => {
               <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
               <div className="text-left">
                 <p className="text-sm font-medium text-green-800">
-                  Magic link sent!
+                  {t('auth.magicLinkSent')}
                 </p>
                 <p className="text-sm text-green-700 mt-1">
-                  Check your email inbox and click the link to sign in. The link expires in 1 hour.
+                  {t('auth.magicLinkInstructions')}
                 </p>
               </div>
             </div>
@@ -117,7 +119,7 @@ export const AuthForm: React.FC = () => {
               className="text-sm transition-colors"
               style={{ color: '#2FA5A9' }}
             >
-              Send another link
+              {t('auth.sendAnotherLink')}
             </button>
           </div>
         ) : (
@@ -132,13 +134,13 @@ export const AuthForm: React.FC = () => {
             {isDevMode && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                 <span className="text-sm text-yellow-700">
-                  <strong>Dev Mode:</strong> Enter any email to sign in instantly
+                  <strong>{t('auth.devMode')}</strong> {t('auth.devModeDescription')}
                 </span>
               </div>
             )}
 
             <div>
-              <label className="block text-sm mb-2 font-medium" style={{ color: '#1E2A38' }}>Email</label>
+              <label className="block text-sm mb-2 font-medium" style={{ color: '#1E2A38' }}>{t('auth.email')}</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#2FA5A9' }} />
                 <input
@@ -149,7 +151,7 @@ export const AuthForm: React.FC = () => {
                     borderColor: errors.email ? '#DC2626' : '#2FA5A9',
                     color: '#1E2A38'
                   }}
-                  placeholder="Enter your email"
+                  placeholder={t('auth.emailPlaceholder')}
                   autoComplete="email"
                   onFocus={(e) => e.target.style.boxShadow = '0 0 0 3px rgba(47, 165, 169, 0.1)'}
                   onBlur={(e) => e.target.style.boxShadow = 'none'}
@@ -179,11 +181,11 @@ export const AuthForm: React.FC = () => {
                 }
               }}
             >
-              {isSubmitting ? 'Sending...' : 'Send Magic Link'}
+              {isSubmitting ? t('auth.sending') : t('auth.sendMagicLink')}
             </button>
 
             <p className="text-xs text-center text-gray-500 mt-2">
-              We'll email you a sign-in link. No password needed.
+              {t('auth.emailFooter')}
             </p>
           </form>
         )}

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { X, Download, Upload, FileText, Check, AlertCircle, Info, Lock } from 'lucide-react';
 import type { XLSXTemplateType } from '../../utils/xlsx';
 import {
@@ -35,6 +36,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   validateRow,
   onImport,
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<Tab>('template');
   const [isDragging, setIsDragging] = useState(false);
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
@@ -68,7 +70,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   const processFile = useCallback(async (file: File) => {
     const fileName = file.name.toLowerCase();
     if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
-      setParseErrors(['Please select an Excel file (.xlsx or .xls extension)']);
+      setParseErrors([t('import.excelError')]);
       setActiveTab('preview');
       return;
     }
@@ -106,7 +108,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     } finally {
       setIsParsing(false);
     }
-  }, [parseFile, validateRow]);
+  }, [parseFile, validateRow, t]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -142,7 +144,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
       : parsedRows.map(r => r.data);
 
     if (rowsToImport.length === 0) {
-      setImportResult({ success: false, message: 'No valid rows to import' });
+      setImportResult({ success: false, message: t('import.noValidRows') });
       return;
     }
 
@@ -162,7 +164,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     } finally {
       setIsImporting(false);
     }
-  }, [parsedRows, skipInvalid, onImport, handleClose]);
+  }, [parsedRows, skipInvalid, onImport, handleClose, t]);
 
   const validCount = parsedRows.filter(r => r.isValid).length;
   const invalidCount = parsedRows.filter(r => !r.isValid).length;
@@ -182,7 +184,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Import {entityName.charAt(0).toUpperCase() + entityName.slice(1)}
+            {t('import.title', { entity: entityName })}
           </h3>
           <button
             onClick={handleClose}
@@ -207,7 +209,9 @@ export const ImportModal: React.FC<ImportModalProps> = ({
               {tab === 'template' && <FileText className="w-4 h-4 inline mr-1.5" />}
               {tab === 'upload' && <Upload className="w-4 h-4 inline mr-1.5" />}
               {tab === 'preview' && <Check className="w-4 h-4 inline mr-1.5" />}
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === 'template' && t('import.template')}
+              {tab === 'upload' && t('import.upload')}
+              {tab === 'preview' && t('import.preview')}
               {tab === 'preview' && parsedRows.length > 0 && (
                 <span className="ml-1.5 text-xs bg-gray-200 dark:bg-gray-600 px-1.5 py-0.5 rounded">
                   {parsedRows.length}
@@ -228,16 +232,16 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-purple-900 dark:text-purple-100">
-                    Data Import is a Pro Feature
+                    {t('import.proFeature')}
                   </p>
                   <p className="mt-1 text-sm text-purple-700 dark:text-purple-300">
-                    Upgrade to Pro to import data from Excel files. You can still view the template format below.
+                    {t('import.proFeatureDesc')}
                   </p>
                   <button
                     onClick={handleClose}
                     className="mt-3 px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
                   >
-                    Contact Us to Upgrade
+                    {t('import.contactUpgrade')}
                   </button>
                 </div>
               </div>
@@ -257,7 +261,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
               {/* Example Table */}
               <div>
                 <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Example Format
+                  {t('import.exampleFormat')}
                 </h4>
                 <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
                   <table className="w-full text-xs">
@@ -294,7 +298,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
               {/* Field Notes */}
               <div>
                 <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Field Reference
+                  {t('import.fieldReference')}
                 </h4>
                 <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                   {templateInfo.notes.map((note, idx) => (
@@ -312,7 +316,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-700 dark:text-green-300 rounded-lg transition-colors"
               >
                 <Download className="w-4 h-4" />
-                Download Excel Template
+                {t('import.downloadTemplate')}
               </button>
             </div>
           )}
@@ -340,7 +344,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                   <>
                     <div className="w-10 h-10 mx-auto mb-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                     <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                      Processing file...
+                      {t('import.processing')}
                     </p>
                   </>
                 ) : (
@@ -349,10 +353,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                       isDragging ? 'text-blue-500' : 'text-gray-400'
                     }`} />
                     <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                      {isDragging ? 'Drop your file here' : 'Drag & drop your Excel file here'}
+                      {isDragging ? t('import.dropHere') : t('import.dragDrop')}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      or click to browse
+                      {t('import.orBrowse')}
                     </p>
                   </>
                 )}
@@ -367,14 +371,14 @@ export const ImportModal: React.FC<ImportModalProps> = ({
               />
 
               <div className="text-center text-xs text-gray-500 dark:text-gray-400">
-                <p>Supported formats: Excel (.xlsx, .xls)</p>
+                <p>{t('import.supportedFormats')}</p>
                 <p className="mt-1">
-                  Need a template?{' '}
+                  {t('import.needTemplate')}{' '}
                   <button
                     onClick={() => setActiveTab('template')}
                     className="text-blue-600 dark:text-blue-400 hover:underline"
                   >
-                    View format guide
+                    {t('import.viewFormatGuide')}
                   </button>
                 </p>
               </div>
@@ -389,7 +393,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
                   <div className="flex items-center gap-2 text-red-700 dark:text-red-400 mb-2">
                     <AlertCircle className="w-4 h-4" />
-                    <span className="text-sm font-medium">Parse Errors</span>
+                    <span className="text-sm font-medium">{t('import.parseErrors')}</span>
                   </div>
                   <ul className="text-xs text-red-700 dark:text-red-400 space-y-1">
                     {parseErrors.map((error, idx) => (
@@ -403,14 +407,14 @@ export const ImportModal: React.FC<ImportModalProps> = ({
               {parsedRows.length > 0 && (
                 <div className="flex items-center gap-4 text-sm">
                   <span className="text-gray-600 dark:text-gray-400">
-                    Total: {parsedRows.length} rows
+                    {t('import.totalRows', { count: parsedRows.length })}
                   </span>
                   <span className="text-green-700 dark:text-green-400">
-                    Valid: {validCount}
+                    {t('import.validRows', { count: validCount })}
                   </span>
                   {invalidCount > 0 && (
                     <span className="text-red-700 dark:text-red-400">
-                      Invalid: {invalidCount}
+                      {t('import.invalidRows', { count: invalidCount })}
                     </span>
                   )}
                 </div>
@@ -481,15 +485,15 @@ export const ImportModal: React.FC<ImportModalProps> = ({
               {parsedRows.length === 0 && parseErrors.length === 0 && (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   <FileText className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">No data to preview</p>
+                  <p className="text-sm">{t('import.noDataPreview')}</p>
                   <p className="text-xs mt-1">
                     <button
                       onClick={() => setActiveTab('upload')}
                       className="text-blue-600 dark:text-blue-400 hover:underline"
                     >
-                      Upload an Excel file
+                      {t('import.uploadToStart')}
                     </button>
-                    {' '}to get started
+                    {' '}{t('import.toGetStarted')}
                   </p>
                 </div>
               )}
@@ -530,7 +534,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                   onChange={(e) => setSkipInvalid(e.target.checked)}
                   className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
                 />
-                Skip invalid rows
+                {t('import.skipInvalid')}
               </label>
             )}
           </div>
@@ -540,7 +544,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
               onClick={handleClose}
               className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
             >
-              Cancel
+              {t('import.cancel')}
             </button>
             {activeTab === 'preview' && parsedRows.length > 0 && userCanImport && (
               <button
@@ -548,7 +552,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 disabled={isImporting || (skipInvalid && validCount === 0)}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed rounded-lg transition-colors"
               >
-                {isImporting ? 'Importing...' : `Import ${skipInvalid ? validCount : parsedRows.length} ${entityName}`}
+                {isImporting ? t('import.importing') : t('import.importCount', { count: skipInvalid ? validCount : parsedRows.length, entity: entityName })}
               </button>
             )}
             {activeTab === 'template' && (
@@ -556,7 +560,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 onClick={() => setActiveTab('upload')}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
               >
-                Continue to Upload
+                {t('import.continueUpload')}
               </button>
             )}
             {activeTab === 'upload' && userCanImport && (
@@ -565,7 +569,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 disabled={isParsing}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed rounded-lg transition-colors"
               >
-                {isParsing ? 'Processing...' : 'Select File'}
+                {isParsing ? t('import.processing') : t('import.selectFile')}
               </button>
             )}
           </div>

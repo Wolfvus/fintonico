@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useShallow } from 'zustand/react/shallow';
+import { useTranslation } from 'react-i18next';
 import { useIncomeStore } from '../../stores/incomeStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { useMonthNavigation } from '../../hooks/useMonthNavigation';
@@ -11,9 +12,9 @@ import { ImportModal } from '../Shared/ImportModal';
 import { parseIncomeXLSX } from '../../utils/xlsx';
 
 // Format date for display (compact format: Dec 11)
-const formatDateCompact = (dateStr: string): string => {
+const formatDateCompact = (dateStr: string, locale: string = 'en-US'): string => {
   const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 };
 
 // Parse YYYY-MM-DD as local date
@@ -28,12 +29,12 @@ const getTodayString = (): string => {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 };
 
-// Frequency options
-const FREQUENCY_OPTIONS: { value: IncomeFrequency; label: string }[] = [
-  { value: 'one-time', label: 'One-time' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'bi-weekly', label: 'Bi-weekly' },
-  { value: 'monthly', label: 'Monthly' },
+// Frequency options — labels are i18n keys, resolved at render time via t()
+const FREQUENCY_OPTIONS: { value: IncomeFrequency; labelKey: string }[] = [
+  { value: 'one-time', labelKey: 'income.oneTime' },
+  { value: 'weekly', labelKey: 'income.weekly' },
+  { value: 'bi-weekly', labelKey: 'income.biWeekly' },
+  { value: 'monthly', labelKey: 'income.monthlyFreq' },
 ];
 
 // Monthly conversion factors for expected income calculation
@@ -47,10 +48,10 @@ const MONTHLY_FACTORS: Record<string, number> = {
 };
 
 // Format number with thousands separator (1,895.00)
-const formatNumberWithCommas = (value: number | string): string => {
+const formatNumberWithCommas = (value: number | string, locale: string = 'en-US'): string => {
   const num = typeof value === 'string' ? parseFloat(value) : value;
   if (isNaN(num)) return '';
-  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return num.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 // Editable Cell Component
@@ -61,6 +62,7 @@ interface EditableCellProps {
   placeholder?: string;
   align?: 'left' | 'right';
   className?: string;
+  locale?: string;
 }
 
 const EditableCell: React.FC<EditableCellProps> = ({
@@ -70,6 +72,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
   placeholder = 'Click to edit',
   align = 'left',
   className = '',
+  locale = 'en-US',
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localValue, setLocalValue] = useState(value);
@@ -122,9 +125,9 @@ const EditableCell: React.FC<EditableCellProps> = ({
 
   let displayValue = value;
   if (type === 'date' && value) {
-    displayValue = formatDateCompact(value);
+    displayValue = formatDateCompact(value, locale);
   } else if (type === 'currency' && value) {
-    displayValue = formatNumberWithCommas(value);
+    displayValue = formatNumberWithCommas(value, locale);
   }
 
   return (
@@ -146,6 +149,7 @@ interface FrequencyDropdownProps {
 }
 
 const FrequencyDropdown: React.FC<FrequencyDropdownProps> = ({ value, onChange }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0, openUp: false });
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -193,7 +197,7 @@ const FrequencyDropdown: React.FC<FrequencyDropdownProps> = ({ value, onChange }
         className="flex items-center gap-1 px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md transition-colors w-full"
       >
         <span className="flex-1 text-left text-gray-700 dark:text-gray-300 whitespace-nowrap text-xs">
-          {selectedOption?.label || 'Select...'}
+          {selectedOption ? t(selectedOption.labelKey) : 'Select...'}
         </span>
         <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
@@ -222,7 +226,7 @@ const FrequencyDropdown: React.FC<FrequencyDropdownProps> = ({ value, onChange }
                 option.value === value ? 'bg-green-50 dark:bg-green-900/20' : ''
               }`}
             >
-              <span className="text-gray-700 dark:text-gray-300">{option.label}</span>
+              <span className="text-gray-700 dark:text-gray-300">{t(option.labelKey)}</span>
             </button>
           ))}
         </div>,
@@ -328,6 +332,7 @@ interface DatePickerCellProps {
 }
 
 const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
+  const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [viewDate, setViewDate] = useState(() => value ? parseLocalDate(value) : new Date());
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
@@ -435,7 +440,7 @@ const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
         className="flex items-center gap-1 px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md transition-colors w-full"
       >
         <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
-          {value ? formatDateCompact(value) : '-'}
+          {value ? formatDateCompact(value, i18n.language) : '-'}
         </span>
         <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
@@ -463,7 +468,7 @@ const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
               <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </button>
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {viewDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+              {viewDate.toLocaleDateString(i18n.language, { month: 'short', year: 'numeric' })}
             </span>
             <button
               onClick={(e) => {
@@ -523,7 +528,7 @@ const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
             }}
             className="w-full mt-2 px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
           >
-            Today
+            {t('income.today')}
           </button>
         </div>,
         document.body
@@ -548,6 +553,7 @@ const IncomeRow: React.FC<IncomeRowProps> = ({
   enabledCurrencies,
   index,
 }) => {
+  const { i18n } = useTranslation();
   const isEven = index % 2 === 0;
 
   return (
@@ -570,6 +576,7 @@ const IncomeRow: React.FC<IncomeRowProps> = ({
           placeholder="0.00"
           align="right"
           className="text-green-700 dark:text-green-400 font-medium"
+          locale={i18n.language}
         />
       </td>
 
@@ -684,15 +691,16 @@ const TableHeaderWithFilter: React.FC<TableHeaderWithFilterProps> = ({
   sortDirection,
   onSort,
 }) => {
+  const { t } = useTranslation();
   return (
     <thead>
       <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-          Source
+          {t('income.sourceHeader')}
         </th>
         <th className="px-2 py-2 border-l border-gray-300 dark:border-gray-600 w-28">
           <SortableHeader
-            label="Amount"
+            label={t('income.amountHeader')}
             column="amount"
             currentSort={sortColumn}
             direction={sortDirection}
@@ -701,14 +709,14 @@ const TableHeaderWithFilter: React.FC<TableHeaderWithFilterProps> = ({
           />
         </th>
         <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
-          Currency
+          {t('income.currencyHeader')}
         </th>
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-24">
-          Frequency
+          {t('income.frequencyHeader')}
         </th>
         <th className="px-2 py-2 border-l border-gray-200 dark:border-gray-700 w-24">
           <SortableHeader
-            label="Date"
+            label={t('income.dateHeader')}
             column="date"
             currentSort={sortColumn}
             direction={sortDirection}
@@ -739,7 +747,7 @@ const TableHeaderWithFilter: React.FC<TableHeaderWithFilterProps> = ({
                 type="text"
                 value={sourceFilter}
                 onChange={(e) => setSourceFilter(e.target.value)}
-                placeholder="Search source..."
+                placeholder={t('income.searchSource')}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-gray-900 dark:text-white placeholder-gray-400 w-36"
               />
 
@@ -749,7 +757,7 @@ const TableHeaderWithFilter: React.FC<TableHeaderWithFilterProps> = ({
                 onChange={(e) => setCurrencyFilter(e.target.value)}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
               >
-                <option value="">All Currencies</option>
+                <option value="">{t('income.allCurrencies')}</option>
                 {enabledCurrencies.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
@@ -761,9 +769,9 @@ const TableHeaderWithFilter: React.FC<TableHeaderWithFilterProps> = ({
                 onChange={(e) => setFrequencyFilter(e.target.value)}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
               >
-                <option value="">All Frequencies</option>
+                <option value="">{t('income.allFrequencies')}</option>
                 {FREQUENCY_OPTIONS.map((f) => (
-                  <option key={f.value} value={f.value}>{f.label}</option>
+                  <option key={f.value} value={f.value}>{t(f.labelKey)}</option>
                 ))}
               </select>
 
@@ -774,7 +782,7 @@ const TableHeaderWithFilter: React.FC<TableHeaderWithFilterProps> = ({
                   className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                 >
                   <X className="w-3 h-3" />
-                  Clear
+                  {t('income.clear')}
                 </button>
               )}
             </div>
@@ -787,6 +795,7 @@ const TableHeaderWithFilter: React.FC<TableHeaderWithFilterProps> = ({
 
 // Main Component
 export const IncomePage: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const { incomes, addIncome, deleteIncome } = useIncomeStore(
     useShallow((state) => ({ incomes: state.incomes, addIncome: state.addIncome, deleteIncome: state.deleteIncome }))
   );
@@ -1035,12 +1044,12 @@ export const IncomePage: React.FC = () => {
             }} className="space-y-2">
               <div className="flex items-center gap-2 mb-1">
                 <Plus className="w-4 h-4 text-green-700 dark:text-green-400" />
-                <span className="text-sm font-medium text-gray-900 dark:text-white">Quick Add</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">{t('income.quickAdd')}</span>
               </div>
               <input
                 name="quickSource"
                 type="text"
-                placeholder="Source"
+                placeholder={t('income.source')}
                 className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white placeholder-gray-400"
               />
               <div className="flex gap-2">
@@ -1067,14 +1076,14 @@ export const IncomePage: React.FC = () => {
                 className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-green-500 text-gray-900 dark:text-white"
               >
                 {FREQUENCY_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
                 ))}
               </select>
               <button
                 type="submit"
                 className="w-full py-1.5 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white text-sm font-medium rounded transition-colors"
               >
-                Add Income
+                {t('income.addIncome')}
               </button>
             </form>
           </div>
@@ -1092,7 +1101,7 @@ export const IncomePage: React.FC = () => {
                   <p className="text-lg font-bold text-green-700 dark:text-green-400 truncate">
                     {formatAmount(monthlyTotal)}
                   </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{filteredIncomes.length} entries</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{t('income.entries', { count: filteredIncomes.length })}</p>
                 </div>
               </div>
             </div>
@@ -1104,12 +1113,12 @@ export const IncomePage: React.FC = () => {
                   <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Expected Monthly</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('income.expectedMonthly')}</p>
                   <p className="text-lg font-bold text-blue-600 dark:text-blue-400 truncate">
                     {formatAmount(expectedMonthlyIncome)}
                   </p>
                   <p className="text-xs text-gray-400 dark:text-gray-500">
-                    {recurringCount > 0 ? `${recurringCount} recurring` : 'no recurring'}
+                    {recurringCount > 0 ? t('income.recurringCount', { count: recurringCount }) : t('income.noRecurring')}
                   </p>
                 </div>
               </div>
@@ -1127,7 +1136,7 @@ export const IncomePage: React.FC = () => {
               title="Import income from CSV"
             >
               <Upload className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Import</span>
+              <span className="hidden sm:inline">{t('income.import')}</span>
             </button>
 
             {/* Month Navigation */}
@@ -1192,7 +1201,7 @@ export const IncomePage: React.FC = () => {
               {filteredIncomes.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-gray-500 dark:text-gray-400">
-                    No income this month. Use the Quick Add form above to get started.
+                    {t('income.emptyState')}
                   </td>
                 </tr>
               )}

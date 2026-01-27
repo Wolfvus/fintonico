@@ -1,0 +1,861 @@
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
+
+const resources = {
+  en: {
+    translation: {
+      // ── Common / Shared ──────────────────────────────────────────────
+      loading: "Loading",
+      save: "Save",
+      cancel: "Cancel",
+      add: "Add",
+      delete: "Delete",
+      clear: "Clear",
+      retry: "Retry",
+      refresh: "Refresh",
+      filter: "Filter",
+      search: "Search",
+      close: "Close",
+      previous: "Previous",
+      next: "Next",
+      all: "All",
+      type: "Type",
+      name: "Name",
+      active: "Active",
+      status: "Status",
+      amount: "Amount",
+      date: "Date",
+      currency: "Currency",
+      description: "Description",
+      source: "Source",
+      category: "Category",
+      monthly: "Monthly",
+      yearly: "Yearly",
+      custom: "Custom",
+
+      // ── Navigation ───────────────────────────────────────────────────
+      "nav.dashboard": "Dashboard",
+      "nav.income": "Income",
+      "nav.expenses": "Expenses",
+      "nav.netWorth": "Net Worth",
+      "nav.accounts": "Accounts",
+      "nav.admin": "Admin",
+      "nav.lightMode": "Light Mode",
+      "nav.darkMode": "Dark Mode",
+      "nav.settings": "Settings",
+      "nav.signOut": "Sign Out",
+
+      // ── App / TopBar ─────────────────────────────────────────────────
+      "app.brand": "FINTONICO",
+      "app.tagline": "The Ultimate Personal Finance Dashboard",
+
+      // ── Auth ─────────────────────────────────────────────────────────
+      "auth.brand": "FINTONICO",
+      "auth.tagline": "Personal Finance Audit System",
+      "auth.continueWithGoogle": "Continue with Google",
+      "auth.orSignInWithEmail": "or sign in with email",
+      "auth.magicLinkSent": "Magic link sent!",
+      "auth.magicLinkInstructions":
+        "Check your email inbox and click the link to sign in. The link expires in 1 hour.",
+      "auth.sendAnotherLink": "Send another link",
+      "auth.sendMagicLink": "Send Magic Link",
+      "auth.sending": "Sending...",
+      "auth.email": "Email",
+      "auth.emailPlaceholder": "Enter your email",
+      "auth.emailFooter":
+        "We'll email you a sign-in link. No password needed.",
+      "auth.devMode": "Dev Mode:",
+      "auth.devModeDescription": "Enter any email to sign in instantly",
+      "auth.error": "An error occurred",
+      "auth.googleError": "Google sign in failed",
+
+      // ── Dashboard ────────────────────────────────────────────────────
+      "dashboard.netWorth": "Net Worth",
+      "dashboard.totalNetWorth": "Total Net Worth",
+      "dashboard.assets": "Assets",
+      "dashboard.totalAssets": "Total Assets",
+      "dashboard.liabilities": "Liabilities",
+      "dashboard.totalLiabilities": "Total Liabilities",
+      "dashboard.cashFlow": "Cash Flow",
+      "dashboard.savings": "Savings",
+      "dashboard.income": "Income",
+      "dashboard.expenses": "Expenses",
+      "dashboard.period": "Period:",
+      "dashboard.monthly": "Monthly",
+      "dashboard.yearly": "Yearly",
+      "dashboard.custom": "Custom",
+      "dashboard.to": "to",
+      "dashboard.recentTransactions": "Recent Transactions",
+      "dashboard.filter": "Filter:",
+      "dashboard.allFilter": "All",
+      "dashboard.incomeFilter": "Income",
+      "dashboard.expensesFilter": "Expenses",
+      "dashboard.typeHeader": "Type",
+      "dashboard.descriptionHeader": "Description",
+      "dashboard.amountHeader": "Amount",
+      "dashboard.currencyHeader": "Currency",
+      "dashboard.dateHeader": "Date",
+      "dashboard.incomeType": "Income",
+      "dashboard.expenseType": "Expense",
+      "dashboard.noTransactions":
+        "No transactions found for the selected period",
+      "dashboard.pageOf":
+        "Page {{current}} of {{total}} ({{count}} total)",
+      "dashboard.expenseBreakdown": "Expense Breakdown",
+      "dashboard.essential": "Essential",
+      "dashboard.discretionary": "Discretionary",
+      "dashboard.luxury": "Luxury",
+      "dashboard.noData": "No data",
+      "dashboard.noExpensesPeriod": "No expenses this period",
+      "dashboard.overview": "Overview",
+      "dashboard.optimize": "Optimize",
+      "dashboard.optimizationTips": "Optimization Tips",
+      "dashboard.savingsPotential": "Savings Potential",
+      "dashboard.nonEssentialSpending":
+        "in non-essential + luxury spending",
+      "dashboard.allEssential":
+        "Great job! All spending is essential.",
+      "dashboard.quickTips": "Quick Tips:",
+      "dashboard.tip1": "Aim for a 20% or higher savings rate",
+      "dashboard.tip2": "Review non-essential expenses monthly",
+      "dashboard.tip3": "Track spending patterns over time",
+
+      // ── Income ───────────────────────────────────────────────────────
+      "income.quickAdd": "Quick Add",
+      "income.source": "Source",
+      "income.addIncome": "Add Income",
+      "income.expectedMonthly": "Expected Monthly",
+      "income.recurringCount": "{{count}} recurring",
+      "income.noRecurring": "no recurring",
+      "income.entries": "{{count}} entries",
+      "income.import": "Import",
+      "income.sourceHeader": "Source",
+      "income.amountHeader": "Amount",
+      "income.currencyHeader": "Currency",
+      "income.frequencyHeader": "Frequency",
+      "income.dateHeader": "Date",
+      "income.searchSource": "Search source...",
+      "income.allCurrencies": "All Currencies",
+      "income.allFrequencies": "All Frequencies",
+      "income.clear": "Clear",
+      "income.emptyState":
+        "No income this month. Use the Quick Add form above to get started.",
+      "income.today": "Today",
+      "income.oneTime": "One-time",
+      "income.weekly": "Weekly",
+      "income.biWeekly": "Bi-weekly",
+      "income.monthlyFreq": "Monthly",
+
+      // ── Expenses ─────────────────────────────────────────────────────
+      "expenses.quickAdd": "Quick Add",
+      "expenses.description": "Description",
+      "expenses.add": "Add",
+      "expenses.recurring": "Recurring",
+      "expenses.recurringExpenses": "Recurring Expenses",
+      "expenses.monthlyExpenses": "Monthly Expenses",
+      "expenses.essential": "Essential",
+      "expenses.discretionary": "Discretionary",
+      "expenses.luxury": "Luxury",
+      "expenses.perMonth": "/mo",
+      "expenses.items": "items",
+      "expenses.of": "of",
+      "expenses.import": "Import",
+      "expenses.descriptionHeader": "Description",
+      "expenses.amountHeader": "Amount",
+      "expenses.currencyHeader": "Currency",
+      "expenses.categoryHeader": "Category",
+      "expenses.dateHeader": "Date",
+      "expenses.dueDateHeader": "Due Date",
+      "expenses.searchDescription": "Search description...",
+      "expenses.search": "Search...",
+      "expenses.allCurrencies": "All Currencies",
+      "expenses.allCategories": "All Categories",
+      "expenses.clear": "Clear",
+      "expenses.emptyRecurring":
+        "No recurring expenses. Mark an expense as recurring to have it appear here.",
+      "expenses.emptyMonthly":
+        "No expenses this month. Use the Quick Add form above to get started.",
+      "expenses.today": "Today",
+      "expenses.markRecurring": "Mark as recurring",
+      "expenses.recurringExpense": "Recurring expense",
+      "expenses.rec": "rec.",
+
+      // ── Net Worth ────────────────────────────────────────────────────
+      "netWorth.totalAssets": "Total Assets",
+      "netWorth.totalLiabilities": "Total Liabilities",
+      "netWorth.netWorth": "Net Worth",
+      "netWorth.estInvestmentReturns": "Est. Investment Returns",
+      "netWorth.perYear": "/yr",
+      "netWorth.perMonth": "/mo",
+      "netWorth.assets": "Assets",
+      "netWorth.liabilities": "Liabilities",
+      "netWorth.accounts": "accounts",
+      "netWorth.of": "of",
+      "netWorth.unpaid": "unpaid",
+      "netWorth.excluded": "excluded",
+      "netWorth.importCSV": "Import CSV",
+      "netWorth.viewOnly": "View Only",
+      "netWorth.historical": "Historical",
+      "netWorth.noDataTitle": "No Data for {{month}}",
+      "netWorth.noDataDescription":
+        "No snapshot was recorded for this month. Snapshots are automatically created when you visit the app.",
+      "netWorth.legacySnapshot":
+        "This snapshot was created before account-level tracking was available. Only totals are shown above.",
+      "netWorth.legacySnapshotNote":
+        "Future snapshots will include detailed account breakdowns.",
+      "netWorth.nameHeader": "Name",
+      "netWorth.typeHeader": "Type",
+      "netWorth.currencyHeader": "Currency",
+      "netWorth.valueHeader": "Value",
+      "netWorth.yieldHeader": "Yield",
+      "netWorth.monthHeader": "/Month",
+      "netWorth.yearHeader": "/Year",
+      "netWorth.balanceHeader": "Balance",
+      "netWorth.minPayHeader": "Min Pay",
+      "netWorth.noInterestHeader": "No Interest",
+      "netWorth.dueHeader": "Due",
+      "netWorth.paidHeader": "Paid",
+      "netWorth.updatedHeader": "Updated",
+      "netWorth.exclHeader": "Excl",
+      "netWorth.addAsset": "Add asset",
+      "netWorth.addLiability": "Add liability",
+      "netWorth.searchName": "Search name...",
+      "netWorth.allTypes": "All Types",
+      "netWorth.allCurrencies": "All Currencies",
+      "netWorth.allStatus": "All Status",
+      "netWorth.included": "Included",
+      "netWorth.excludedFilter": "Excluded",
+      "netWorth.allPaidStatus": "All Paid Status",
+      "netWorth.paid": "Paid",
+      "netWorth.unpaidFilter": "Unpaid",
+      "netWorth.clear": "Clear",
+      "netWorth.paymentDueDay": "Payment due day",
+      "netWorth.startTracking": "Start Tracking Your Net Worth",
+      "netWorth.startTrackingDesc":
+        'Click "Add asset" or "Add liability" in the tables above to get started.',
+      "netWorth.assetsDesc": "Cash, Bank, Investments",
+      "netWorth.liabilitiesDesc": "Credit Cards, Loans",
+      "netWorth.cash": "Cash",
+      "netWorth.bank": "Bank",
+      "netWorth.exchange": "Exchange",
+      "netWorth.investment": "Investment",
+      "netWorth.property": "Property",
+      "netWorth.other": "Other",
+      "netWorth.creditCard": "Credit Card",
+      "netWorth.loan": "Loan",
+      "netWorth.mortgage": "Mortgage",
+
+      // ── History ──────────────────────────────────────────────────────
+      "history.netWorthHistory": "Net Worth History",
+      "history.month": "month",
+      "history.months": "months",
+      "history.show": "Show:",
+      "history.sixMonths": "6 months",
+      "history.twelveMonths": "12 months",
+      "history.twentyFourMonths": "24 months",
+      "history.allTime": "All time",
+      "history.over": "over",
+      "history.monthHeader": "Month",
+      "history.netWorthHeader": "Net Worth",
+      "history.assetsHeader": "Assets",
+      "history.liabilitiesHeader": "Liabilities",
+      "history.changeHeader": "Change",
+      "history.noHistory": "No history data yet",
+      "history.snapshotsAuto":
+        "Snapshots are created automatically each month",
+      "history.noHistoryChart": "No history data available",
+      "history.assetsTooltip": "Assets:",
+      "history.liabilitiesTooltip": "Liabilities:",
+      "history.netWorthTooltip": "Net Worth:",
+
+      // ── Chart of Accounts ────────────────────────────────────────────
+      "accounts.title": "Account References",
+      "accounts.description":
+        "Quick reference for your bank accounts, CLABEs and card numbers. {{active}} active of {{total}} total.",
+      "accounts.nameHeader": "Name",
+      "accounts.accountCardHeader": "Account/Card #",
+      "accounts.clabeHeader": "CLABE",
+      "accounts.typeHeader": "Type",
+      "accounts.activeHeader": "Active",
+      "accounts.debit": "Debit",
+      "accounts.credit": "Credit",
+      "accounts.addAccountRef": "Add account reference",
+      "accounts.importCSV": "Import CSV",
+      "accounts.emptyTitle": "Add Your Account References",
+      "accounts.emptyDescription":
+        "Store your bank account numbers and CLABEs for quick reference. Hover over any entry to copy it to your clipboard.",
+      "accounts.search": "Search...",
+
+      // ── Settings ─────────────────────────────────────────────────────
+      "settings.title": "Workspace Settings",
+      "settings.description":
+        "Configure currency visibility and dashboard preferences.",
+      "settings.baseCurrency": "Base Currency",
+      "settings.baseCurrencyDesc":
+        "Used for totals and financial reports.",
+      "settings.baseCurrencyLabel": "Base currency",
+      "settings.currencyVisibility": "Currency Visibility",
+      "settings.currencyVisibilityDesc":
+        "Choose which currencies show up in pickers and dashboards. Base stays on.",
+      "settings.hideList": "Hide list",
+      "settings.showList": "Show list",
+      "settings.base": "Base",
+      "settings.preview": "Preview:",
+      "settings.showing": "Showing",
+      "settings.addCurrencyWarning":
+        "Add another currency if you plan to track FX balances.",
+      "settings.generalPreferences": "General Preferences",
+      "settings.generalPreferencesDesc":
+        "Feature toggles saved locally; expand as shared settings come online.",
+      "settings.showSavingsInsights":
+        "Show savings insights on dashboard",
+      "settings.showSavingsInsightsDesc":
+        "Recommended to keep enabled for budgeting tips.",
+      "settings.autoRefreshFx": "Auto-refresh FX rates at launch",
+      "settings.autoRefreshFxDesc":
+        "Disable if working offline to avoid API warnings.",
+      "settings.cloudSync": "Cloud Sync",
+      "settings.cloudSyncDesc":
+        "Migrate your local data to the cloud for multi-device access and backup.",
+      "settings.dataManagement": "Data Management",
+      "settings.dataManagementDesc":
+        "These actions only affect data stored in this browser.",
+      "settings.seedMockData": "Seed mock data",
+      "settings.seedMockDataDesc":
+        "Populate the app with a small demo dataset.",
+      "settings.seedMockDataBtn": "Seed mock data",
+      "settings.seeding": "Seeding...",
+      "settings.clearLocalData": "Clear local data",
+      "settings.clearLocalDataDesc":
+        "Removes all local entries. You cannot undo this.",
+      "settings.clearing": "Clearing...",
+      "settings.clearConfirm":
+        "Clear all local data? This will remove your incomes, expenses, accounts, and settings from this browser. This cannot be undone.",
+      "settings.resetDefaults": "Reset defaults",
+      "settings.cancel": "Cancel",
+      "settings.saveChanges": "Save changes",
+      "settings.saving": "Saving...",
+      "settings.refreshingRates": "Refreshing exchange rates...",
+      "settings.ratesInfo":
+        "Exchange rates update every 5 minutes while open.",
+      "settings.language": "Language",
+      "settings.languageDesc":
+        "Choose your preferred language for the interface.",
+
+      // ── Data Migration ───────────────────────────────────────────────
+      "migration.title": "Data Migration",
+      "migration.devMode": "Dev Mode Active",
+      "migration.devModeDesc":
+        "Data migration is not available in dev mode. Configure Supabase environment variables to enable cloud sync.",
+      "migration.localStorage": "Local Storage Data",
+      "migration.noLocalData": "No local data found.",
+      "migration.cloudData": "Cloud Data (Supabase)",
+      "migration.noCloudData": "No cloud data yet.",
+      "migration.expensesLabel": "Expenses",
+      "migration.incomeLabel": "Income",
+      "migration.accountsLabel": "Accounts",
+      "migration.ledgerLabel": "Ledger",
+      "migration.snapshotsLabel": "Snapshots",
+      "migration.overwrite": "Overwrite existing cloud data",
+      "migration.migrateOverwrite": "Migrate & Overwrite Cloud Data",
+      "migration.migrateToCloud": "Migrate to Cloud",
+      "migration.success": "Migration Successful!",
+      "migration.errors": "Migration had errors",
+      "migration.clearPrompt": "Clear local data permanently?",
+      "migration.clearConfirm": "Yes, Clear",
+      "migration.clearCancel": "Cancel",
+      "migration.clearLocalBtn":
+        "Clear local data (already migrated)",
+      "migration.noLocalDataMsg":
+        "No local data to migrate. Your data is already stored in the cloud.",
+
+      // ── Import Modal ─────────────────────────────────────────────────
+      "import.title": "Import {{entity}}",
+      "import.template": "Template",
+      "import.upload": "Upload",
+      "import.preview": "Preview",
+      "import.proFeature": "Data Import is a Pro Feature",
+      "import.proFeatureDesc":
+        "Upgrade to Pro to import data from Excel files. You can still view the template format below.",
+      "import.contactUpgrade": "Contact Us to Upgrade",
+      "import.exampleFormat": "Example Format",
+      "import.fieldReference": "Field Reference",
+      "import.downloadTemplate": "Download Excel Template",
+      "import.dragDrop": "Drag & drop your Excel file here",
+      "import.dropHere": "Drop your file here",
+      "import.orBrowse": "or click to browse",
+      "import.processing": "Processing file...",
+      "import.supportedFormats":
+        "Supported formats: Excel (.xlsx, .xls)",
+      "import.needTemplate": "Need a template?",
+      "import.viewFormatGuide": "View format guide",
+      "import.parseErrors": "Parse Errors",
+      "import.totalRows": "Total: {{count}} rows",
+      "import.validRows": "Valid: {{count}}",
+      "import.invalidRows": "Invalid: {{count}}",
+      "import.noDataPreview": "No data to preview",
+      "import.uploadToStart": "Upload an Excel file",
+      "import.toGetStarted": "to get started",
+      "import.noValidRows": "No valid rows to import",
+      "import.skipInvalid": "Skip invalid rows",
+      "import.cancel": "Cancel",
+      "import.importing": "Importing...",
+      "import.importCount": "Import {{count}} {{entity}}",
+      "import.continueUpload": "Continue to Upload",
+      "import.selectFile": "Select File",
+      "import.excelError":
+        "Please select an Excel file (.xlsx or .xls extension)",
+    },
+  },
+  es: {
+    translation: {
+      // ── Común / Compartido ───────────────────────────────────────────
+      loading: "Cargando",
+      save: "Guardar",
+      cancel: "Cancelar",
+      add: "Agregar",
+      delete: "Eliminar",
+      clear: "Limpiar",
+      retry: "Reintentar",
+      refresh: "Actualizar",
+      filter: "Filtrar",
+      search: "Buscar",
+      close: "Cerrar",
+      previous: "Anterior",
+      next: "Siguiente",
+      all: "Todos",
+      type: "Tipo",
+      name: "Nombre",
+      active: "Activo",
+      status: "Estado",
+      amount: "Monto",
+      date: "Fecha",
+      currency: "Moneda",
+      description: "Descripción",
+      source: "Fuente",
+      category: "Categoría",
+      monthly: "Mensual",
+      yearly: "Anual",
+      custom: "Personalizado",
+
+      // ── Navegación ───────────────────────────────────────────────────
+      "nav.dashboard": "Panel",
+      "nav.income": "Ingresos",
+      "nav.expenses": "Gastos",
+      "nav.netWorth": "Patrimonio Neto",
+      "nav.accounts": "Cuentas",
+      "nav.admin": "Administración",
+      "nav.lightMode": "Modo Claro",
+      "nav.darkMode": "Modo Oscuro",
+      "nav.settings": "Configuración",
+      "nav.signOut": "Cerrar Sesión",
+
+      // ── App / TopBar ─────────────────────────────────────────────────
+      "app.brand": "FINTONICO",
+      "app.tagline":
+        "El Panel Definitivo de Finanzas Personales",
+
+      // ── Auth ─────────────────────────────────────────────────────────
+      "auth.brand": "FINTONICO",
+      "auth.tagline": "Sistema de Auditoría de Finanzas Personales",
+      "auth.continueWithGoogle": "Continuar con Google",
+      "auth.orSignInWithEmail": "o inicia sesión con correo",
+      "auth.magicLinkSent": "¡Enlace mágico enviado!",
+      "auth.magicLinkInstructions":
+        "Revisa tu bandeja de entrada y haz clic en el enlace para iniciar sesión. El enlace expira en 1 hora.",
+      "auth.sendAnotherLink": "Enviar otro enlace",
+      "auth.sendMagicLink": "Enviar Enlace Mágico",
+      "auth.sending": "Enviando...",
+      "auth.email": "Correo electrónico",
+      "auth.emailPlaceholder": "Ingresa tu correo",
+      "auth.emailFooter":
+        "Te enviaremos un enlace de inicio de sesión. No se necesita contraseña.",
+      "auth.devMode": "Modo Dev:",
+      "auth.devModeDescription":
+        "Ingresa cualquier correo para iniciar sesión al instante",
+      "auth.error": "Ocurrió un error",
+      "auth.googleError":
+        "Error al iniciar sesión con Google",
+
+      // ── Panel (Dashboard) ────────────────────────────────────────────
+      "dashboard.netWorth": "Patrimonio Neto",
+      "dashboard.totalNetWorth": "Patrimonio Neto Total",
+      "dashboard.assets": "Activos",
+      "dashboard.totalAssets": "Activos Totales",
+      "dashboard.liabilities": "Pasivos",
+      "dashboard.totalLiabilities": "Pasivos Totales",
+      "dashboard.cashFlow": "Flujo de Efectivo",
+      "dashboard.savings": "Ahorro",
+      "dashboard.income": "Ingresos",
+      "dashboard.expenses": "Gastos",
+      "dashboard.period": "Período:",
+      "dashboard.monthly": "Mensual",
+      "dashboard.yearly": "Anual",
+      "dashboard.custom": "Personalizado",
+      "dashboard.to": "a",
+      "dashboard.recentTransactions": "Transacciones Recientes",
+      "dashboard.filter": "Filtro:",
+      "dashboard.allFilter": "Todos",
+      "dashboard.incomeFilter": "Ingresos",
+      "dashboard.expensesFilter": "Gastos",
+      "dashboard.typeHeader": "Tipo",
+      "dashboard.descriptionHeader": "Descripción",
+      "dashboard.amountHeader": "Monto",
+      "dashboard.currencyHeader": "Moneda",
+      "dashboard.dateHeader": "Fecha",
+      "dashboard.incomeType": "Ingreso",
+      "dashboard.expenseType": "Gasto",
+      "dashboard.noTransactions":
+        "No se encontraron transacciones para el período seleccionado",
+      "dashboard.pageOf":
+        "Página {{current}} de {{total}} ({{count}} en total)",
+      "dashboard.expenseBreakdown": "Desglose de Gastos",
+      "dashboard.essential": "Esencial",
+      "dashboard.discretionary": "Discrecional",
+      "dashboard.luxury": "Lujo",
+      "dashboard.noData": "Sin datos",
+      "dashboard.noExpensesPeriod":
+        "Sin gastos en este período",
+      "dashboard.overview": "Resumen",
+      "dashboard.optimize": "Optimizar",
+      "dashboard.optimizationTips": "Consejos de Optimización",
+      "dashboard.savingsPotential": "Potencial de Ahorro",
+      "dashboard.nonEssentialSpending":
+        "en gastos no esenciales + de lujo",
+      "dashboard.allEssential":
+        "¡Buen trabajo! Todos los gastos son esenciales.",
+      "dashboard.quickTips": "Consejos Rápidos:",
+      "dashboard.tip1":
+        "Apunta a una tasa de ahorro del 20% o más",
+      "dashboard.tip2":
+        "Revisa los gastos no esenciales mensualmente",
+      "dashboard.tip3":
+        "Rastrea los patrones de gasto a lo largo del tiempo",
+
+      // ── Ingresos ─────────────────────────────────────────────────────
+      "income.quickAdd": "Agregar Rápido",
+      "income.source": "Fuente",
+      "income.addIncome": "Agregar Ingreso",
+      "income.expectedMonthly": "Esperado Mensual",
+      "income.recurringCount": "{{count}} recurrentes",
+      "income.noRecurring": "sin recurrentes",
+      "income.entries": "{{count}} registros",
+      "income.import": "Importar",
+      "income.sourceHeader": "Fuente",
+      "income.amountHeader": "Monto",
+      "income.currencyHeader": "Moneda",
+      "income.frequencyHeader": "Frecuencia",
+      "income.dateHeader": "Fecha",
+      "income.searchSource": "Buscar fuente...",
+      "income.allCurrencies": "Todas las Monedas",
+      "income.allFrequencies": "Todas las Frecuencias",
+      "income.clear": "Limpiar",
+      "income.emptyState":
+        "Sin ingresos este mes. Usa el formulario de Agregar Rápido arriba para comenzar.",
+      "income.today": "Hoy",
+      "income.oneTime": "Único",
+      "income.weekly": "Semanal",
+      "income.biWeekly": "Quincenal",
+      "income.monthlyFreq": "Mensual",
+
+      // ── Gastos ───────────────────────────────────────────────────────
+      "expenses.quickAdd": "Agregar Rápido",
+      "expenses.description": "Descripción",
+      "expenses.add": "Agregar",
+      "expenses.recurring": "Recurrente",
+      "expenses.recurringExpenses": "Gastos Recurrentes",
+      "expenses.monthlyExpenses": "Gastos del Mes",
+      "expenses.essential": "Esencial",
+      "expenses.discretionary": "Discrecional",
+      "expenses.luxury": "Lujo",
+      "expenses.perMonth": "/mes",
+      "expenses.items": "elementos",
+      "expenses.of": "de",
+      "expenses.import": "Importar",
+      "expenses.descriptionHeader": "Descripción",
+      "expenses.amountHeader": "Monto",
+      "expenses.currencyHeader": "Moneda",
+      "expenses.categoryHeader": "Categoría",
+      "expenses.dateHeader": "Fecha",
+      "expenses.dueDateHeader": "Fecha de Vencimiento",
+      "expenses.searchDescription": "Buscar descripción...",
+      "expenses.search": "Buscar...",
+      "expenses.allCurrencies": "Todas las Monedas",
+      "expenses.allCategories": "Todas las Categorías",
+      "expenses.clear": "Limpiar",
+      "expenses.emptyRecurring":
+        "Sin gastos recurrentes. Marca un gasto como recurrente para que aparezca aquí.",
+      "expenses.emptyMonthly":
+        "Sin gastos este mes. Usa el formulario de Agregar Rápido arriba para comenzar.",
+      "expenses.today": "Hoy",
+      "expenses.markRecurring": "Marcar como recurrente",
+      "expenses.recurringExpense": "Gasto recurrente",
+      "expenses.rec": "rec.",
+
+      // ── Patrimonio Neto ──────────────────────────────────────────────
+      "netWorth.totalAssets": "Activos Totales",
+      "netWorth.totalLiabilities": "Pasivos Totales",
+      "netWorth.netWorth": "Patrimonio Neto",
+      "netWorth.estInvestmentReturns":
+        "Rendimiento Est. de Inversiones",
+      "netWorth.perYear": "/año",
+      "netWorth.perMonth": "/mes",
+      "netWorth.assets": "Activos",
+      "netWorth.liabilities": "Pasivos",
+      "netWorth.accounts": "cuentas",
+      "netWorth.of": "de",
+      "netWorth.unpaid": "sin pagar",
+      "netWorth.excluded": "excluidos",
+      "netWorth.importCSV": "Importar CSV",
+      "netWorth.viewOnly": "Solo Lectura",
+      "netWorth.historical": "Histórico",
+      "netWorth.noDataTitle": "Sin Datos para {{month}}",
+      "netWorth.noDataDescription":
+        "No se registró una instantánea para este mes. Las instantáneas se crean automáticamente cuando visitas la app.",
+      "netWorth.legacySnapshot":
+        "Esta instantánea fue creada antes de que el seguimiento por cuenta estuviera disponible. Solo se muestran los totales arriba.",
+      "netWorth.legacySnapshotNote":
+        "Las futuras instantáneas incluirán desgloses detallados por cuenta.",
+      "netWorth.nameHeader": "Nombre",
+      "netWorth.typeHeader": "Tipo",
+      "netWorth.currencyHeader": "Moneda",
+      "netWorth.valueHeader": "Valor",
+      "netWorth.yieldHeader": "Rendimiento",
+      "netWorth.monthHeader": "/Mes",
+      "netWorth.yearHeader": "/Año",
+      "netWorth.balanceHeader": "Saldo",
+      "netWorth.minPayHeader": "Pago Mín.",
+      "netWorth.noInterestHeader": "Sin Intereses",
+      "netWorth.dueHeader": "Vence",
+      "netWorth.paidHeader": "Pagado",
+      "netWorth.updatedHeader": "Actualizado",
+      "netWorth.exclHeader": "Excl",
+      "netWorth.addAsset": "Agregar activo",
+      "netWorth.addLiability": "Agregar pasivo",
+      "netWorth.searchName": "Buscar nombre...",
+      "netWorth.allTypes": "Todos los Tipos",
+      "netWorth.allCurrencies": "Todas las Monedas",
+      "netWorth.allStatus": "Todos los Estados",
+      "netWorth.included": "Incluidos",
+      "netWorth.excludedFilter": "Excluidos",
+      "netWorth.allPaidStatus": "Todos los Estados de Pago",
+      "netWorth.paid": "Pagado",
+      "netWorth.unpaidFilter": "Sin Pagar",
+      "netWorth.clear": "Limpiar",
+      "netWorth.paymentDueDay": "Día de vencimiento de pago",
+      "netWorth.startTracking":
+        "Comienza a Rastrear tu Patrimonio Neto",
+      "netWorth.startTrackingDesc":
+        'Haz clic en "Agregar activo" o "Agregar pasivo" en las tablas de arriba para comenzar.',
+      "netWorth.assetsDesc": "Efectivo, Banco, Inversiones",
+      "netWorth.liabilitiesDesc":
+        "Tarjetas de Crédito, Préstamos",
+      "netWorth.cash": "Efectivo",
+      "netWorth.bank": "Banco",
+      "netWorth.exchange": "Casa de Cambio",
+      "netWorth.investment": "Inversión",
+      "netWorth.property": "Propiedad",
+      "netWorth.other": "Otro",
+      "netWorth.creditCard": "Tarjeta de Crédito",
+      "netWorth.loan": "Préstamo",
+      "netWorth.mortgage": "Hipoteca",
+
+      // ── Historial ────────────────────────────────────────────────────
+      "history.netWorthHistory":
+        "Historial de Patrimonio Neto",
+      "history.month": "mes",
+      "history.months": "meses",
+      "history.show": "Mostrar:",
+      "history.sixMonths": "6 meses",
+      "history.twelveMonths": "12 meses",
+      "history.twentyFourMonths": "24 meses",
+      "history.allTime": "Todo el tiempo",
+      "history.over": "en",
+      "history.monthHeader": "Mes",
+      "history.netWorthHeader": "Patrimonio Neto",
+      "history.assetsHeader": "Activos",
+      "history.liabilitiesHeader": "Pasivos",
+      "history.changeHeader": "Cambio",
+      "history.noHistory": "Sin datos históricos aún",
+      "history.snapshotsAuto":
+        "Las instantáneas se crean automáticamente cada mes",
+      "history.noHistoryChart":
+        "Sin datos históricos disponibles",
+      "history.assetsTooltip": "Activos:",
+      "history.liabilitiesTooltip": "Pasivos:",
+      "history.netWorthTooltip": "Patrimonio Neto:",
+
+      // ── Catálogo de Cuentas ──────────────────────────────────────────
+      "accounts.title": "Referencias de Cuentas",
+      "accounts.description":
+        "Referencia rápida para tus cuentas bancarias, CLABEs y números de tarjeta. {{active}} activas de {{total}} en total.",
+      "accounts.nameHeader": "Nombre",
+      "accounts.accountCardHeader": "Cuenta/Tarjeta #",
+      "accounts.clabeHeader": "CLABE",
+      "accounts.typeHeader": "Tipo",
+      "accounts.activeHeader": "Activa",
+      "accounts.debit": "Débito",
+      "accounts.credit": "Crédito",
+      "accounts.addAccountRef": "Agregar referencia de cuenta",
+      "accounts.importCSV": "Importar CSV",
+      "accounts.emptyTitle":
+        "Agrega tus Referencias de Cuentas",
+      "accounts.emptyDescription":
+        "Almacena tus números de cuenta bancaria y CLABEs para referencia rápida. Pasa el cursor sobre cualquier entrada para copiarla al portapapeles.",
+      "accounts.search": "Buscar...",
+
+      // ── Configuración ────────────────────────────────────────────────
+      "settings.title": "Configuración del Espacio de Trabajo",
+      "settings.description":
+        "Configura la visibilidad de monedas y las preferencias del panel.",
+      "settings.baseCurrency": "Moneda Base",
+      "settings.baseCurrencyDesc":
+        "Usada para totales y reportes financieros.",
+      "settings.baseCurrencyLabel": "Moneda base",
+      "settings.currencyVisibility": "Visibilidad de Monedas",
+      "settings.currencyVisibilityDesc":
+        "Elige qué monedas aparecen en los selectores y paneles. La base permanece activa.",
+      "settings.hideList": "Ocultar lista",
+      "settings.showList": "Mostrar lista",
+      "settings.base": "Base",
+      "settings.preview": "Vista previa:",
+      "settings.showing": "Mostrando",
+      "settings.addCurrencyWarning":
+        "Agrega otra moneda si planeas rastrear saldos en divisas.",
+      "settings.generalPreferences": "Preferencias Generales",
+      "settings.generalPreferencesDesc":
+        "Opciones guardadas localmente; se expandirán cuando la configuración compartida esté disponible.",
+      "settings.showSavingsInsights":
+        "Mostrar consejos de ahorro en el panel",
+      "settings.showSavingsInsightsDesc":
+        "Se recomienda mantener activado para consejos de presupuesto.",
+      "settings.autoRefreshFx":
+        "Actualizar tasas de cambio automáticamente al iniciar",
+      "settings.autoRefreshFxDesc":
+        "Desactiva si trabajas sin conexión para evitar advertencias de API.",
+      "settings.cloudSync": "Sincronización en la Nube",
+      "settings.cloudSyncDesc":
+        "Migra tus datos locales a la nube para acceso multi-dispositivo y respaldo.",
+      "settings.dataManagement": "Gestión de Datos",
+      "settings.dataManagementDesc":
+        "Estas acciones solo afectan los datos almacenados en este navegador.",
+      "settings.seedMockData": "Cargar datos de prueba",
+      "settings.seedMockDataDesc":
+        "Llena la app con un pequeño conjunto de datos de demostración.",
+      "settings.seedMockDataBtn": "Cargar datos de prueba",
+      "settings.seeding": "Cargando...",
+      "settings.clearLocalData": "Borrar datos locales",
+      "settings.clearLocalDataDesc":
+        "Elimina todas las entradas locales. No se puede deshacer.",
+      "settings.clearing": "Borrando...",
+      "settings.clearConfirm":
+        "¿Borrar todos los datos locales? Esto eliminará tus ingresos, gastos, cuentas y configuración de este navegador. No se puede deshacer.",
+      "settings.resetDefaults":
+        "Restablecer valores predeterminados",
+      "settings.cancel": "Cancelar",
+      "settings.saveChanges": "Guardar cambios",
+      "settings.saving": "Guardando...",
+      "settings.refreshingRates":
+        "Actualizando tasas de cambio...",
+      "settings.ratesInfo":
+        "Las tasas de cambio se actualizan cada 5 minutos mientras la app está abierta.",
+      "settings.language": "Idioma",
+      "settings.languageDesc":
+        "Elige tu idioma preferido para la interfaz.",
+
+      // ── Migración de Datos ───────────────────────────────────────────
+      "migration.title": "Migración de Datos",
+      "migration.devMode": "Modo Dev Activo",
+      "migration.devModeDesc":
+        "La migración de datos no está disponible en modo dev. Configura las variables de entorno de Supabase para habilitar la sincronización en la nube.",
+      "migration.localStorage":
+        "Datos del Almacenamiento Local",
+      "migration.noLocalData":
+        "No se encontraron datos locales.",
+      "migration.cloudData": "Datos en la Nube (Supabase)",
+      "migration.noCloudData": "Sin datos en la nube aún.",
+      "migration.expensesLabel": "Gastos",
+      "migration.incomeLabel": "Ingresos",
+      "migration.accountsLabel": "Cuentas",
+      "migration.ledgerLabel": "Libro Mayor",
+      "migration.snapshotsLabel": "Instantáneas",
+      "migration.overwrite":
+        "Sobrescribir datos existentes en la nube",
+      "migration.migrateOverwrite":
+        "Migrar y Sobrescribir Datos en la Nube",
+      "migration.migrateToCloud": "Migrar a la Nube",
+      "migration.success": "¡Migración Exitosa!",
+      "migration.errors": "La migración tuvo errores",
+      "migration.clearPrompt":
+        "¿Borrar datos locales permanentemente?",
+      "migration.clearConfirm": "Sí, Borrar",
+      "migration.clearCancel": "Cancelar",
+      "migration.clearLocalBtn":
+        "Borrar datos locales (ya migrados)",
+      "migration.noLocalDataMsg":
+        "No hay datos locales para migrar. Tus datos ya están almacenados en la nube.",
+
+      // ── Modal de Importación ─────────────────────────────────────────
+      "import.title": "Importar {{entity}}",
+      "import.template": "Plantilla",
+      "import.upload": "Subir",
+      "import.preview": "Vista Previa",
+      "import.proFeature":
+        "La Importación de Datos es una Función Pro",
+      "import.proFeatureDesc":
+        "Actualiza a Pro para importar datos desde archivos Excel. Aún puedes ver el formato de la plantilla abajo.",
+      "import.contactUpgrade":
+        "Contáctanos para Actualizar",
+      "import.exampleFormat": "Formato de Ejemplo",
+      "import.fieldReference": "Referencia de Campos",
+      "import.downloadTemplate":
+        "Descargar Plantilla de Excel",
+      "import.dragDrop":
+        "Arrastra y suelta tu archivo de Excel aquí",
+      "import.dropHere": "Suelta tu archivo aquí",
+      "import.orBrowse": "o haz clic para buscar",
+      "import.processing": "Procesando archivo...",
+      "import.supportedFormats":
+        "Formatos soportados: Excel (.xlsx, .xls)",
+      "import.needTemplate": "¿Necesitas una plantilla?",
+      "import.viewFormatGuide": "Ver guía de formato",
+      "import.parseErrors": "Errores de Análisis",
+      "import.totalRows": "Total: {{count}} filas",
+      "import.validRows": "Válidas: {{count}}",
+      "import.invalidRows": "Inválidas: {{count}}",
+      "import.noDataPreview":
+        "Sin datos para vista previa",
+      "import.uploadToStart": "Sube un archivo de Excel",
+      "import.toGetStarted": "para comenzar",
+      "import.noValidRows":
+        "No hay filas válidas para importar",
+      "import.skipInvalid": "Omitir filas inválidas",
+      "import.cancel": "Cancelar",
+      "import.importing": "Importando...",
+      "import.importCount": "Importar {{count}} {{entity}}",
+      "import.continueUpload": "Continuar a Subir",
+      "import.selectFile": "Seleccionar Archivo",
+      "import.excelError":
+        "Selecciona un archivo de Excel (extensión .xlsx o .xls)",
+    },
+  },
+};
+
+i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    resources,
+    fallbackLng: "en",
+    detection: {
+      order: ["localStorage", "navigator"],
+      lookupLocalStorage: "fintonico-language",
+      caches: ["localStorage"],
+    },
+    interpolation: {
+      escapeValue: false,
+    },
+  });
+
+export default i18n;

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useShallow } from 'zustand/react/shallow';
+import { useTranslation } from 'react-i18next';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { useMonthNavigation } from '../../hooks/useMonthNavigation';
@@ -10,9 +11,9 @@ import { ImportModal } from '../Shared/ImportModal';
 import { parseExpenseXLSX } from '../../utils/xlsx';
 
 // Format date for display (compact format: Dec 11)
-const formatDateCompact = (dateStr: string): string => {
+const formatDateCompact = (dateStr: string, locale: string = 'en-US'): string => {
   const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 };
 
 // Parse YYYY-MM-DD as local date
@@ -36,10 +37,10 @@ const RATING_OPTIONS: { value: ExpenseRating; label: string; color: string; bgCo
 
 // Editable Cell Component
 // Format number with thousands separator (1,895.00)
-const formatNumberWithCommas = (value: number | string): string => {
+const formatNumberWithCommas = (value: number | string, locale: string = 'en-US'): string => {
   const num = typeof value === 'string' ? parseFloat(value) : value;
   if (isNaN(num)) return '';
-  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return num.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 interface EditableCellProps {
@@ -49,6 +50,7 @@ interface EditableCellProps {
   placeholder?: string;
   align?: 'left' | 'right';
   className?: string;
+  locale?: string;
 }
 
 const EditableCell: React.FC<EditableCellProps> = ({
@@ -58,6 +60,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
   placeholder = 'Click to edit',
   align = 'left',
   className = '',
+  locale = 'en-US',
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localValue, setLocalValue] = useState(value);
@@ -110,9 +113,9 @@ const EditableCell: React.FC<EditableCellProps> = ({
 
   let displayValue = value;
   if (type === 'date' && value) {
-    displayValue = formatDateCompact(value);
+    displayValue = formatDateCompact(value, locale);
   } else if (type === 'currency' && value) {
-    displayValue = formatNumberWithCommas(value);
+    displayValue = formatNumberWithCommas(value, locale);
   }
 
   return (
@@ -134,6 +137,7 @@ interface RatingDropdownProps {
 }
 
 const RatingDropdown: React.FC<RatingDropdownProps> = ({ value, onChange }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -180,7 +184,7 @@ const RatingDropdown: React.FC<RatingDropdownProps> = ({ value, onChange }) => {
         className="flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md transition-colors w-full"
       >
         <span className={`flex-1 text-left ${selectedOption?.color}`}>
-          {selectedOption?.label || 'Select...'}
+          {selectedOption ? t(`expenses.${selectedOption.value}`) : 'Select...'}
         </span>
         <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
@@ -210,7 +214,7 @@ const RatingDropdown: React.FC<RatingDropdownProps> = ({ value, onChange }) => {
               }`}
             >
               <option.icon className={`w-4 h-4 ${option.color}`} />
-              <span className={option.color}>{option.label}</span>
+              <span className={option.color}>{t(`expenses.${option.value}`)}</span>
             </button>
           ))}
         </div>,
@@ -316,6 +320,7 @@ interface RecurringToggleProps {
 }
 
 const RecurringToggle: React.FC<RecurringToggleProps> = ({ value, onChange }) => {
+  const { t } = useTranslation();
   return (
     <button
       onClick={() => onChange(!value)}
@@ -324,7 +329,7 @@ const RecurringToggle: React.FC<RecurringToggleProps> = ({ value, onChange }) =>
           ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
           : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
       }`}
-      title={value ? 'Recurring expense' : 'Mark as recurring'}
+      title={value ? t('expenses.recurringExpense') : t('expenses.markRecurring')}
     >
       <RefreshCw className="w-4 h-4" />
     </button>
@@ -338,6 +343,7 @@ interface DatePickerCellProps {
 }
 
 const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
+  const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [viewDate, setViewDate] = useState(() => value ? parseLocalDate(value) : new Date());
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
@@ -445,7 +451,7 @@ const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
         className="flex items-center gap-1 px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md transition-colors w-full"
       >
         <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
-          {value ? formatDateCompact(value) : '-'}
+          {value ? formatDateCompact(value, i18n.language) : '-'}
         </span>
         <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
@@ -473,7 +479,7 @@ const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
               <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </button>
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {viewDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+              {viewDate.toLocaleDateString(i18n.language, { month: 'short', year: 'numeric' })}
             </span>
             <button
               onClick={(e) => {
@@ -533,7 +539,7 @@ const DatePickerCell: React.FC<DatePickerCellProps> = ({ value, onChange }) => {
             }}
             className="w-full mt-2 px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
           >
-            Today
+            {t('expenses.today')}
           </button>
         </div>,
         document.body
@@ -562,6 +568,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
   hideDate = false,
   hideRecurring = false,
 }) => {
+  const { i18n } = useTranslation();
   const isEven = index % 2 === 0;
 
   return (
@@ -584,6 +591,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({
           placeholder="0.00"
           align="right"
           className="text-red-700 dark:text-red-400 font-medium"
+          locale={i18n.language}
         />
       </td>
 
@@ -712,15 +720,16 @@ const MonthlyTableHeader: React.FC<MonthlyTableHeaderProps> = ({
   sortDirection,
   onSort,
 }) => {
+  const { t } = useTranslation();
   return (
     <thead>
       <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-          Description
+          {t('expenses.descriptionHeader')}
         </th>
         <th className="px-2 py-2 border-l border-gray-300 dark:border-gray-600 w-28">
           <SortableHeader
-            label="Amount"
+            label={t('expenses.amountHeader')}
             column="amount"
             currentSort={sortColumn}
             direction={sortDirection}
@@ -729,14 +738,14 @@ const MonthlyTableHeader: React.FC<MonthlyTableHeaderProps> = ({
           />
         </th>
         <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
-          Currency
+          {t('expenses.currencyHeader')}
         </th>
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
-          Category
+          {t('expenses.categoryHeader')}
         </th>
         <th className="px-2 py-2 border-l border-gray-200 dark:border-gray-700 w-24">
           <SortableHeader
-            label="Date"
+            label={t('expenses.dateHeader')}
             column="date"
             currentSort={sortColumn}
             direction={sortDirection}
@@ -767,7 +776,7 @@ const MonthlyTableHeader: React.FC<MonthlyTableHeaderProps> = ({
                 type="text"
                 value={descriptionFilter}
                 onChange={(e) => setDescriptionFilter(e.target.value)}
-                placeholder="Search description..."
+                placeholder={t('expenses.searchDescription')}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-900 dark:text-white placeholder-gray-400 w-36"
               />
 
@@ -777,7 +786,7 @@ const MonthlyTableHeader: React.FC<MonthlyTableHeaderProps> = ({
                 onChange={(e) => setCurrencyFilter(e.target.value)}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
               >
-                <option value="">All Currencies</option>
+                <option value="">{t('expenses.allCurrencies')}</option>
                 {enabledCurrencies.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
@@ -789,9 +798,9 @@ const MonthlyTableHeader: React.FC<MonthlyTableHeaderProps> = ({
                 onChange={(e) => setCategoryFilter(e.target.value)}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
               >
-                <option value="">All Categories</option>
+                <option value="">{t('expenses.allCategories')}</option>
                 {RATING_OPTIONS.map((r) => (
-                  <option key={r.value} value={r.value}>{r.label}</option>
+                  <option key={r.value} value={r.value}>{t(`expenses.${r.value}`)}</option>
                 ))}
               </select>
 
@@ -802,7 +811,7 @@ const MonthlyTableHeader: React.FC<MonthlyTableHeaderProps> = ({
                   className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                 >
                   <X className="w-3 h-3" />
-                  Clear
+                  {t('expenses.clear')}
                 </button>
               )}
             </div>
@@ -847,15 +856,16 @@ const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
   sortDirection,
   onSort,
 }) => {
+  const { t } = useTranslation();
   return (
     <thead>
       <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-          Description
+          {t('expenses.descriptionHeader')}
         </th>
         <th className="px-2 py-2 border-l border-gray-300 dark:border-gray-600 w-28">
           <SortableHeader
-            label="Amount"
+            label={t('expenses.amountHeader')}
             column="amount"
             currentSort={sortColumn}
             direction={sortDirection}
@@ -864,14 +874,14 @@ const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
           />
         </th>
         <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-20">
-          Currency
+          {t('expenses.currencyHeader')}
         </th>
         <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-700 w-32">
-          Category
+          {t('expenses.categoryHeader')}
         </th>
         <th className="px-2 py-2 border-l border-gray-200 dark:border-gray-700 w-24">
           <SortableHeader
-            label="Due Date"
+            label={t('expenses.dueDateHeader')}
             column="date"
             currentSort={sortColumn}
             direction={sortDirection}
@@ -902,7 +912,7 @@ const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
                 type="text"
                 value={descriptionFilter}
                 onChange={(e) => setDescriptionFilter(e.target.value)}
-                placeholder="Search..."
+                placeholder={t('expenses.search')}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-gray-900 dark:text-white placeholder-gray-400 w-32"
               />
 
@@ -912,7 +922,7 @@ const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
                 onChange={(e) => setCurrencyFilter(e.target.value)}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
               >
-                <option value="">All Currencies</option>
+                <option value="">{t('expenses.allCurrencies')}</option>
                 {enabledCurrencies.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
@@ -924,9 +934,9 @@ const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
                 onChange={(e) => setCategoryFilter(e.target.value)}
                 className="px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white"
               >
-                <option value="">All Categories</option>
+                <option value="">{t('expenses.allCategories')}</option>
                 {RATING_OPTIONS.map((r) => (
-                  <option key={r.value} value={r.value}>{r.label}</option>
+                  <option key={r.value} value={r.value}>{t(`expenses.${r.value}`)}</option>
                 ))}
               </select>
 
@@ -937,7 +947,7 @@ const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
                   className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                 >
                   <X className="w-3 h-3" />
-                  Clear
+                  {t('expenses.clear')}
                 </button>
               )}
             </div>
@@ -950,6 +960,7 @@ const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
 
 // Main Component
 export const ExpensePage: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const { expenses, addExpense, deleteExpense, error: storeError, clearError } = useExpenseStore(
     useShallow((state) => ({ expenses: state.expenses, addExpense: state.addExpense, deleteExpense: state.deleteExpense, error: state.error, clearError: state.clearError }))
   );
@@ -1287,7 +1298,7 @@ export const ExpensePage: React.FC = () => {
             }} className="space-y-2">
               <div className="flex items-center gap-2 mb-1">
                 <Plus className="w-4 h-4 text-red-700 dark:text-red-400" />
-                <span className="text-sm font-medium text-gray-900 dark:text-white">Quick Add</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">{t('expenses.quickAdd')}</span>
               </div>
               {(quickAddError || storeError) && (
                 <div className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded px-2 py-1" onClick={() => { setQuickAddError(null); clearError(); }}>
@@ -1297,7 +1308,7 @@ export const ExpensePage: React.FC = () => {
               <input
                 name="quickWhat"
                 type="text"
-                placeholder="Description"
+                placeholder={t('expenses.description')}
                 className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded outline-none focus:border-red-500 text-gray-900 dark:text-white placeholder-gray-400"
               />
               <div className="flex gap-2">
@@ -1332,7 +1343,7 @@ export const ExpensePage: React.FC = () => {
                     }`}
                   >
                     <opt.icon className="w-3 h-3" />
-                    <span>{opt.label}</span>
+                    <span>{t(`expenses.${opt.value}`)}</span>
                   </button>
                 ))}
               </div>
@@ -1347,13 +1358,13 @@ export const ExpensePage: React.FC = () => {
                   }`}
                 >
                   <RefreshCw className="w-3 h-3" />
-                  <span>Recurring</span>
+                  <span>{t('expenses.recurring')}</span>
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-1.5 bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white text-sm font-medium rounded transition-colors"
                 >
-                  Add
+                  {t('expenses.add')}
                 </button>
               </div>
             </form>
@@ -1368,7 +1379,7 @@ export const ExpensePage: React.FC = () => {
                 {formatAmount(monthlyTotal)}
               </p>
               <p className="text-xs text-gray-400 dark:text-gray-500">
-                + {formatAmount(recurringTotal)} rec.
+                + {formatAmount(recurringTotal)} {t('expenses.rec')}
               </p>
             </div>
 
@@ -1377,7 +1388,7 @@ export const ExpensePage: React.FC = () => {
               <div key={rating.value} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-1 mb-0.5">
                   <rating.icon className={`w-3 h-3 ${rating.color}`} />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{rating.label}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t(`expenses.${rating.value}`)}</p>
                 </div>
                 <p className={`text-base font-semibold truncate ${rating.color}`}>
                   {formatAmount(ratingBreakdown[rating.value])}
@@ -1397,7 +1408,7 @@ export const ExpensePage: React.FC = () => {
               title="Import expenses from CSV"
             >
               <Upload className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Import</span>
+              <span className="hidden sm:inline">{t('expenses.import')}</span>
             </button>
 
             {/* Month Navigation */}
@@ -1440,12 +1451,12 @@ export const ExpensePage: React.FC = () => {
             <ChevronDown className="w-5 h-5 text-gray-400" />
           )}
           <RefreshCw className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left">Recurring Expenses</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left">{t('expenses.recurringExpenses')}</h2>
           <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">
-            {formatAmount(recurringTotal)}/mo
+            {formatAmount(recurringTotal)}{t('expenses.perMonth')}
           </span>
           <span className="text-xs text-gray-400 dark:text-gray-500">
-            {filteredRecurringExpenses.length} {hasRecurringFilters ? `of ${allRecurringExpenses.length}` : ''} items
+            {filteredRecurringExpenses.length} {hasRecurringFilters ? `${t('expenses.of')} ${allRecurringExpenses.length}` : ''} {t('expenses.items')}
           </span>
         </button>
 
@@ -1483,7 +1494,7 @@ export const ExpensePage: React.FC = () => {
                 {filteredRecurringExpenses.length === 0 && (
                   <tr>
                     <td colSpan={6} className="py-6 text-center text-gray-500 dark:text-gray-400 text-sm">
-                      No recurring expenses. Mark an expense as recurring to have it appear here.
+                      {t('expenses.emptyRecurring')}
                     </td>
                   </tr>
                 )}
@@ -1505,12 +1516,12 @@ export const ExpensePage: React.FC = () => {
             <ChevronDown className="w-5 h-5 text-gray-400" />
           )}
           <Calendar className="w-5 h-5 text-red-700 dark:text-red-400" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left">Monthly Expenses</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left">{t('expenses.monthlyExpenses')}</h2>
           <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">
             {formatAmount(monthlyTotal)}
           </span>
           <span className="text-xs text-gray-400 dark:text-gray-500">
-            {filteredMonthlyExpenses.length} {hasMonthlyFilters ? `of ${allMonthlyExpenses.length}` : ''} items
+            {filteredMonthlyExpenses.length} {hasMonthlyFilters ? `${t('expenses.of')} ${allMonthlyExpenses.length}` : ''} {t('expenses.items')}
           </span>
         </button>
 
@@ -1548,7 +1559,7 @@ export const ExpensePage: React.FC = () => {
                 {filteredMonthlyExpenses.length === 0 && (
                   <tr>
                     <td colSpan={6} className="py-6 text-center text-gray-500 dark:text-gray-400 text-sm">
-                      No expenses this month. Use the Quick Add form above to get started.
+                      {t('expenses.emptyMonthly')}
                     </td>
                   </tr>
                 )}

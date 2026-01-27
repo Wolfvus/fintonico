@@ -1,20 +1,21 @@
 import React, { useState, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnapshotStore, type NetWorthSnapshot } from '../../stores/snapshotStore';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, History, Calendar, BarChart3, LineChart as LineChartIcon } from 'lucide-react';
 
 // Format month string (YYYY-MM) to display format (Jan 2025)
-const formatMonth = (monthStr: string): string => {
+const formatMonth = (monthStr: string, locale: string): string => {
   const [year, month] = monthStr.split('-').map(Number);
   const date = new Date(year, month - 1, 1);
-  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  return date.toLocaleDateString(locale, { month: 'short', year: 'numeric' });
 };
 
 // Format month string to short format (Jan '25)
-const formatMonthShort = (monthStr: string): string => {
+const formatMonthShort = (monthStr: string, locale: string): string => {
   const [year, month] = monthStr.split('-').map(Number);
   const date = new Date(year, month - 1, 1);
-  return date.toLocaleDateString('en-US', { month: 'short' }) + " '" + String(year).slice(-2);
+  return date.toLocaleDateString(locale, { month: 'short' }) + " '" + String(year).slice(-2);
 };
 
 // Format large numbers compactly (e.g., 1.2M, 500K)
@@ -39,13 +40,14 @@ interface LineChartProps {
 }
 
 const LineChart: React.FC<LineChartProps> = ({ data, formatAmount, mode }) => {
+  const { t, i18n } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredPoint, setHoveredPoint] = useState<{ index: number; x: number; y: number } | null>(null);
 
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center h-48 sm:h-56 md:h-64 text-gray-500 dark:text-gray-400 text-sm">
-        No history data available
+        {t('history.noHistoryChart')}
       </div>
     );
   }
@@ -124,7 +126,7 @@ const LineChart: React.FC<LineChartProps> = ({ data, formatAmount, mode }) => {
   const getXAxisLabels = () => {
     if (data.length <= 2) {
       return data.map((d, i) => ({
-        label: formatMonthShort(d.monthEndLocal),
+        label: formatMonthShort(d.monthEndLocal, i18n.language),
         x: leftPadding + (i / Math.max(data.length - 1, 1)) * chartWidth,
       }));
     }
@@ -137,7 +139,7 @@ const LineChart: React.FC<LineChartProps> = ({ data, formatAmount, mode }) => {
     for (let i = 0; i < labelCount; i++) {
       const dataIndex = Math.round(i * step);
       labels.push({
-        label: formatMonthShort(data[dataIndex].monthEndLocal),
+        label: formatMonthShort(data[dataIndex].monthEndLocal, i18n.language),
         x: leftPadding + (dataIndex / Math.max(data.length - 1, 1)) * chartWidth,
       });
     }
@@ -330,22 +332,22 @@ const LineChart: React.FC<LineChartProps> = ({ data, formatAmount, mode }) => {
           }}
         >
           <div className="font-semibold mb-1 border-b border-gray-700 dark:border-gray-600 pb-1">
-            {formatMonth(data[hoveredPoint.index].monthEndLocal)}
+            {formatMonth(data[hoveredPoint.index].monthEndLocal, i18n.language)}
           </div>
           {mode === 'breakdown' && (
             <>
               <div className="flex justify-between gap-3">
-                <span className="text-green-400">Assets:</span>
+                <span className="text-green-400">{t('history.assetsTooltip')}</span>
                 <span>{formatAmount(data[hoveredPoint.index].totalsByNature.asset)}</span>
               </div>
               <div className="flex justify-between gap-3">
-                <span className="text-red-400">Liabilities:</span>
+                <span className="text-red-400">{t('history.liabilitiesTooltip')}</span>
                 <span>{formatAmount(Math.abs(data[hoveredPoint.index].totalsByNature.liability))}</span>
               </div>
             </>
           )}
           <div className="flex justify-between gap-3">
-            <span className={mode === 'breakdown' ? 'text-blue-400' : ''}>Net Worth:</span>
+            <span className={mode === 'breakdown' ? 'text-blue-400' : ''}>{t('history.netWorthTooltip')}</span>
             <span className="font-medium">{formatAmount(data[hoveredPoint.index].netWorthBase)}</span>
           </div>
         </div>
@@ -356,15 +358,15 @@ const LineChart: React.FC<LineChartProps> = ({ data, formatAmount, mode }) => {
         <div className="flex items-center justify-center gap-4 mt-2 text-xs">
           <div className="flex items-center gap-1">
             <div className="w-3 h-0.5 bg-green-500 rounded"></div>
-            <span className="text-gray-600 dark:text-gray-400">Assets</span>
+            <span className="text-gray-600 dark:text-gray-400">{t('history.assetsHeader')}</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-0.5 bg-red-500 rounded"></div>
-            <span className="text-gray-600 dark:text-gray-400">Liabilities</span>
+            <span className="text-gray-600 dark:text-gray-400">{t('history.liabilitiesHeader')}</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-0.5 bg-blue-500 rounded"></div>
-            <span className="text-gray-600 dark:text-gray-400">Net Worth</span>
+            <span className="text-gray-600 dark:text-gray-400">{t('history.netWorthHeader')}</span>
           </div>
         </div>
       )}
@@ -373,6 +375,7 @@ const LineChart: React.FC<LineChartProps> = ({ data, formatAmount, mode }) => {
 };
 
 export const NetWorthHistory: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const { getHistory } = useSnapshotStore();
   const { formatAmount } = useCurrencyStore();
 
@@ -416,10 +419,10 @@ export const NetWorthHistory: React.FC = () => {
       >
         <div className="flex items-center gap-2">
           <History className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Net Worth History</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('history.netWorthHistory')}</h3>
           {history.length > 0 && (
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              ({history.length} {history.length === 1 ? 'month' : 'months'})
+              ({history.length} {history.length === 1 ? t('history.month') : t('history.months')})
             </span>
           )}
         </div>
@@ -436,12 +439,12 @@ export const NetWorthHistory: React.FC = () => {
           {/* Filter buttons */}
           <div className="flex items-center gap-2 flex-wrap">
             <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">Show:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('history.show')}</span>
             {[
-              { value: 6, label: '6 months' },
-              { value: 12, label: '12 months' },
-              { value: 24, label: '24 months' },
-              { value: 0, label: 'All time' },
+              { value: 6, label: t('history.sixMonths') },
+              { value: 12, label: t('history.twelveMonths') },
+              { value: 24, label: t('history.twentyFourMonths') },
+              { value: 0, label: t('history.allTime') },
             ].map(({ value, label }) => (
               <button
                 key={value}
@@ -480,7 +483,7 @@ export const NetWorthHistory: React.FC = () => {
                 </span>
               </span>
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                over {history.length} {history.length === 1 ? 'month' : 'months'}
+                {t('history.over')} {history.length} {history.length === 1 ? t('history.month') : t('history.months')}
               </span>
             </div>
           )}
@@ -521,11 +524,11 @@ export const NetWorthHistory: React.FC = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 dark:text-gray-400">Month</th>
-                    <th className="text-right py-2 px-3 text-xs font-medium text-gray-500 dark:text-gray-400">Net Worth</th>
-                    <th className="text-right py-2 px-3 text-xs font-medium text-gray-500 dark:text-gray-400">Assets</th>
-                    <th className="text-right py-2 px-3 text-xs font-medium text-gray-500 dark:text-gray-400">Liabilities</th>
-                    <th className="text-right py-2 px-3 text-xs font-medium text-gray-500 dark:text-gray-400">Change</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 dark:text-gray-400">{t('history.monthHeader')}</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-gray-500 dark:text-gray-400">{t('history.netWorthHeader')}</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-gray-500 dark:text-gray-400">{t('history.assetsHeader')}</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-gray-500 dark:text-gray-400">{t('history.liabilitiesHeader')}</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-gray-500 dark:text-gray-400">{t('history.changeHeader')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -541,7 +544,7 @@ export const NetWorthHistory: React.FC = () => {
                         className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                       >
                         <td className="py-2 px-3 text-gray-900 dark:text-white font-medium">
-                          {formatMonth(snapshot.monthEndLocal)}
+                          {formatMonth(snapshot.monthEndLocal, i18n.language)}
                         </td>
                         <td className={`py-2 px-3 text-right font-medium ${
                           snapshot.netWorthBase >= 0
@@ -585,8 +588,8 @@ export const NetWorthHistory: React.FC = () => {
           {history.length === 0 && (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <History className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No history data yet</p>
-              <p className="text-sm mt-1">Snapshots are created automatically each month</p>
+              <p>{t('history.noHistory')}</p>
+              <p className="text-sm mt-1">{t('history.snapshotsAuto')}</p>
             </div>
           )}
         </div>

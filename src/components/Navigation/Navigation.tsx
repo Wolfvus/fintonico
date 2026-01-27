@@ -14,6 +14,7 @@ import {
   BookOpen,
   Shield
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore';
 import { CurrencySelector } from '../Currency/CurrencySelector';
 
@@ -42,15 +43,16 @@ export const Navigation: React.FC<NavigationProps> = ({
   onOpenSettings,
   showAdmin = false
 }) => {
+  const { t, i18n } = useTranslation();
   const { user, signOut } = useAuthStore();
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'income', label: 'Income', icon: DollarSign },
-    { id: 'expenses', label: 'Expenses', icon: Wallet },
-    { id: 'networth', label: 'Net Worth', icon: Landmark },
-    { id: 'accounts', label: 'Accounts', icon: BookOpen },
-    ...(showAdmin ? [{ id: 'admin', label: 'Admin', icon: Shield }] : []),
+    { id: 'dashboard', label: t('nav.dashboard'), icon: Home },
+    { id: 'income', label: t('nav.income'), icon: DollarSign },
+    { id: 'expenses', label: t('nav.expenses'), icon: Wallet },
+    { id: 'networth', label: t('nav.netWorth'), icon: Landmark },
+    { id: 'accounts', label: t('nav.accounts'), icon: BookOpen },
+    ...(showAdmin ? [{ id: 'admin', label: t('nav.admin'), icon: Shield }] : []),
   ];
 
   const handleSignOut = async () => {
@@ -120,7 +122,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               <Moon className="w-5 h-5 flex-shrink-0" />
             )}
             <span className="font-medium hidden lg:group-hover:block transition-all duration-300 whitespace-nowrap">
-              {isDark ? 'Light Mode' : 'Dark Mode'}
+              {isDark ? t('nav.lightMode') : t('nav.darkMode')}
             </span>
           </button>
           <button
@@ -129,7 +131,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           >
             <Settings className="w-5 h-5 flex-shrink-0" />
             <span className="font-medium hidden lg:group-hover:block transition-all duration-300 whitespace-nowrap">
-              Settings
+              {t('nav.settings')}
             </span>
           </button>
         </div>
@@ -149,7 +151,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                 className="nav-item justify-center lg:group-hover:justify-start"
               >
                 <LogOut className="w-5 h-5 flex-shrink-0" />
-                <span className="font-medium hidden lg:group-hover:block transition-all duration-300 whitespace-nowrap">Sign Out</span>
+                <span className="font-medium hidden lg:group-hover:block transition-all duration-300 whitespace-nowrap">{t('nav.signOut')}</span>
               </button>
             </div>
           )}
@@ -178,7 +180,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               className="h-7 px-2 flex items-center rounded-lg transition-colors btn-secondary"
             >
               <span className="text-sm font-medium whitespace-nowrap">
-                {new Date().toLocaleDateString('en-US', {
+                {new Date().toLocaleDateString(i18n.language, {
                   month: 'short',
                   day: 'numeric'
                 })}
@@ -247,12 +249,12 @@ export const Navigation: React.FC<NavigationProps> = ({
                   {isDark ? (
                     <>
                       <Sun className="w-5 h-5" />
-                      <span className="font-medium text-sm">Light Mode</span>
+                      <span className="font-medium text-sm">{t('nav.lightMode')}</span>
                     </>
                   ) : (
                     <>
                       <Moon className="w-5 h-5" />
-                      <span className="font-medium text-sm">Dark Mode</span>
+                      <span className="font-medium text-sm">{t('nav.darkMode')}</span>
                     </>
                   )}
                 </button>
@@ -264,7 +266,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                   className="mt-3 nav-item min-h-[48px]"
                 >
                   <Settings className="w-5 h-5" />
-                  <span className="font-medium text-sm">Settings</span>
+                  <span className="font-medium text-sm">{t('nav.settings')}</span>
                 </button>
               </div>
 
@@ -281,7 +283,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                     className="nav-item min-h-[44px]"
                   >
                     <LogOut className="w-5 h-5" />
-                    <span className="font-medium text-sm">Sign Out</span>
+                    <span className="font-medium text-sm">{t('nav.signOut')}</span>
                   </button>
                 </div>
               )}

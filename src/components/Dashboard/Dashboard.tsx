@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { useTranslation } from 'react-i18next';
 import { useCurrencyStore } from '../../stores/currencyStore';
 import { useLedgerStore } from '../../stores/ledgerStore';
 import { useExpenseStore } from '../../stores/expenseStore';
@@ -18,6 +19,7 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
+  const { t, i18n } = useTranslation();
   const { formatAmount, baseCurrency, convertAmount } = useCurrencyStore(
     useShallow((state) => ({ formatAmount: state.formatAmount, baseCurrency: state.baseCurrency, convertAmount: state.convertAmount }))
   );
@@ -307,7 +309,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     <Landmark className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                 </div>
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 text-left">Net Worth</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 text-left">{t('dashboard.netWorth')}</p>
                 <div className="flex items-center gap-2">
                   <p className={`text-2xl font-bold ${
                     netWorth >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-700 dark:text-red-400'
@@ -332,14 +334,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               <div className="flex items-center justify-center gap-2">
                 <TrendingUp className="w-4 h-4 text-green-700 dark:text-green-400" />
                 <div className="text-center">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Assets</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.assets')}</p>
                   <p className="text-base font-semibold text-green-700 dark:text-green-400">{formatAmount(totalAssets)}</p>
                 </div>
               </div>
               <div className="flex items-center justify-center gap-2">
                 <TrendingDown className="w-4 h-4 text-red-700 dark:text-red-400" />
                 <div className="text-center">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Liabilities</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.liabilities')}</p>
                   <p className="text-base font-semibold text-red-700 dark:text-red-400">{formatAmount(totalLiabilities)}</p>
                 </div>
               </div>
@@ -354,7 +356,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                   <Landmark className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 text-left">Total Net Worth</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 text-left">{t('dashboard.totalNetWorth')}</p>
               <div className="flex items-center gap-2">
                 <p className={`text-3xl font-bold ${
                   netWorth >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-700 dark:text-red-400'
@@ -377,14 +379,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-green-700 dark:text-green-400" />
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Total Assets</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.totalAssets')}</p>
                   <p className="text-lg font-semibold text-green-700 dark:text-green-400">{formatAmount(totalAssets)}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <TrendingDown className="w-5 h-5 text-red-700 dark:text-red-400" />
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Total Liabilities</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('dashboard.totalLiabilities')}</p>
                   <p className="text-lg font-semibold text-red-700 dark:text-red-400">{formatAmount(totalLiabilities)}</p>
                 </div>
               </div>
@@ -397,15 +399,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center justify-center sm:justify-start gap-2">
               <Filter className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Period:</span>
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('dashboard.period')}</span>
               <select
                 value={viewMode}
                 onChange={(e) => setViewMode(e.target.value as typeof viewMode)}
                 className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
               >
-                <option value="month">Monthly</option>
-                <option value="year">Yearly</option>
-                <option value="custom">Custom</option>
+                <option value="month">{t('dashboard.monthly')}</option>
+                <option value="year">{t('dashboard.yearly')}</option>
+                <option value="custom">{t('dashboard.custom')}</option>
               </select>
             </div>
             {viewMode === 'month' && (
@@ -438,7 +440,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               <div className="flex items-center justify-center gap-2">
                 <input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)}
                   className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300" />
-                <span className="text-xs text-gray-500">to</span>
+                <span className="text-xs text-gray-500">{t('dashboard.to')}</span>
                 <input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)}
                   className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300" />
               </div>
@@ -452,7 +454,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-2.5 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-1.5 mb-1">
               <ArrowUpDown className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />
-              <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Cash Flow</p>
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('dashboard.cashFlow')}</p>
             </div>
             <p className={`text-base font-bold ${monthlyCashFlow >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
               {formatAmount(monthlyCashFlow)}
@@ -463,7 +465,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-2.5 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-1.5 mb-1">
               <PiggyBank className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />
-              <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Savings</p>
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('dashboard.savings')}</p>
             </div>
             <p className={`text-base font-bold ${savingsRate >= 20 ? 'text-green-700 dark:text-green-400' : savingsRate >= 10 ? 'text-yellow-700 dark:text-yellow-400' : 'text-red-700 dark:text-red-400'}`}>
               {savingsRate.toFixed(1)}%
@@ -475,7 +477,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-2.5 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               <div className="flex items-center gap-1.5 mb-1">
                 <DollarSign className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />
-                <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Income</p>
+                <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('dashboard.income')}</p>
               </div>
               <p className="text-base font-bold text-green-700 dark:text-green-400">{formatAmount(periodIncome)}</p>
             </div>
@@ -486,7 +488,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-2.5 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               <div className="flex items-center gap-1.5 mb-1">
                 <Wallet className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />
-                <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Expenses</p>
+                <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('dashboard.expenses')}</p>
               </div>
               <p className="text-base font-bold text-red-700 dark:text-red-400">{formatAmount(totalMonthlyExpenses)}</p>
             </div>
@@ -501,7 +503,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
             {/* Section header with collapse toggle */}
             <div className="p-4 sm:p-5 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Transactions</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('dashboard.recentTransactions')}</h3>
               <button
                 onClick={() => setIsTransactionsCollapsed(!isTransactionsCollapsed)}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -518,33 +520,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               <div>
                 <div className="px-4 sm:px-5 pt-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className={styles.sectionLabel}>Filter:</span>
+                    <span className={styles.sectionLabel}>{t('dashboard.filter')}</span>
                     <select
                       value={entryFilter}
                       onChange={(e) => setEntryFilter(e.target.value as typeof entryFilter)}
                       className={styles.input}
                     >
-                      <option value="all">All</option>
-                      <option value="income">Income</option>
-                      <option value="expense">Expenses</option>
+                      <option value="all">{t('dashboard.allFilter')}</option>
+                      <option value="income">{t('dashboard.incomeFilter')}</option>
+                      <option value="expense">{t('dashboard.expensesFilter')}</option>
                     </select>
                   </div>
                 </div>
                 <div className="overflow-x-auto">
                   {paginatedTransactions.length === 0 ? (
                     <div className={styles.emptyState}>
-                      No transactions found for the selected period
+                      {t('dashboard.noTransactions')}
                     </div>
                   ) : (
                     <>
                       <table className="w-full">
                         <thead>
                           <tr className="border-b border-gray-200 dark:border-gray-700">
-                            <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Type</th>
-                            <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Description</th>
-                            <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Amount</th>
-                            <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Currency</th>
-                            <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">Date</th>
+                            <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">{t('dashboard.typeHeader')}</th>
+                            <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">{t('dashboard.descriptionHeader')}</th>
+                            <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">{t('dashboard.amountHeader')}</th>
+                            <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">{t('dashboard.currencyHeader')}</th>
+                            <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 dark:text-gray-400">{t('dashboard.dateHeader')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -559,7 +561,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                                     ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                                     : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
                                 }`}>
-                                  {transaction.type === 'income' ? 'Income' : 'Expense'}
+                                  {transaction.type === 'income' ? t('dashboard.incomeType') : t('dashboard.expenseType')}
                                 </span>
                               </td>
                               <td className="py-2 px-4">
@@ -603,7 +605,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                             Previous
                           </button>
                           <span className="text-sm text-gray-600 dark:text-gray-400">
-                            Page {currentPage} of {totalPages} ({allTransactions.length} total)
+                            {t('dashboard.pageOf', { current: currentPage, total: totalPages, count: allTransactions.length })}
                           </span>
                           <button
                             onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
@@ -637,7 +639,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 }`}
               >
                 <LayoutGrid className="w-4 h-4" />
-                <span className="hidden sm:inline">Overview</span>
+                <span className="hidden sm:inline">{t('dashboard.overview')}</span>
               </button>
               <button
                 onClick={() => setActiveInsightTab('optimize')}
@@ -648,7 +650,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 }`}
               >
                 <Scissors className="w-4 h-4" />
-                <span className="hidden sm:inline">Optimize</span>
+                <span className="hidden sm:inline">{t('dashboard.optimize')}</span>
               </button>
             </div>
 
@@ -656,7 +658,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <div className="p-4">
               {activeInsightTab === 'overview' && (
                 <div className="space-y-4">
-                  <h4 className={styles.sectionHeader}>Expense Breakdown</h4>
+                  <h4 className={styles.sectionHeader}>{t('dashboard.expenseBreakdown')}</h4>
 
                   {/* Pie Chart */}
                   {periodExpenses > 0 ? (
@@ -664,9 +666,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                       <svg viewBox="0 0 100 100" className="w-40 h-40">
                         {(() => {
                           const categories = [
-                            { key: 'essential', color: '#22c55e', label: 'Essential' },
-                            { key: 'discretionary', color: '#eab308', label: 'Discretionary' },
-                            { key: 'luxury', color: '#ef4444', label: 'Luxury' },
+                            { key: 'essential', color: '#22c55e', label: t('dashboard.essential') },
+                            { key: 'discretionary', color: '#eab308', label: t('dashboard.discretionary') },
+                            { key: 'luxury', color: '#ef4444', label: t('dashboard.luxury') },
                           ];
 
                           let cumulativePercent = 0;
@@ -713,9 +715,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                       {/* Legend */}
                       <div className="flex flex-wrap justify-center gap-3 mt-4">
                         {([
-                          { key: 'essential', color: 'bg-green-500', label: 'Essential' },
-                          { key: 'discretionary', color: 'bg-yellow-500', label: 'Discretionary' },
-                          { key: 'luxury', color: 'bg-red-500', label: 'Luxury' },
+                          { key: 'essential', color: 'bg-green-500', label: t('dashboard.essential') },
+                          { key: 'discretionary', color: 'bg-yellow-500', label: t('dashboard.discretionary') },
+                          { key: 'luxury', color: 'bg-red-500', label: t('dashboard.luxury') },
                         ] as const).map(({ key, color, label }) => {
                           const value = expensesByRating[key] || 0;
                           const percent = periodExpenses > 0 ? (value / periodExpenses) * 100 : 0;
@@ -734,9 +736,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                       {/* Category amounts */}
                       <div className="w-full mt-4 space-y-2">
                         {([
-                          { key: 'essential', color: 'text-green-700 dark:text-green-400', label: 'Essential' },
-                          { key: 'discretionary', color: 'text-yellow-700 dark:text-yellow-400', label: 'Discretionary' },
-                          { key: 'luxury', color: 'text-red-700 dark:text-red-400', label: 'Luxury' },
+                          { key: 'essential', color: 'text-green-700 dark:text-green-400', label: t('dashboard.essential') },
+                          { key: 'discretionary', color: 'text-yellow-700 dark:text-yellow-400', label: t('dashboard.discretionary') },
+                          { key: 'luxury', color: 'text-red-700 dark:text-red-400', label: t('dashboard.luxury') },
                         ] as const).map(({ key, color, label }) => {
                           const value = expensesByRating[key] || 0;
                           return value > 0 ? (
@@ -751,10 +753,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                   ) : (
                     <div className="flex flex-col items-center py-8">
                       <div className="w-40 h-40 rounded-full border-4 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center">
-                        <span className="text-xs text-gray-400 dark:text-gray-500">No data</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">{t('dashboard.noData')}</span>
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 italic mt-4">
-                        No expenses this period
+                        {t('dashboard.noExpensesPeriod')}
                       </p>
                     </div>
                   )}
@@ -763,13 +765,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
               {activeInsightTab === 'optimize' && (
                 <div className="space-y-4">
-                  <h4 className={styles.sectionHeader}>Optimization Tips</h4>
+                  <h4 className={styles.sectionHeader}>{t('dashboard.optimizationTips')}</h4>
 
                   {/* Savings Potential */}
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-2">
                       <Scissors className="w-4 h-4 text-yellow-700 dark:text-yellow-400" />
-                      <p className="text-xs font-medium text-gray-900 dark:text-white">Savings Potential</p>
+                      <p className="text-xs font-medium text-gray-900 dark:text-white">{t('dashboard.savingsPotential')}</p>
                     </div>
                     {nonEssentialTotal > 0 ? (
                       <>
@@ -777,31 +779,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                           {formatAmount(nonEssentialTotal)}
                         </p>
                         <p className={styles.sectionLabel}>
-                          in non-essential + luxury spending
+                          {t('dashboard.nonEssentialSpending')}
                         </p>
                       </>
                     ) : (
                       <p className={styles.sectionLabel}>
-                        Great job! All spending is essential.
+                        {t('dashboard.allEssential')}
                       </p>
                     )}
                   </div>
 
                   {/* Tips */}
                   <div className="space-y-2">
-                    <p className={styles.sectionLabel}>Quick Tips:</p>
+                    <p className={styles.sectionLabel}>{t('dashboard.quickTips')}</p>
                     <ul className="space-y-1 text-xs text-gray-700 dark:text-gray-300">
                       <li className="flex items-start gap-1">
                         <span className="text-green-500">•</span>
-                        <span>Aim for a 20% or higher savings rate</span>
+                        <span>{t('dashboard.tip1')}</span>
                       </li>
                       <li className="flex items-start gap-1">
                         <span className="text-yellow-500">•</span>
-                        <span>Review non-essential expenses monthly</span>
+                        <span>{t('dashboard.tip2')}</span>
                       </li>
                       <li className="flex items-start gap-1">
                         <span className="text-blue-500">•</span>
-                        <span>Track spending patterns over time</span>
+                        <span>{t('dashboard.tip3')}</span>
                       </li>
                     </ul>
                   </div>
