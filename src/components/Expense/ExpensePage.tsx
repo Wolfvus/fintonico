@@ -950,9 +950,10 @@ const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
 
 // Main Component
 export const ExpensePage: React.FC = () => {
-  const { expenses, addExpense, deleteExpense } = useExpenseStore(
-    useShallow((state) => ({ expenses: state.expenses, addExpense: state.addExpense, deleteExpense: state.deleteExpense }))
+  const { expenses, addExpense, deleteExpense, error: storeError, clearError } = useExpenseStore(
+    useShallow((state) => ({ expenses: state.expenses, addExpense: state.addExpense, deleteExpense: state.deleteExpense, error: state.error, clearError: state.clearError }))
   );
+  const [quickAddError, setQuickAddError] = useState<string | null>(null);
   const { baseCurrency, enabledCurrencies, formatAmount, convertAmount } = useCurrencyStore(
     useShallow((state) => ({ baseCurrency: state.baseCurrency, enabledCurrencies: state.enabledCurrencies, formatAmount: state.formatAmount, convertAmount: state.convertAmount }))
   );
@@ -1259,30 +1260,40 @@ export const ExpensePage: React.FC = () => {
         <div className="grid grid-cols-3 gap-3">
           {/* Quick Add Form - Compact */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
+              setQuickAddError(null);
               const form = e.target as HTMLFormElement;
               const whatInput = form.elements.namedItem('quickWhat') as HTMLInputElement;
               const amountInput = form.elements.namedItem('quickAmount') as HTMLInputElement;
               if (whatInput.value.trim() && amountInput.value) {
-                addExpense({
-                  what: whatInput.value.trim(),
-                  amount: parseFloat(amountInput.value) || 0,
-                  currency: quickCurrency,
-                  rating: quickRating,
-                  date: getTodayString(),
-                  recurring: quickRecurring,
-                });
-                whatInput.value = '';
-                amountInput.value = '';
-                setQuickRecurring(false);
-                whatInput.focus();
+                try {
+                  await addExpense({
+                    what: whatInput.value.trim(),
+                    amount: parseFloat(amountInput.value) || 0,
+                    currency: quickCurrency,
+                    rating: quickRating,
+                    date: getTodayString(),
+                    recurring: quickRecurring,
+                  });
+                  whatInput.value = '';
+                  amountInput.value = '';
+                  setQuickRecurring(false);
+                  whatInput.focus();
+                } catch (err) {
+                  setQuickAddError(err instanceof Error ? err.message : 'Failed to add expense');
+                }
               }
             }} className="space-y-2">
               <div className="flex items-center gap-2 mb-1">
                 <Plus className="w-4 h-4 text-red-600 dark:text-red-400" />
                 <span className="text-sm font-medium text-gray-900 dark:text-white">Quick Add</span>
               </div>
+              {(quickAddError || storeError) && (
+                <div className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded px-2 py-1" onClick={() => { setQuickAddError(null); clearError(); }}>
+                  {quickAddError || storeError} (tap to dismiss)
+                </div>
+              )}
               <input
                 name="quickWhat"
                 type="text"
