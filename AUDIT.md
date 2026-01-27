@@ -3,7 +3,196 @@
 A comprehensive step-by-step audit checklist for the Fintonico codebase.
 
 **Created:** 2025-12-17
-**Last Updated:** 2025-12-17
+**Last Updated:** 2026-01-26
+
+---
+
+## Recent Production Issues (2026-01-26)
+
+### Issue Summary
+
+After deploying the subscription tier and auth overhaul features to production (https://fintonico.vercel.app), users were unable to add or save data. The admin panel also could not modify data. Multiple cascading issues were identified and fixed.
+
+### Root Causes Identified
+
+1. **Data not loading from Supabase** (CRITICAL)
+   - **Problem**: Every store defined a `fetchAll()` method but no component ever called it
+   - **Impact**: In production mode, stores remained empty (no data loaded from Supabase)
+   - **Why it was hidden**: In DEV_MODE, Zustand persist middleware loads data from localStorage, masking the bug
+   - **Fix** (commit `90896ba`): Added `useEffect` in `App.tsx` to call `fetchAll()` on all 5 data stores when user authenticates
+   - **Status**: ✅ FIXED
+
+2. **Silent error swallowing in forms** (HIGH)
+   - **Problem**: `addExpense()` called without `await` in Quick Add form's `onSubmit` handler
+   - **Impact**: Save failures were unhandled promise rejections (no user feedback)
+   - **Fix** (commit `dc38d4b`): Made handler `async`, added try/catch, added red error banner UI
+   - **Status**: ✅ FIXED
+
+3. **App crash on load** (CRITICAL)
+   - **Problem**: `ensureCurrentMonthSnapshot()` ran at app init before auth completed
+   - **Impact**: In production, it called `supabase.auth.getUser()` before session existed → threw "Not authenticated"
+   - **Fix** (commit `f904872`): Moved `ensureCurrentMonthSnapshot()` to run only after auth and data fetch
+   - **Status**: ✅ FIXED
+
+4. **Page unresponsive** (CRITICAL)
+   - **Problem**: `useSnapshotStore()` hook in App.tsx subscribed to ALL snapshot store state changes
+   - **Impact**: When fetchAll and ensureCurrentMonthSnapshot updated store, App re-rendered repeatedly
+   - **Fix** (commit `5f4cb12`): Replaced hook with `useRef` guard and `getState()` to avoid subscription
+   - **Status**: ✅ FIXED
+
+### Production Verification Status
+
+| Test | Status | Notes |
+| --- | --- | --- |
+| Page loads without crashing | ❓ PENDING | User needs to test latest deploy |
+| Page remains responsive | ❓ PENDING | User needs to verify after hard refresh |
+| Can add expenses via Quick Add | ❓ PENDING | Error messages now visible if it fails |
+| Admin can modify user data | ❓ PENDING | RLS policies verified correct in DB |
+| Data persists to Supabase | ❓ PENDING | Service methods verified correct |
+
+### Comprehensive Code Audit Results (2026-01-26)
+
+A thorough code audit was performed focusing on production/Supabase mode issues. **14 issues identified** ranging from CRITICAL to LOW severity.
+
+#### CRITICAL Issues
+
+**1. Unhandled Promise Rejection in App.tsx**
+- **File**: `src/App.tsx:62-70`
+- **Problem**: `Promise.allSettled()` chain has no error handling; `ensureCurrentMonthSnapshot()` errors silently swallowed with `.catch(() => {})`
+- **Impact**: Users won't know if snapshot creation fails; silent data inconsistencies
+- **Priority**: 🔴 CRITICAL - Fix immediately
+
+**2. localStorage in production (recurringUtils.ts)**
+- **File**: `src/utils/recurringUtils.ts:19-20, 58-59, 99-106`
+- **Problem**: `checkAndGenerateRecurring()` reads from localStorage assuming DEV_MODE data; in production, Supabase stores have data but localStorage is empty
+- **Impact**: Recurring transactions won't generate; app can crash if localStorage throws
+- **Priority**: 🔴 CRITICAL - Fix immediately
+
+#### HIGH Severity Issues
+
+**3. Partial Error Handling in snapshotService.ts**
+- **File**: `src/services/snapshotService.ts:216-222`
+- **Problem**: Account snapshots can fail silently; parent snapshot exists but detail data missing; only logs error, doesn't throw
+- **Impact**: Incomplete data without user notification
+- **Priority**: 🟠 HIGH - Fix soon
+
+**4. Missing try-catch in recurringUtils.ts**
+- **File**: `src/utils/recurringUtils.ts:20, 52, 93`
+- **Problem**: `JSON.parse()` and `localStorage.setItem()` can throw; no error handling
+- **Impact**: App crash on startup or silent failures
+- **Priority**: 🟠 HIGH - Fix soon
+
+#### MEDIUM Severity Issues
+
+**5. Missing Error Handling in adminStore.ts**
+- **File**: `src/stores/adminStore.ts:117-121, 180-196`
+- **Problem**: `usersLoading` state not reset on success; `setUserRole` missing loading state management
+- **Impact**: Admin panel can enter stuck loading states
+- **Priority**: 🟡 MEDIUM
+
+**6. Auth State Race Conditions in Services**
+- **Files**: All service files (expenseService.ts, incomeService.ts, etc.)
+- **Problem**: `supabase.auth.getUser()` can return null even if user authenticated; no retry or token refresh; generic error messages
+- **Impact**: Users get "Not authenticated" errors when actually logged in
+- **Priority**: 🟡 MEDIUM
+
+**7. Snapshot Creation Race Conditions**
+- **File**: `src/stores/snapshotStore.ts:199-207`
+- **Problem**: Between checking snapshot exists and creating it, another process can create one; no locking mechanism
+- **Impact**: Duplicate snapshots, "duplicate key" errors in Supabase
+- **Priority**: 🟡 MEDIUM
+
+**8. Missing Initialization Check in App.tsx**
+- **File**: `src/App.tsx:69`
+- **Problem**: `ensureCurrentMonthSnapshot()` called immediately after `Promise.allSettled()` without waiting; accounts/expenses may not be loaded
+- **Impact**: Snapshots fail if data fetches are slow
+- **Priority**: 🟡 MEDIUM
+
+**9. Dynamic Imports in Production (adminStore.ts)**
+- **File**: `src/stores/adminStore.ts:288-290, 328-329`
+- **Problem**: `await import('./authStore')` inside store methods; creates circular dependency risk
+- **Impact**: Could crash admin actions unexpectedly
+- **Priority**: 🟡 MEDIUM
+
+**10. Data Fetching Race Condition in App.tsx**
+- **File**: `src/App.tsx:59-72`
+- **Problem**: `dataFetched.current` not React-managed; multiple tabs can both fetch; no cleanup on unmount
+- **Impact**: Duplicate data fetches, inconsistent state
+- **Priority**: 🟡 MEDIUM
+
+**11. Auth Store Session Validation**
+- **File**: `src/stores/authStore.ts:199-257`
+- **Problem**: `fetchUserProfile()` errors silently caught in auth listener; no cleanup of listeners; can stack on reloads
+- **Impact**: Memory leaks, silent profile load failures
+- **Priority**: 🟡 MEDIUM
+
+**12. Missing Snapshot User ID Check**
+- **File**: `src/services/snapshotService.ts:146-169`
+- **Problem**: Inserts account snapshots with `snapshot_id` that might not exist if previous insert failed
+- **Impact**: FK constraint violations
+- **Priority**: 🟡 MEDIUM
+
+#### LOW Severity Issues
+
+**13. Missing Null Checks in accountStore.ts**
+- **File**: `src/stores/accountStore.ts:319-321`
+- **Problem**: Optimistic state update before validation; throws error but state already modified
+- **Impact**: Inconsistent state after errors
+- **Priority**: 🟢 LOW-MEDIUM
+
+**14. Zustand Store Subscriptions**
+- **Files**: Dashboard.tsx and other components
+- **Problem**: Potential re-render loops if selectors return new objects
+- **Impact**: Performance degradation (currently mitigated by `useShallow`)
+- **Priority**: 🟢 LOW - Already using `useShallow` correctly
+
+#### Summary Table
+
+| Issue | Severity | Files | Impact |
+|-------|----------|-------|--------|
+| Unhandled Promise in App.tsx | 🔴 CRITICAL | App.tsx:69 | Silent snapshot failures |
+| localStorage in production | 🔴 CRITICAL | recurringUtils.ts | Missing recurring transactions, crashes |
+| Partial snapshot saves | 🟠 HIGH | snapshotService.ts:216-222 | Incomplete data |
+| Missing try-catch localStorage | 🟠 HIGH | recurringUtils.ts | App crash on startup |
+| Admin store loading states | 🟡 MEDIUM | adminStore.ts | Stuck loading states |
+| Auth state race conditions | 🟡 MEDIUM | All services | False "Not authenticated" errors |
+| Snapshot creation race | 🟡 MEDIUM | snapshotStore.ts:199-207 | Duplicate snapshots |
+| Missing snapshot init check | 🟡 MEDIUM | App.tsx:69 | Snapshot failures |
+| Dynamic imports in production | 🟡 MEDIUM | adminStore.ts | Unexpected crashes |
+| Data fetch race condition | 🟡 MEDIUM | App.tsx:59-72 | Duplicate API calls |
+| Auth listener cleanup | 🟡 MEDIUM | authStore.ts | Memory leaks |
+| Snapshot FK violations | 🟡 MEDIUM | snapshotService.ts | FK errors |
+| Account store state | 🟢 LOW-MEDIUM | accountStore.ts | State inconsistency |
+| Zustand subscriptions | 🟢 LOW | Various components | Already mitigated |
+
+### Recommended Fix Priority
+
+1. **Immediate** (CRITICAL):
+   - Add proper error handling to `Promise.allSettled()` chain in App.tsx
+   - Add try-catch to `recurringUtils.ts` localStorage access OR disable it in production mode
+   - Show user-visible error messages for snapshot creation failures
+
+2. **Soon** (HIGH):
+   - Fix `snapshotService.ts` to throw errors when account snapshots fail
+   - Implement proper initialization guards before creating snapshots
+
+3. **Next Sprint** (MEDIUM):
+   - Convert dynamic imports in adminStore to static imports
+   - Add atomic operations for snapshot creation or pessimistic locking
+   - Implement proper auth listener cleanup
+   - Add retry logic for auth state checks in services
+
+4. **Backlog** (LOW):
+   - Review all optimistic updates for consistency
+   - Add comprehensive error logging service
+
+### Next Steps
+
+1. ✅ User to test production site with hard refresh (Cmd+Shift+R)
+2. ✅ Comprehensive code audit completed
+3. ❓ Fix CRITICAL issues (issues #1 and #2)
+4. ❓ Fix HIGH severity issues (issues #3 and #4)
+5. ❓ Consider fixing MEDIUM severity issues based on priority
 
 ---
 

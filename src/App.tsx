@@ -28,6 +28,7 @@ function App() {
   const { initializeDefaultAccounts } = useLedgerStore();
   const { isDark, toggleTheme, initializeTheme } = useThemeStore();
   const dataFetched = useRef(false);
+  const [dataLoadError, setDataLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const saved = localStorage.getItem('fintonico-active-tab');
     const validTabs: TabType[] = ['dashboard', 'expenses', 'income', 'networth', 'accounts', 'admin'];
@@ -59,14 +60,32 @@ function App() {
   useEffect(() => {
     if (user && !dataFetched.current) {
       dataFetched.current = true;
+      setDataLoadError(null);
+
       Promise.allSettled([
         useExpenseStore.getState().fetchAll(),
         useIncomeStore.getState().fetchAll(),
         useAccountStore.getState().fetchAll(),
         useLedgerAccountStore.getState().fetchAll(),
         useSnapshotStore.getState().fetchAll(),
-      ]).then(() => {
-        useSnapshotStore.getState().ensureCurrentMonthSnapshot().catch(() => {});
+      ]).then((results) => {
+        // Check for failures and report them
+        const failures = results
+          .map((r, i) => r.status === 'rejected' ? ['expenses', 'income', 'accounts', 'ledger', 'snapshots'][i] : null)
+          .filter(Boolean);
+
+        if (failures.length > 0) {
+          console.error('Failed to load data stores:', failures);
+          setDataLoadError(`Failed to load: ${failures.join(', ')}. Try refreshing.`);
+        }
+
+        // Only create snapshot if accounts loaded successfully
+        const accountsLoaded = results[2].status === 'fulfilled';
+        if (accountsLoaded) {
+          useSnapshotStore.getState().ensureCurrentMonthSnapshot().catch((err) => {
+            console.error('Failed to ensure current month snapshot:', err);
+          });
+        }
       });
     }
   }, [user]);
@@ -134,6 +153,13 @@ function App() {
         </div>
       </div>
 
+
+      {dataLoadError && (
+        <div className="fixed top-14 lg:top-12 left-0 lg:left-16 right-0 z-40 bg-red-600 text-white px-4 py-2 text-sm text-center cursor-pointer"
+             onClick={() => setDataLoadError(null)}>
+          {dataLoadError}
+        </div>
+      )}
 
       <main className="pt-16 lg:pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 sm:py-3 lg:pl-20">

@@ -218,7 +218,9 @@ export const snapshotService = {
         .insert(accountInserts);
 
       if (accountError) {
+        // Log for debugging, but also throw so callers know snapshot is incomplete
         console.error('Failed to create account snapshots:', accountError);
+        throw new Error(`Snapshot created but account details failed to save: ${accountError.message}`);
       }
     }
 
