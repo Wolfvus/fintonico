@@ -1342,13 +1342,263 @@ interface NetWorthSnapshot {
 
 ---
 
-## Future Phases
+## Phase 24: UI Bug Fixes & Polish
 
-See **[STYLEROADMAP.md](./STYLEROADMAP.md)** for pending style and UX improvements.
+**Goal:** Fix reported UI bugs and improve component usability across Income Quick Add, Net Worth type selector, sorting, and Settings controls.
+
+### Step 1: Income Quick Add Layout Fix ⬜
+
+**Goal:** Enlarge the amount input field and move frequency selector below to match the Expenses Quick Add style.
+
+| Task | Status |
+| --- | --- |
+| Enlarge amount input field (currently `w-20`, too small) | ⬜ |
+| Move frequency selector to a row below the amount/currency row | ⬜ |
+| Match layout style with Expenses Quick Add (category buttons below) | ⬜ |
+| Verify mobile responsiveness | ⬜ |
+
+**Current Issue:** The amount input is only 80px wide (`w-20`), making it hard to enter larger numbers. The frequency selector is inline, cramping the layout.
+
+**Target Layout:**
+- Row 1: Source (text input)
+- Row 2: Amount (wider) + Currency selector
+- Row 3: Frequency selector (full width, like expense category buttons)
+- Row 4: Submit button
+
+### Step 2: Net Worth Type Selector Fix ⬜
+
+**Goal:** Fix the account type dropdown that behaves strangely when adding multiple entries — it jumps to the bottom of the page instead of staying anchored.
+
+| Task | Status |
+| --- | --- |
+| Fix DropdownSelector portal positioning when multiple rows exist | ⬜ |
+| Ensure dropdown always shows full list of options | ⬜ |
+| Dropdown should open upward if near page bottom | ⬜ |
+| Test with 10+ account entries to verify stability | ⬜ |
+
+**Current Issue:** The `DropdownSelector` uses fixed positioning via a portal. When adding multiple net worth entries, the dropdown position calculation breaks and the list appears at the bottom of the page instead of near the trigger button.
+
+### Step 3: Net Worth Sorting — Add Name Column ⬜
+
+**Goal:** Allow sorting assets and liabilities back to alphabetical (A-Z) by name after sorting by another column like Yield or Value.
+
+| Task | Status |
+| --- | --- |
+| Add `name` as a sortable column for Assets table | ⬜ |
+| Add `name` as a sortable column for Liabilities table | ⬜ |
+| Clicking Name toggles A-Z / Z-A | ⬜ |
+| Default sort remains Name A-Z | ⬜ |
+
+**Current Issue:** Assets sort by Name A-Z by default, but once you click Yield or Value to sort, there's no way to sort back to Name. The Name column header is not clickable.
+
+### Step 4: Settings — Hide Dev Controls for Non-Admins ⬜
+
+**Goal:** Remove mock data display and "Clear Local Data" controls from Settings for regular (non-admin) users. These are dev/admin tools only.
+
+| Task | Status |
+| --- | --- |
+| Hide "Mock Data" / local storage summary for non-admin users | ⬜ |
+| Hide "Clear Local Data" button for non-admin users | ⬜ |
+| Keep "Cloud Sync" migration option visible (or hide if not in DEV_MODE) | ⬜ |
+| Verify admin users still see all controls | ⬜ |
+
+**Rationale:** The Cloud Sync section is the localStorage → Supabase migration tool. Regular users using Supabase don't need to see local data counts or clear local data. These controls should only appear for admin/super_admin roles or in DEV_MODE.
 
 ---
 
-**Last Updated:** 2025-01-24 (Phase 23 Step 6 completed)
+## Phase 25: Light Mode & Style Overhaul
+
+**Goal:** Improve light mode readability and visual contrast. Create a style reference document. The current light mode uses white backgrounds that make green/red amount text hard to read.
+
+### Step 1: Create style.md Reference ⬜
+
+**Goal:** Replace `STYLEROADMAP.md` with `style.md` — a concise reference document summarizing the app's design system.
+
+| Task | Status |
+| --- | --- |
+| Document color palette (primary teal, accent gold, navy, surfaces) | ⬜ |
+| Document dark mode colors | ⬜ |
+| Document light mode colors (current + updated) | ⬜ |
+| Document typography scale and font choices | ⬜ |
+| Document spacing system and component patterns | ⬜ |
+| Document semantic colors (success green, error red, warning yellow) | ⬜ |
+| Delete `STYLEROADMAP.md` after `style.md` is complete | ⬜ |
+
+**File Changes:**
+- Create: `style.md`
+- Delete: `STYLEROADMAP.md`
+
+### Step 2: Light Mode Navbar & Menu ⬜
+
+**Goal:** Change the light mode navbar and sidebar from white/gray to a light blue tone for better visual hierarchy and readability.
+
+| Task | Status |
+| --- | --- |
+| Change sidebar background to light blue (e.g., `bg-blue-50` or `bg-slate-100`) | ⬜ |
+| Change mobile header to matching light blue | ⬜ |
+| Ensure nav icons and text contrast on light blue background | ⬜ |
+| Active nav item should remain clearly distinguishable | ⬜ |
+| Update `style.md` with new nav colors | ⬜ |
+
+### Step 3: Light Mode Amount Contrast ⬜
+
+**Goal:** Improve readability of green (income/assets) and red (expense/liabilities) amounts on light backgrounds.
+
+| Task | Status |
+| --- | --- |
+| Darken green amount text for light mode (e.g., `text-green-700` instead of `text-green-500`) | ⬜ |
+| Darken red amount text for light mode (e.g., `text-red-700` instead of `text-red-500`) | ⬜ |
+| Check contrast ratio meets WCAG AA (4.5:1 minimum) | ⬜ |
+| Test on white and light blue backgrounds | ⬜ |
+| Update summary cards, table cells, and dashboard amounts | ⬜ |
+| Update `style.md` with finalized amount colors | ⬜ |
+
+### Step 4: Overall Light Mode Polish ⬜
+
+**Goal:** Ensure consistent, readable light mode across all pages.
+
+| Task | Status |
+| --- | --- |
+| Review all pages in light mode | ⬜ |
+| Fix any remaining low-contrast elements | ⬜ |
+| Ensure cards/surfaces have subtle separation (borders or shadows) | ⬜ |
+| Verify filter dropdowns and modals are readable | ⬜ |
+| Test on both mobile and desktop | ⬜ |
+
+---
+
+## Phase 26: Admin Panel Rework
+
+**Goal:** Rebuild the admin panel to pull real users from Supabase Auth and manage them directly, replacing the current mock/limited implementation.
+
+### Step 1: Pull Users from Supabase Auth ⬜
+
+**Goal:** Fetch the actual list of registered users from Supabase Auth admin API.
+
+| Task | Status |
+| --- | --- |
+| Use Supabase Admin API to list all auth users | ⬜ |
+| Display user list with email, created_at, last_sign_in | ⬜ |
+| Join with `user_profiles` table for role and subscription data | ⬜ |
+| Pagination for large user lists | ⬜ |
+| Search/filter by email or name | ⬜ |
+
+### Step 2: User Profile Management ⬜
+
+**Goal:** Allow admins to view and edit user profiles, roles, and subscription tiers.
+
+| Task | Status |
+| --- | --- |
+| View user profile details (email, role, tier, created date) | ⬜ |
+| Edit user role (super_admin, admin, user) — super_admin only | ⬜ |
+| Edit subscription tier (freemium, pro) — super_admin only | ⬜ |
+| Disable/enable user accounts | ⬜ |
+| All changes logged to audit table | ⬜ |
+
+### Step 3: User Financial Data Overview ⬜
+
+**Goal:** Read-only view of any user's financial data for support/debugging.
+
+| Task | Status |
+| --- | --- |
+| View user's expenses, income, accounts, ledger, snapshots | ⬜ |
+| Summary cards (total accounts, total expenses, etc.) | ⬜ |
+| Data export per user (CSV/XLSX) | ⬜ |
+
+### Step 4: Admin Audit Log Viewer ⬜
+
+**Goal:** View admin action history.
+
+| Task | Status |
+| --- | --- |
+| Display audit log entries with filters | ⬜ |
+| Filter by admin user, action type, date range | ⬜ |
+| Paginated log view | ⬜ |
+
+---
+
+## Phase 27: Internationalization (i18n)
+
+**Goal:** Add multilanguage support starting with Spanish. This is a full-app effort touching every UI string.
+
+### Step 1: i18n Framework Setup ⬜
+
+**Goal:** Install and configure an i18n library.
+
+| Task | Status |
+| --- | --- |
+| Install `react-i18next` and `i18next` | ⬜ |
+| Configure i18n with language detection | ⬜ |
+| Set up translation file structure (`locales/en.json`, `locales/es.json`) | ⬜ |
+| Create i18n provider wrapper in App.tsx | ⬜ |
+| Default language: English | ⬜ |
+
+### Step 2: Extract UI Strings ⬜
+
+**Goal:** Replace all hardcoded strings with translation keys.
+
+| Task | Status |
+| --- | --- |
+| Extract Navigation labels | ⬜ |
+| Extract Dashboard text | ⬜ |
+| Extract Income page text | ⬜ |
+| Extract Expenses page text | ⬜ |
+| Extract Net Worth page text | ⬜ |
+| Extract Chart of Accounts page text | ⬜ |
+| Extract Settings modal text | ⬜ |
+| Extract Auth forms text | ⬜ |
+| Extract Admin panel text | ⬜ |
+| Extract error messages and validation text | ⬜ |
+| Extract import/export labels | ⬜ |
+
+### Step 3: Spanish Translation ⬜
+
+**Goal:** Complete Spanish translation for all extracted strings.
+
+| Task | Status |
+| --- | --- |
+| Translate all `locales/en.json` keys to `locales/es.json` | ⬜ |
+| Review financial terminology in Spanish | ⬜ |
+| Review button labels and form placeholders | ⬜ |
+| Review error messages | ⬜ |
+
+### Step 4: Language Selector in Settings ⬜
+
+**Goal:** Allow users to switch language from the Settings modal.
+
+| Task | Status |
+| --- | --- |
+| Add language selector dropdown in Settings | ⬜ |
+| Options: English, Español | ⬜ |
+| Persist language choice (localStorage or user profile) | ⬜ |
+| Apply language change without page reload | ⬜ |
+
+### Step 5: Date & Number Format Localization ⬜
+
+**Goal:** Format dates and numbers according to the selected locale.
+
+| Task | Status |
+| --- | --- |
+| Date format: `MM/DD/YYYY` (en) vs `DD/MM/YYYY` (es) | ⬜ |
+| Number format: `1,234.56` (en) vs `1.234,56` (es) | ⬜ |
+| Currency display respects locale | ⬜ |
+| Month names in date selectors | ⬜ |
+
+---
+
+## Future Phases
+
+**Subscription Tiers (Freemium/Pro):** Feature gating for import/export. See plan file for details.
+
+**Stripe Integration:** Payment processing for pro tier upgrades.
+
+**Data Visualization:** Charts for expense categories, income trends, savings rate.
+
+**Mobile App:** React Native or PWA for native mobile experience.
+
+---
+
+**Last Updated:** 2026-01-26 (Phases 24-27 planned)
 
 ---
 
