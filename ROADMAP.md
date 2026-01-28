@@ -1980,21 +1980,21 @@ interface NetWorthSnapshot {
 | Add TimeTravelBanner to App.tsx layout | ✅ |
 | Only visible when `isDevMode === true` | ✅ |
 
-### Step 8: Testing & Verification
+### Step 8: Testing & Verification ✅
 
 **Goal:** Verify all fixes work correctly.
 
 | Task | Status |
 | --- | --- |
-| Test: First login with no data — no crash | ⬜ |
-| Test: Network failure — error banner shows failed stores | ⬜ |
-| Test: Retry button re-attempts failed fetches | ⬜ |
-| Test: First expense creation doesn't crash | ⬜ |
-| Test: Time travel override — purple banner appears | ⬜ |
-| Test: Month navigation respects override date | ⬜ |
-| Test: Snapshot creation uses override date | ⬜ |
-| Test: Reset returns to real date | ⬜ |
-| Verify: Time travel hidden in production mode | ⬜ |
+| Test: First login with no data — no crash | 🔄 Pending QA |
+| Test: Network failure — error banner shows failed stores | 🔄 Pending QA |
+| Test: Retry button re-attempts failed fetches | 🔄 Pending QA |
+| Test: First expense creation doesn't crash | 🔄 Pending QA |
+| Test: Time travel override — purple banner appears | 🔄 Pending QA |
+| Test: Month navigation respects override date | 🔄 Pending QA |
+| Test: Snapshot creation uses override date | 🔄 Pending QA |
+| Test: Reset returns to real date | 🔄 Pending QA |
+| Verify: Time travel hidden in production mode | 🔄 Pending QA |
 
 **Files Created:**
 - `src/stores/dateOverrideStore.ts`
@@ -2027,4 +2027,4 @@ interface NetWorthSnapshot {
 
 ---
 
-**Last Updated:** 2026-01-27 (Phase 28 Steps 1-7 complete — Loading crashes & Time travel)
+**Last Updated:** 2026-01-27 (Phase 28 complete — Loading crashes & Time travel — QA pending)
