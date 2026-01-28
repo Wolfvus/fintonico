@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+import { getCurrentDate } from '../utils/dateUtils';
 
 interface MonthNavigationResult {
   /** The currently selected date */
@@ -31,7 +32,7 @@ interface MonthNavigationResult {
  * @returns Object with navigation state and handlers
  */
 export function useMonthNavigation(initialDate?: Date): MonthNavigationResult {
-  const [selectedDate, setSelectedDate] = useState(initialDate ?? new Date());
+  const [selectedDate, setSelectedDate] = useState(initialDate ?? getCurrentDate());
 
   const navigateMonth = useCallback((direction: 'prev' | 'next') => {
     setSelectedDate(current => {
@@ -58,7 +59,7 @@ export function useMonthNavigation(initialDate?: Date): MonthNavigationResult {
   }, []);
 
   const goToCurrentMonth = useCallback(() => {
-    setSelectedDate(new Date());
+    setSelectedDate(getCurrentDate());
   }, []);
 
   const formattedMonth = useMemo(() => {
@@ -70,7 +71,7 @@ export function useMonthNavigation(initialDate?: Date): MonthNavigationResult {
   }, [selectedDate]);
 
   const isCurrentMonth = useMemo(() => {
-    const now = new Date();
+    const now = getCurrentDate();
     return selectedDate.getFullYear() === now.getFullYear() &&
            selectedDate.getMonth() === now.getMonth();
   }, [selectedDate]);

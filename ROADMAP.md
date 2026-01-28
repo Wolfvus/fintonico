@@ -1950,20 +1950,20 @@ interface NetWorthSnapshot {
 | Add `adjustDays()`, `adjustMonths()` helpers | ✅ |
 | Only functional when `isDevMode === true` | ✅ |
 
-### Step 6: Date Utilities
+### Step 6: Date Utilities ✅
 
 **Goal:** Centralize date access with override support.
 
 | Task | Status |
 | --- | --- |
-| Create `dateUtils.ts` with `getCurrentDate()` function | ⬜ |
-| Check override store, fall back to `new Date()` | ⬜ |
-| Add `getTodayLocalString()` helper | ⬜ |
-| Replace `new Date()` in finance.ts (12 locations) | ⬜ |
-| Replace `new Date()` in dateFormat.ts | ⬜ |
-| Replace `new Date()` in useMonthNavigation.ts (3 locations) | ⬜ |
-| Replace `new Date()` in snapshotStore.ts (2 locations) | ⬜ |
-| Replace `new Date()` in App.tsx (1 location) | ⬜ |
+| Create `dateUtils.ts` with `getCurrentDate()` function | ✅ |
+| Check override store, fall back to `new Date()` | ✅ |
+| Add `getTodayLocalString()` helper | ✅ |
+| Replace `new Date()` in finance.ts (7 locations) | ✅ |
+| Replace `new Date()` in dateFormat.ts | ✅ |
+| Replace `new Date()` in useMonthNavigation.ts (3 locations) | ✅ |
+| Replace `new Date()` in snapshotStore.ts (2 locations) | ✅ |
+| Replace `new Date()` in App.tsx (1 location) | ✅ |
 
 ### Step 7: Time Travel UI
 

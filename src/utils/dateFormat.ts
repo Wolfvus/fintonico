@@ -12,13 +12,10 @@ export const formatDate = (dateString: string): string => {
   });
 };
 
-export const getTodayLocalString = (): string => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+export { getTodayLocalString } from './dateUtils';
+
+// Re-export getCurrentDate for convenience
+export { getCurrentDate } from './dateUtils';
 
 export const parseLocalDate = (dateString: string): Date => {
   // Parse the date as local time to avoid timezone issues

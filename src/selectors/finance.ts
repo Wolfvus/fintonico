@@ -7,6 +7,7 @@ import { Money } from '../domain/money';
 import type { AccountNature } from '../domain/ledger';
 import type { AccountType } from '../types';
 import type { Transaction } from '../domain/ledger';
+import { getCurrentDate } from '../utils/dateUtils';
 
 // Date utility for consistent date handling
 const startOfDay = (date: Date): Date => {
@@ -30,7 +31,7 @@ const endOfMonth = (date: Date): Date => {
 };
 
 // Core balance selectors
-export const getBalancesAt = (date: Date = new Date()) => {
+export const getBalancesAt = (date: Date = getCurrentDate()) => {
   const { baseCurrency, convertAmount } = useCurrencyStore.getState();
   const accountStore = useAccountStore.getState();
 
@@ -114,7 +115,7 @@ export const getBalancesAt = (date: Date = new Date()) => {
   };
 };
 
-export const getNetWorthAt = (date: Date = new Date()) => {
+export const getNetWorthAt = (date: Date = getCurrentDate()) => {
   const balances = getBalancesAt(date);
   const { baseCurrency } = useCurrencyStore.getState();
 
@@ -484,22 +485,22 @@ export const getSavingsPotential = (startDate: Date, endDate: Date) => {
 
 // Period convenience selectors
 export const getCurrentMonthPL = () => {
-  const now = new Date();
+  const now = getCurrentDate();
   return getPL(startOfMonth(now), endOfMonth(now));
 };
 
 export const getCurrentMonthExpenseBreakdown = () => {
-  const now = new Date();
+  const now = getCurrentDate();
   return getExpenseBreakdown(startOfMonth(now), endOfMonth(now));
 };
 
 export const getCurrentMonthCashflow = () => {
-  const now = new Date();
+  const now = getCurrentDate();
   return getCashflowStatement(startOfMonth(now), endOfMonth(now));
 };
 
 export const getCurrentMonthSavingsPotential = () => {
-  const now = new Date();
+  const now = getCurrentDate();
   return getSavingsPotential(startOfMonth(now), endOfMonth(now));
 };
 
@@ -507,7 +508,7 @@ export const getCurrentMonthSavingsPotential = () => {
 // Compares LIVE net worth vs previous month's snapshot for real-time updates
 export const getMoMChange = () => {
   const snapshotStore = useSnapshotStore.getState();
-  const now = new Date();
+  const now = getCurrentDate();
 
   // Get previous month
   const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);

@@ -6,6 +6,7 @@ import { useAccountStore } from './accountStore';
 import { useCurrencyStore } from './currencyStore';
 import type { AccountType } from '../types';
 import { snapshotService } from '../services/snapshotService';
+import { getCurrentDate } from '../utils/dateUtils';
 
 // Dev mode configuration
 const DEV_MODE = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_DEV_MODE === 'true';
@@ -49,7 +50,7 @@ interface SnapshotState {
 }
 
 // Utility to get month end date string in YYYY-MM format
-const getMonthEndString = (date: Date = new Date()): string => {
+const getMonthEndString = (date: Date = getCurrentDate()): string => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 };
 
@@ -160,7 +161,7 @@ export const useSnapshotStore = create<SnapshotState>()(
           netWorthBase: netWorthData.netWorth.toMajorUnits(),
           totalsByNature,
           accountSnapshots,
-          createdAt: new Date().toISOString()
+          createdAt: getCurrentDate().toISOString()
         };
 
         if (DEV_MODE) {

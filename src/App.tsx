@@ -9,6 +9,7 @@ import { useIncomeStore } from './stores/incomeStore';
 import { useAccountStore } from './stores/accountStore';
 import { useLedgerAccountStore } from './stores/ledgerAccountStore';
 import { checkAndGenerateRecurring } from './utils/recurringUtils';
+import { getCurrentDate } from './utils/dateUtils';
 import { AuthForm } from './components/Auth/AuthForm';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { NetWorthPage } from './components/NetWorth/NetWorthPage';
@@ -182,7 +183,7 @@ function App() {
               className="h-8 px-3 flex items-center rounded-lg transition-colors btn-secondary"
             >
               <span className="text-sm font-medium">
-                {new Date().toLocaleDateString(i18n.language, {
+                {getCurrentDate().toLocaleDateString(i18n.language, {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric'
