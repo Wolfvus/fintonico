@@ -32,9 +32,53 @@ const endOfMonth = (date: Date): Date => {
 // Core balance selectors
 export const getBalancesAt = (date: Date = new Date()) => {
   const { baseCurrency, convertAmount } = useCurrencyStore.getState();
-  const { accounts: externalAccounts } = useAccountStore.getState();
+  const accountStore = useAccountStore.getState();
 
   const asOfDate = endOfDay(date);
+
+  // Guard: Check if account store is ready
+  if (!accountStore.isReady()) {
+    return {
+      ledgerBalances: [] as Array<{
+        accountId: string;
+        accountName: string;
+        accountType: string;
+        balance: Money;
+        asOfDate: Date;
+      }>,
+      externalBalances: [] as Array<{
+        accountId: string;
+        accountName: string;
+        accountType: AccountType;
+        balance: Money;
+        asOfDate: Date;
+      }>,
+      asOfDate
+    };
+  }
+
+  const externalAccounts = accountStore.accounts;
+
+  // Guard: Check for empty accounts
+  if (externalAccounts.length === 0) {
+    return {
+      ledgerBalances: [] as Array<{
+        accountId: string;
+        accountName: string;
+        accountType: string;
+        balance: Money;
+        asOfDate: Date;
+      }>,
+      externalBalances: [] as Array<{
+        accountId: string;
+        accountName: string;
+        accountType: AccountType;
+        balance: Money;
+        asOfDate: Date;
+      }>,
+      asOfDate
+    };
+  }
 
   // For net worth calculation, we ONLY use external accounts (accountStore)
   // These are the user's actual financial accounts with real balances
