@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { Save, RotateCcw, Plus, X, AlertCircle } from 'lucide-react';
 import { useAdminStore } from '../../stores/adminStore';
 import { useAuthStore } from '../../stores/authStore';
+import { useDateOverrideStore } from '../../stores/dateOverrideStore';
 import { CURRENCY_REGISTRY } from '../../config/currencies';
 
 const DEFAULT_EXPENSE_CATEGORIES = [
@@ -24,7 +25,8 @@ const DEFAULT_EXPENSE_CATEGORIES = [
 
 export const SystemConfigSection: React.FC = () => {
   const { systemConfig, configLoading, fetchSystemConfig, updateSystemConfig } = useAdminStore();
-  const { isSuperAdmin } = useAuthStore();
+  const { isSuperAdmin, isDevMode } = useAuthStore();
+  const { overrideDate, isActive, setOverride, resetToToday, adjustDays, adjustMonths } = useDateOverrideStore();
 
   const [defaultCurrency, setDefaultCurrency] = useState('USD');
   const [enabledCurrencies, setEnabledCurrencies] = useState<string[]>(['USD', 'EUR', 'MXN']);
@@ -261,6 +263,81 @@ export const SystemConfigSection: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Time Travel (Dev Mode Only) */}
+      {canEdit && isDevMode && (
+        <div className="space-y-4 p-4 bg-purple-50 dark:bg-purple-900/10 rounded-lg border-2 border-purple-200 dark:border-purple-800">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-100">
+              Time Travel (Dev Mode Only)
+            </h4>
+            {isActive && (
+              <span className="px-2 py-1 bg-purple-600 text-white text-xs rounded-full font-bold">
+                ACTIVE
+              </span>
+            )}
+          </div>
+
+          <p className="text-xs text-purple-700 dark:text-purple-300">
+            Override the current date for testing snapshots and net worth calculations over time.
+          </p>
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Override Date
+              </label>
+              <input
+                type="date"
+                value={overrideDate ? overrideDate.toISOString().split('T')[0] : ''}
+                onChange={(e) => {
+                  const dateStr = e.target.value;
+                  if (!dateStr) {
+                    resetToToday();
+                  } else {
+                    setOverride(new Date(dateStr + 'T00:00:00'));
+                  }
+                }}
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => adjustDays(-1)}
+                className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 transition-colors"
+              >
+                -1 Day
+              </button>
+              <button
+                onClick={() => adjustDays(1)}
+                className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 transition-colors"
+              >
+                +1 Day
+              </button>
+              <button
+                onClick={() => adjustMonths(-1)}
+                className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 transition-colors"
+              >
+                -1 Month
+              </button>
+              <button
+                onClick={() => adjustMonths(1)}
+                className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 transition-colors"
+              >
+                +1 Month
+              </button>
+            </div>
+
+            <button
+              onClick={resetToToday}
+              className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors"
+            >
+              Reset to Real Today
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

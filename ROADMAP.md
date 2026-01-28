@@ -1965,20 +1965,20 @@ interface NetWorthSnapshot {
 | Replace `new Date()` in snapshotStore.ts (2 locations) | ✅ |
 | Replace `new Date()` in App.tsx (1 location) | ✅ |
 
-### Step 7: Time Travel UI
+### Step 7: Time Travel UI ✅
 
 **Goal:** Add admin controls for date override.
 
 | Task | Status |
 | --- | --- |
-| Create `TimeTravelBanner.tsx` — purple banner when override active | ⬜ |
-| Add Time Travel section to `SystemConfigSection.tsx` | ⬜ |
-| Add date picker input | ⬜ |
-| Add quick navigation buttons (±1 day, ±1 month) | ⬜ |
-| Add "Reset to Real Today" button | ⬜ |
-| Show "ACTIVE" badge when override enabled | ⬜ |
-| Add TimeTravelBanner to App.tsx layout | ⬜ |
-| Only visible when `isDevMode === true` | ⬜ |
+| Create `TimeTravelBanner.tsx` — purple banner when override active | ✅ |
+| Add Time Travel section to `SystemConfigSection.tsx` | ✅ |
+| Add date picker input | ✅ |
+| Add quick navigation buttons (±1 day, ±1 month) | ✅ |
+| Add "Reset to Real Today" button | ✅ |
+| Show "ACTIVE" badge when override enabled | ✅ |
+| Add TimeTravelBanner to App.tsx layout | ✅ |
+| Only visible when `isDevMode === true` | ✅ |
 
 ### Step 8: Testing & Verification
 

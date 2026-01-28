@@ -10,6 +10,7 @@ import { useAccountStore } from './stores/accountStore';
 import { useLedgerAccountStore } from './stores/ledgerAccountStore';
 import { checkAndGenerateRecurring } from './utils/recurringUtils';
 import { getCurrentDate } from './utils/dateUtils';
+import { TimeTravelBanner } from './components/Admin/TimeTravelBanner';
 import { AuthForm } from './components/Auth/AuthForm';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { NetWorthPage } from './components/NetWorth/NetWorthPage';
@@ -157,6 +158,7 @@ function App() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-bg)' }}>
+      <TimeTravelBanner />
       <Navigation
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab as TabType)}
