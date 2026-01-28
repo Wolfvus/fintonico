@@ -17,11 +17,15 @@ export interface NewExpense {
   recurring?: boolean;
 }
 
+type InitializationStatus = 'idle' | 'loading' | 'success' | 'error';
+
 interface ExpenseState {
   expenses: Expense[];
   loading: boolean;
   error: string | null;
-  initialized: boolean;
+  initializationStatus: InitializationStatus;
+  errorDetails: string | null;
+  isReady: () => boolean;
   fetchAll: () => Promise<void>;
   addExpense: (expense: NewExpense) => Promise<Expense>;
   updateExpense: (id: string, updates: Partial<NewExpense>) => Promise<Expense>;
@@ -37,24 +41,29 @@ export const useExpenseStore = create<ExpenseState>()(
       expenses: [],
       loading: false,
       error: null,
-      initialized: false,
+      initializationStatus: 'idle' as InitializationStatus,
+      errorDetails: null,
+
+      isReady: () => get().initializationStatus === 'success',
 
       fetchAll: async () => {
         if (DEV_MODE) {
           // In dev mode, data comes from localStorage via persist
-          set({ initialized: true });
+          set({ initializationStatus: 'success' });
           return;
         }
 
-        set({ loading: true, error: null });
+        set({ initializationStatus: 'loading', loading: true, error: null, errorDetails: null });
         try {
           const expenses = await expenseService.getAll();
-          set({ expenses, loading: false, initialized: true });
+          set({ expenses, loading: false, initializationStatus: 'success' });
         } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to fetch expenses';
           set({
-            error: error instanceof Error ? error.message : 'Failed to fetch expenses',
+            error: message,
+            errorDetails: message,
             loading: false,
-            initialized: true,
+            initializationStatus: 'error',
           });
         }
       },

@@ -515,7 +515,7 @@ Bank Account,1234567890,012345678901234567,debit,true
 
 ---
 
-## Phase 16: Net Worth History & Tracking (Planned)
+## Phase 16: Net Worth History & Tracking ✅
 
 **Goal:** Track net worth changes over time so users can see how their financial position evolves month-to-month.
 
@@ -590,7 +590,7 @@ Bank Account,1234567890,012345678901234567,debit,true
 
 ---
 
-## Phase 17: Table Sorting & Liability Enhancements (Planned)
+## Phase 17: Table Sorting & Liability Enhancements ✅
 
 **Goal:** Add column sorting to all data tables and enhance liability tracking with minimum payment and payment-to-avoid-interest fields.
 
@@ -746,7 +746,7 @@ Credit Card,credit-card,liability,USD,-5000,,15,200,5000,false
 
 ---
 
-## Phase 18: Net Worth Monthly View & Chart Improvements (Planned)
+## Phase 18: Net Worth Monthly View & Chart Improvements ✅
 
 **Goal:** Add month selector to Net Worth page for viewing/editing historical account balances, while maintaining data integrity. Improve the net worth history chart.
 
@@ -1342,7 +1342,240 @@ interface NetWorthSnapshot {
 
 ---
 
-## Phase 24: UI Bug Fixes & Polish
+## Phase 23: Supabase Backend Integration ✅
+
+**Goal:** Migrate from localStorage to Supabase database for persistent cloud storage, multi-device sync, and production readiness.
+
+### Current State
+
+**What's working (localStorage):**
+- All CRUD operations for Expenses, Income, Accounts, Ledger Accounts
+- Snapshots and history tracking
+- XLSX import/export
+- Admin panel (mock/dev mode)
+
+**What needs Supabase:**
+- User data persistence across devices
+- Real authentication (not dev mode)
+- Admin panel with real user management
+- Data backup and recovery
+
+### Step 1: Database Schema Review ✅
+
+| Task | Status |
+| --- | --- |
+| Audit existing Supabase schema vs current data types | ✅ |
+| Create/update `expenses` table | ✅ |
+| Create/update `incomes` table | ✅ |
+| Create/update `accounts` (net worth) table | ✅ |
+| Create/update `ledger_accounts` table | ✅ |
+| Create/update `net_worth_snapshots` table | ✅ |
+| Add proper RLS policies for user data isolation | ✅ |
+
+**Migration File:** `supabase/migrations/004_app_schema_sync.sql`
+
+**Changes Made:**
+1. **expenses** - Added `currency`, `recurring`; fixed rating constraint (`non_essential` → `discretionary`)
+2. **income** - Added `amount` (decimal), `frequency` column; migrates from `amount_cents`
+3. **net_worth_accounts** - New table for Account interface (assets/liabilities with balances)
+4. **ledger_accounts** - New table for LedgerAccount interface (Chart of Accounts)
+5. **net_worth_snapshots** - New table for monthly net worth history
+6. **account_snapshots** - New table for per-account breakdown within snapshots
+7. **Helper functions** - `get_account_nature()`, `calculate_user_net_worth()`
+
+### Step 2: API Service Layer ✅
+
+| Task | Status |
+| --- | --- |
+| Create `supabaseClient.ts` configuration | ✅ (already existed at `src/lib/supabase.ts`) |
+| Create `expenseService.ts` (CRUD with Supabase) | ✅ |
+| Create `incomeService.ts` (CRUD with Supabase) | ✅ |
+| Create `netWorthAccountService.ts` (CRUD with Supabase) | ✅ |
+| Create `ledgerAccountService.ts` (CRUD with Supabase) | ✅ |
+| Create `snapshotService.ts` (CRUD with Supabase) | ✅ |
+
+**Files Created:**
+- `src/services/expenseService.ts` - Expense CRUD with bulk import
+- `src/services/incomeService.ts` - Income CRUD with bulk import
+- `src/services/netWorthAccountService.ts` - Net worth account CRUD
+- `src/services/ledgerAccountService.ts` - Chart of Accounts CRUD
+- `src/services/snapshotService.ts` - Net worth snapshot CRUD
+- `src/services/index.ts` - Central export for all services
+- `src/types/database.ts` - Updated with all new table types
+
+**Service Features:**
+- All services have DEV_MODE flag for localStorage fallback
+- Full CRUD operations (getAll, getById, create, update, delete)
+- Bulk create for imports
+- Proper type mapping between DB rows and app types
+- User authentication checks on all operations
+
+### Step 3: Store Migration ✅
+
+| Task | Status |
+| --- | --- |
+| Update `expenseStore.ts` to use Supabase service | ✅ |
+| Update `incomeStore.ts` to use Supabase service | ✅ |
+| Update `accountStore.ts` to use Supabase service | ✅ |
+| Update `ledgerAccountStore.ts` to use Supabase service | ✅ |
+| Update `snapshotStore.ts` to use Supabase service | ✅ |
+| Add loading states and error handling | ✅ |
+| Add optimistic updates for better UX | ✅ (local state updates immediately) |
+
+**Store Updates:**
+- All stores now have `fetchAll()` method to load data from Supabase on app init
+- All stores have `loading`, `error`, `initialized`, and `clearError()` states
+- DEV_MODE fallback: localStorage persistence when Supabase not configured
+- `partialize` ensures only data (not state) is persisted to localStorage
+- Added `bulkImport()` for XLSX import functionality
+- Added `updateExpense/Income` methods for editing
+
+### Step 4: Authentication Integration ✅
+
+| Task | Status |
+| --- | --- |
+| Wire up real Supabase Auth (replace dev mode) | ✅ |
+| Google OAuth sign-in | ✅ |
+| Login/Signup pages with proper validation | ✅ |
+| Password reset flow | ✅ |
+| Session persistence | ✅ (via Supabase `persistSession: true`) |
+| Fetch user profile on login | ✅ |
+
+**Auth Updates:**
+- Added `signInWithGoogle()` method using Supabase OAuth
+- Added `resetPassword()` method for password recovery
+- Added `clearError()` helper
+- AuthForm now has Google sign-in button with proper icon
+- AuthForm supports three modes: signin, signup, reset
+- "Forgot password?" link on sign-in form
+- Dev mode indicator when Supabase not configured
+
+**To Enable Google OAuth in Production:**
+1. Go to Supabase Dashboard → Authentication → Providers
+2. Enable Google provider
+3. Add your Google OAuth Client ID and Secret
+4. Set redirect URL in Google Cloud Console: `https://xvcmnpezakcmwffcnhmw.supabase.co/auth/v1/callback`
+
+### Step 5: Data Migration Tool ✅
+
+| Task | Status |
+| --- | --- |
+| Create localStorage → Supabase migration utility | ✅ |
+| One-click "Upload my data" for existing users | ✅ |
+| Conflict resolution (if data exists in both) | ✅ |
+| Migration progress indicator | ✅ |
+
+**Files Created:**
+- `src/services/migrationService.ts` - Migration utility with progress tracking
+- `src/components/Settings/DataMigration.tsx` - UI component for migration
+
+**Features:**
+- Reads all localStorage stores (expenses, income, accounts, ledger, snapshots)
+- Checks for existing Supabase data before migration
+- Optional "overwrite" mode for replacing existing cloud data
+- Step-by-step progress indicator showing current entity being migrated
+- Error handling with detailed per-entity error messages
+- "Clear local data" option after successful migration
+- Integrated into Settings modal under "Cloud Sync" section
+
+### Step 6: Admin Panel Production ✅
+
+| Task | Status |
+| --- | --- |
+| Wire admin service to real Supabase endpoints | ✅ |
+| User management with real data | ✅ |
+| View user financial data (read-only) | ✅ |
+| System config stored in Supabase | ✅ |
+| Audit log persistence | ✅ |
+
+**Files Modified:**
+- `src/services/adminService.ts` - Fixed table names, added ledger accounts and snapshots methods
+- `src/stores/adminStore.ts` - Added ledger accounts and snapshots to user data fetching
+- `src/types/admin.ts` - Added ledgerAccountCount, snapshotCount, updated FinancialDataTab
+- `src/components/Admin/FinancialDataSection.tsx` - Added Ledger and Snapshots tabs
+
+**Admin Service Updates:**
+- `getUserAccounts()` now uses `net_worth_accounts` table with all fields
+- `getUserExpenses()` uses correct `recurring` column
+- `getUserIncomes()` uses `amount` and `frequency` columns
+- Added `getUserLedgerAccounts()` method
+- Added `getUserSnapshots()` with nested account_snapshots
+
+### Step 7: Vercel Deployment & OAuth Setup ✅
+
+| Task | Status |
+| --- | --- |
+| Create Vercel account and import project | ✅ |
+| Configure build settings (Vite preset) | ✅ |
+| Add environment variables in Vercel | ✅ |
+| Deploy to Vercel | ✅ |
+| Create Google Cloud project | ✅ |
+| Configure OAuth consent screen | ✅ |
+| Create OAuth credentials | ✅ |
+| Configure Google provider in Supabase | ✅ |
+| Set Site URL and redirect URLs in Supabase | ✅ |
+
+**Production URL:** https://fintonico.vercel.app
+
+**Guide:** See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed instructions.
+
+### Step 8: Testing & Production Bug Fixes ✅
+
+| Task | Status |
+| --- | --- |
+| Test Google OAuth sign in/out | ✅ |
+| Test all CRUD operations with Supabase | ✅ |
+| Fix: fetchAll() never called in production | ✅ |
+| Fix: Silent error swallowing in forms | ✅ |
+| Fix: App crash before auth completes | ✅ |
+| Fix: Re-render loop causing page unresponsive | ✅ |
+| Fix: income table amount_cents NOT NULL constraint | ✅ |
+| Test RLS policies (user isolation) | ✅ |
+| Test admin panel functionality | ✅ |
+
+**Bugs Found & Fixed:**
+1. `fetchAll()` was defined in every store but never called from any component
+2. Expense Quick Add form didn't await `addExpense()`, errors were swallowed
+3. `ensureCurrentMonthSnapshot()` ran before auth, causing crash
+4. `useSnapshotStore()` hook in App.tsx subscribed to all state, causing infinite re-renders
+5. `income` table had `amount_cents BIGINT NOT NULL` from migration 002, but service sends `amount` (added in migration 004) — fixed with migration 008
+
+### Step 9: Code Audit & Performance Optimization ✅
+
+| Task | Status |
+| --- | --- |
+| Comprehensive code audit (14 issues identified) | ✅ |
+| Fix: App.tsx unhandled promise + error handling | ✅ |
+| Fix: recurringUtils.ts production mode guard | ✅ |
+| Fix: snapshotService.ts partial save error handling | ✅ |
+| Performance: Replace getUser() with getSessionUser() | ✅ |
+| Performance: Enable localStorage caching in production | ✅ |
+
+**Performance Improvements:**
+- Eliminated 5+ redundant `supabase.auth.getUser()` HTTP calls per page load (~1.5-2.5s saved)
+- Created `getSessionUser()` helper — reads from local session (zero network)
+- Enabled Zustand persist in production — cached data displays instantly on refresh
+- Wrapped `recurringUtils.ts` in DEV_MODE guard and try-catch
+- Added user-visible error banner in App.tsx for data loading failures
+
+**Files Modified:**
+- `src/lib/supabase.ts` — Added `getSessionUser()` helper
+- `src/services/*.ts` (all 5) — Replaced `getUser()` with `getSessionUser()`
+- `src/stores/*.ts` (all 5) — Changed `partialize` to always cache data
+- `src/utils/recurringUtils.ts` — Added DEV_MODE guard and try-catch
+- `src/App.tsx` — Error handling for data fetch, error banner UI
+- `src/services/snapshotService.ts` — Throw on partial snapshot save failure
+- `supabase/migrations/008_fix_income_amount_cents.sql` — Schema fix
+
+**Design Decisions:**
+- localStorage serves as both offline cache and instant-display mechanism
+- Fresh data from Supabase overwrites cache on each login
+- RLS ensures users can only access their own data
+- Admin roles bypass RLS for user management
+
+---
+
+## Phase 24: UI Bug Fixes & Polish ✅
 
 **Goal:** Fix reported UI bugs and improve component usability across Income Quick Add, Net Worth type selector, sorting, and Settings controls.
 
@@ -1651,6 +1884,137 @@ interface NetWorthSnapshot {
 
 ---
 
+## Phase 28: Fix Loading Crashes & Add Time Travel Feature
+
+**Goal:** Fix critical loading failures on first data entry and add time travel feature for admin testing.
+
+### Step 1: Store Initialization State Machine ✅
+
+**Goal:** Replace boolean `initialized` flag with status-based state to properly track loading failures.
+
+| Task | Status |
+| --- | --- |
+| Replace `initialized: boolean` with `initializationStatus` in accountStore | ⬜ |
+| Replace `initialized: boolean` with `initializationStatus` in expenseStore | ⬜ |
+| Replace `initialized: boolean` with `initializationStatus` in incomeStore | ⬜ |
+| Replace `initialized: boolean` with `initializationStatus` in ledgerAccountStore | ⬜ |
+| Replace `initialized: boolean` with `initializationStatus` in snapshotStore | ⬜ |
+| Add `errorDetails: string \| null` to each store | ⬜ |
+| Add `isReady()` helper to each store | ⬜ |
+
+**Initialization Status:** `'idle' | 'loading' | 'success' | 'error'`
+
+### Step 2: Defensive Selectors ✅
+
+**Goal:** Add null/empty checks to finance selectors to prevent crashes.
+
+| Task | Status |
+| --- | --- |
+| Add guards to `getBalancesAt()` — return zero Money if accounts not ready | ⬜ |
+| Add guards to `getNetWorthAt()` — use safe defaults from getBalancesAt | ⬜ |
+| Add null checks before Money operations | ⬜ |
+
+### Step 3: Snapshot Creation Guards ✅
+
+**Goal:** Block snapshot creation until all dependencies are ready.
+
+| Task | Status |
+| --- | --- |
+| Add `accountStore.isReady()` check to `ensureCurrentMonthSnapshot()` | ⬜ |
+| Add empty accounts check to `ensureCurrentMonthSnapshot()` | ⬜ |
+| Add guard to `createSnapshot()` — throw if no accounts available | ⬜ |
+| Log warnings when operations are skipped | ⬜ |
+
+### Step 4: App Loading Orchestration ✅
+
+**Goal:** Structured data loading with proper error handling and retry logic.
+
+| Task | Status |
+| --- | --- |
+| Replace `Promise.allSettled` with sequential loading in App.tsx | ⬜ |
+| Add `getFailedStores()` helper to check initialization status | ⬜ |
+| Only fetch snapshots after accounts are ready | ⬜ |
+| Add `dataLoadError` state for user-visible errors | ⬜ |
+| Update error banner to show specific failed stores | ⬜ |
+| Add "Retry" button to error banner | ⬜ |
+| Implement `retryFailedStores()` method | ⬜ |
+
+### Step 5: Date Override Store ✅
+
+**Goal:** Create time travel infrastructure for admin testing.
+
+| Task | Status |
+| --- | --- |
+| Create `dateOverrideStore.ts` with override state | ⬜ |
+| Add `setOverride()`, `resetToToday()` actions | ⬜ |
+| Add `adjustDays()`, `adjustMonths()` helpers | ⬜ |
+| Only functional when `isDevMode === true` | ⬜ |
+
+### Step 6: Date Utilities ✅
+
+**Goal:** Centralize date access with override support.
+
+| Task | Status |
+| --- | --- |
+| Create `dateUtils.ts` with `getCurrentDate()` function | ⬜ |
+| Check override store, fall back to `new Date()` | ⬜ |
+| Add `getTodayLocalString()` helper | ⬜ |
+| Replace `new Date()` in finance.ts (12 locations) | ⬜ |
+| Replace `new Date()` in dateFormat.ts | ⬜ |
+| Replace `new Date()` in useMonthNavigation.ts (3 locations) | ⬜ |
+| Replace `new Date()` in snapshotStore.ts (2 locations) | ⬜ |
+| Replace `new Date()` in App.tsx (1 location) | ⬜ |
+
+### Step 7: Time Travel UI ✅
+
+**Goal:** Add admin controls for date override.
+
+| Task | Status |
+| --- | --- |
+| Create `TimeTravelBanner.tsx` — purple banner when override active | ⬜ |
+| Add Time Travel section to `SystemConfigSection.tsx` | ⬜ |
+| Add date picker input | ⬜ |
+| Add quick navigation buttons (±1 day, ±1 month) | ⬜ |
+| Add "Reset to Real Today" button | ⬜ |
+| Show "ACTIVE" badge when override enabled | ⬜ |
+| Add TimeTravelBanner to App.tsx layout | ⬜ |
+| Only visible when `isDevMode === true` | ⬜ |
+
+### Step 8: Testing & Verification ✅
+
+**Goal:** Verify all fixes work correctly.
+
+| Task | Status |
+| --- | --- |
+| Test: First login with no data — no crash | ⬜ |
+| Test: Network failure — error banner shows failed stores | ⬜ |
+| Test: Retry button re-attempts failed fetches | ⬜ |
+| Test: First expense creation doesn't crash | ⬜ |
+| Test: Time travel override — purple banner appears | ⬜ |
+| Test: Month navigation respects override date | ⬜ |
+| Test: Snapshot creation uses override date | ⬜ |
+| Test: Reset returns to real date | ⬜ |
+| Verify: Time travel hidden in production mode | ⬜ |
+
+**Files Created:**
+- `src/stores/dateOverrideStore.ts`
+- `src/utils/dateUtils.ts`
+- `src/components/Admin/TimeTravelBanner.tsx`
+
+**Files Modified:**
+- `src/stores/accountStore.ts`
+- `src/stores/expenseStore.ts`
+- `src/stores/incomeStore.ts`
+- `src/stores/ledgerAccountStore.ts`
+- `src/stores/snapshotStore.ts`
+- `src/selectors/finance.ts`
+- `src/utils/dateFormat.ts`
+- `src/hooks/useMonthNavigation.ts`
+- `src/App.tsx`
+- `src/components/Admin/SystemConfigSection.tsx`
+
+---
+
 ## Future Phases
 
 **Subscription Tiers (Freemium/Pro):** Feature gating for import/export. See plan file for details.
@@ -1663,237 +2027,4 @@ interface NetWorthSnapshot {
 
 ---
 
-**Last Updated:** 2026-01-27 (Phase 27 completed — i18n English/Spanish)
-
----
-
-## Phase 23: Supabase Backend Integration (Planned)
-
-**Goal:** Migrate from localStorage to Supabase database for persistent cloud storage, multi-device sync, and production readiness.
-
-### Current State
-
-**What's working (localStorage):**
-- All CRUD operations for Expenses, Income, Accounts, Ledger Accounts
-- Snapshots and history tracking
-- XLSX import/export
-- Admin panel (mock/dev mode)
-
-**What needs Supabase:**
-- User data persistence across devices
-- Real authentication (not dev mode)
-- Admin panel with real user management
-- Data backup and recovery
-
-### Step 1: Database Schema Review ✅
-
-| Task | Status |
-| --- | --- |
-| Audit existing Supabase schema vs current data types | ✅ |
-| Create/update `expenses` table | ✅ |
-| Create/update `incomes` table | ✅ |
-| Create/update `accounts` (net worth) table | ✅ |
-| Create/update `ledger_accounts` table | ✅ |
-| Create/update `net_worth_snapshots` table | ✅ |
-| Add proper RLS policies for user data isolation | ✅ |
-
-**Migration File:** `supabase/migrations/004_app_schema_sync.sql`
-
-**Changes Made:**
-1. **expenses** - Added `currency`, `recurring`; fixed rating constraint (`non_essential` → `discretionary`)
-2. **income** - Added `amount` (decimal), `frequency` column; migrates from `amount_cents`
-3. **net_worth_accounts** - New table for Account interface (assets/liabilities with balances)
-4. **ledger_accounts** - New table for LedgerAccount interface (Chart of Accounts)
-5. **net_worth_snapshots** - New table for monthly net worth history
-6. **account_snapshots** - New table for per-account breakdown within snapshots
-7. **Helper functions** - `get_account_nature()`, `calculate_user_net_worth()`
-
-### Step 2: API Service Layer ✅
-
-| Task | Status |
-| --- | --- |
-| Create `supabaseClient.ts` configuration | ✅ (already existed at `src/lib/supabase.ts`) |
-| Create `expenseService.ts` (CRUD with Supabase) | ✅ |
-| Create `incomeService.ts` (CRUD with Supabase) | ✅ |
-| Create `netWorthAccountService.ts` (CRUD with Supabase) | ✅ |
-| Create `ledgerAccountService.ts` (CRUD with Supabase) | ✅ |
-| Create `snapshotService.ts` (CRUD with Supabase) | ✅ |
-
-**Files Created:**
-- `src/services/expenseService.ts` - Expense CRUD with bulk import
-- `src/services/incomeService.ts` - Income CRUD with bulk import
-- `src/services/netWorthAccountService.ts` - Net worth account CRUD
-- `src/services/ledgerAccountService.ts` - Chart of Accounts CRUD
-- `src/services/snapshotService.ts` - Net worth snapshot CRUD
-- `src/services/index.ts` - Central export for all services
-- `src/types/database.ts` - Updated with all new table types
-
-**Service Features:**
-- All services have DEV_MODE flag for localStorage fallback
-- Full CRUD operations (getAll, getById, create, update, delete)
-- Bulk create for imports
-- Proper type mapping between DB rows and app types
-- User authentication checks on all operations
-
-### Step 3: Store Migration ✅
-
-| Task | Status |
-| --- | --- |
-| Update `expenseStore.ts` to use Supabase service | ✅ |
-| Update `incomeStore.ts` to use Supabase service | ✅ |
-| Update `accountStore.ts` to use Supabase service | ✅ |
-| Update `ledgerAccountStore.ts` to use Supabase service | ✅ |
-| Update `snapshotStore.ts` to use Supabase service | ✅ |
-| Add loading states and error handling | ✅ |
-| Add optimistic updates for better UX | ✅ (local state updates immediately) |
-
-**Store Updates:**
-- All stores now have `fetchAll()` method to load data from Supabase on app init
-- All stores have `loading`, `error`, `initialized`, and `clearError()` states
-- DEV_MODE fallback: localStorage persistence when Supabase not configured
-- `partialize` ensures only data (not state) is persisted to localStorage
-- Added `bulkImport()` for XLSX import functionality
-- Added `updateExpense/Income` methods for editing
-
-### Step 4: Authentication Integration ✅
-
-| Task | Status |
-| --- | --- |
-| Wire up real Supabase Auth (replace dev mode) | ✅ |
-| Google OAuth sign-in | ✅ |
-| Login/Signup pages with proper validation | ✅ |
-| Password reset flow | ✅ |
-| Session persistence | ✅ (via Supabase `persistSession: true`) |
-| Fetch user profile on login | ✅ |
-
-**Auth Updates:**
-- Added `signInWithGoogle()` method using Supabase OAuth
-- Added `resetPassword()` method for password recovery
-- Added `clearError()` helper
-- AuthForm now has Google sign-in button with proper icon
-- AuthForm supports three modes: signin, signup, reset
-- "Forgot password?" link on sign-in form
-- Dev mode indicator when Supabase not configured
-
-**To Enable Google OAuth in Production:**
-1. Go to Supabase Dashboard → Authentication → Providers
-2. Enable Google provider
-3. Add your Google OAuth Client ID and Secret
-4. Set redirect URL in Google Cloud Console: `https://xvcmnpezakcmwffcnhmw.supabase.co/auth/v1/callback`
-
-### Step 5: Data Migration Tool ✅
-
-| Task | Status |
-| --- | --- |
-| Create localStorage → Supabase migration utility | ✅ |
-| One-click "Upload my data" for existing users | ✅ |
-| Conflict resolution (if data exists in both) | ✅ |
-| Migration progress indicator | ✅ |
-
-**Files Created:**
-- `src/services/migrationService.ts` - Migration utility with progress tracking
-- `src/components/Settings/DataMigration.tsx` - UI component for migration
-
-**Features:**
-- Reads all localStorage stores (expenses, income, accounts, ledger, snapshots)
-- Checks for existing Supabase data before migration
-- Optional "overwrite" mode for replacing existing cloud data
-- Step-by-step progress indicator showing current entity being migrated
-- Error handling with detailed per-entity error messages
-- "Clear local data" option after successful migration
-- Integrated into Settings modal under "Cloud Sync" section
-
-### Step 6: Admin Panel Production ✅
-
-| Task | Status |
-| --- | --- |
-| Wire admin service to real Supabase endpoints | ✅ |
-| User management with real data | ✅ |
-| View user financial data (read-only) | ✅ |
-| System config stored in Supabase | ✅ |
-| Audit log persistence | ✅ |
-
-**Files Modified:**
-- `src/services/adminService.ts` - Fixed table names, added ledger accounts and snapshots methods
-- `src/stores/adminStore.ts` - Added ledger accounts and snapshots to user data fetching
-- `src/types/admin.ts` - Added ledgerAccountCount, snapshotCount, updated FinancialDataTab
-- `src/components/Admin/FinancialDataSection.tsx` - Added Ledger and Snapshots tabs
-
-**Admin Service Updates:**
-- `getUserAccounts()` now uses `net_worth_accounts` table with all fields
-- `getUserExpenses()` uses correct `recurring` column
-- `getUserIncomes()` uses `amount` and `frequency` columns
-- Added `getUserLedgerAccounts()` method
-- Added `getUserSnapshots()` with nested account_snapshots
-
-### Step 7: Vercel Deployment & OAuth Setup ✅
-
-| Task | Status |
-| --- | --- |
-| Create Vercel account and import project | ✅ |
-| Configure build settings (Vite preset) | ✅ |
-| Add environment variables in Vercel | ✅ |
-| Deploy to Vercel | ✅ |
-| Create Google Cloud project | ✅ |
-| Configure OAuth consent screen | ✅ |
-| Create OAuth credentials | ✅ |
-| Configure Google provider in Supabase | ✅ |
-| Set Site URL and redirect URLs in Supabase | ✅ |
-
-**Production URL:** https://fintonico.vercel.app
-
-**Guide:** See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed instructions.
-
-### Step 8: Testing & Production Bug Fixes ✅
-
-| Task | Status |
-| --- | --- |
-| Test Google OAuth sign in/out | ✅ |
-| Test all CRUD operations with Supabase | ✅ |
-| Fix: fetchAll() never called in production | ✅ |
-| Fix: Silent error swallowing in forms | ✅ |
-| Fix: App crash before auth completes | ✅ |
-| Fix: Re-render loop causing page unresponsive | ✅ |
-| Fix: income table amount_cents NOT NULL constraint | ✅ |
-| Test RLS policies (user isolation) | ✅ |
-| Test admin panel functionality | ✅ |
-
-**Bugs Found & Fixed:**
-1. `fetchAll()` was defined in every store but never called from any component
-2. Expense Quick Add form didn't await `addExpense()`, errors were swallowed
-3. `ensureCurrentMonthSnapshot()` ran before auth, causing crash
-4. `useSnapshotStore()` hook in App.tsx subscribed to all state, causing infinite re-renders
-5. `income` table had `amount_cents BIGINT NOT NULL` from migration 002, but service sends `amount` (added in migration 004) — fixed with migration 008
-
-### Step 9: Code Audit & Performance Optimization ✅
-
-| Task | Status |
-| --- | --- |
-| Comprehensive code audit (14 issues identified) | ✅ |
-| Fix: App.tsx unhandled promise + error handling | ✅ |
-| Fix: recurringUtils.ts production mode guard | ✅ |
-| Fix: snapshotService.ts partial save error handling | ✅ |
-| Performance: Replace getUser() with getSessionUser() | ✅ |
-| Performance: Enable localStorage caching in production | ✅ |
-
-**Performance Improvements:**
-- Eliminated 5+ redundant `supabase.auth.getUser()` HTTP calls per page load (~1.5-2.5s saved)
-- Created `getSessionUser()` helper — reads from local session (zero network)
-- Enabled Zustand persist in production — cached data displays instantly on refresh
-- Wrapped `recurringUtils.ts` in DEV_MODE guard and try-catch
-- Added user-visible error banner in App.tsx for data loading failures
-
-**Files Modified:**
-- `src/lib/supabase.ts` — Added `getSessionUser()` helper
-- `src/services/*.ts` (all 5) — Replaced `getUser()` with `getSessionUser()`
-- `src/stores/*.ts` (all 5) — Changed `partialize` to always cache data
-- `src/utils/recurringUtils.ts` — Added DEV_MODE guard and try-catch
-- `src/App.tsx` — Error handling for data fetch, error banner UI
-- `src/services/snapshotService.ts` — Throw on partial snapshot save failure
-- `supabase/migrations/008_fix_income_amount_cents.sql` — Schema fix
-
-**Design Decisions:**
-- localStorage serves as both offline cache and instant-display mechanism
-- Fresh data from Supabase overwrites cache on each login
-- RLS ensures users can only access their own data
-- Admin roles bypass RLS for user management
+**Last Updated:** 2026-01-27 (Phase 28 added — Loading crashes & Time travel)

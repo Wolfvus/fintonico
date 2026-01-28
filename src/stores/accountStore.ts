@@ -133,11 +133,15 @@ function migrateAccount(account: Account | Record<string, unknown>): Account {
   return migrated;
 }
 
+type InitializationStatus = 'idle' | 'loading' | 'success' | 'error';
+
 interface AccountState {
   accounts: Account[];
   loading: boolean;
   error: string | null;
-  initialized: boolean;
+  initializationStatus: InitializationStatus;
+  errorDetails: string | null;
+  isReady: () => boolean;
   fetchAll: () => Promise<void>;
   addAccount: (account: Omit<Account, 'id'>) => Promise<Account>;
   deleteAccount: (accountId: string) => Promise<void>;
@@ -153,23 +157,28 @@ export const useAccountStore = create<AccountState>()(
       accounts: [],
       loading: false,
       error: null,
-      initialized: false,
+      initializationStatus: 'idle' as InitializationStatus,
+      errorDetails: null,
+
+      isReady: () => get().initializationStatus === 'success',
 
       fetchAll: async () => {
         if (DEV_MODE) {
-          set({ initialized: true });
+          set({ initializationStatus: 'success' });
           return;
         }
 
-        set({ loading: true, error: null });
+        set({ initializationStatus: 'loading', loading: true, error: null, errorDetails: null });
         try {
           const accounts = await netWorthAccountService.getAll();
-          set({ accounts, loading: false, initialized: true });
+          set({ accounts, loading: false, initializationStatus: 'success' });
         } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to fetch accounts';
           set({
-            error: error instanceof Error ? error.message : 'Failed to fetch accounts',
+            error: message,
+            errorDetails: message,
             loading: false,
-            initialized: true,
+            initializationStatus: 'error',
           });
         }
       },

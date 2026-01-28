@@ -6,11 +6,15 @@ import { ledgerAccountService } from '../services/ledgerAccountService';
 // Dev mode configuration
 const DEV_MODE = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_DEV_MODE === 'true';
 
+type InitializationStatus = 'idle' | 'loading' | 'success' | 'error';
+
 interface LedgerAccountState {
   accounts: LedgerAccount[];
   loading: boolean;
   error: string | null;
-  initialized: boolean;
+  initializationStatus: InitializationStatus;
+  errorDetails: string | null;
+  isReady: () => boolean;
   fetchAll: () => Promise<void>;
   addAccount: (account: Omit<LedgerAccount, 'id'>) => Promise<LedgerAccount>;
   deleteAccount: (accountId: string) => Promise<void>;
@@ -26,23 +30,28 @@ export const useLedgerAccountStore = create<LedgerAccountState>()(
       accounts: [],
       loading: false,
       error: null,
-      initialized: false,
+      initializationStatus: 'idle' as InitializationStatus,
+      errorDetails: null,
+
+      isReady: () => get().initializationStatus === 'success',
 
       fetchAll: async () => {
         if (DEV_MODE) {
-          set({ initialized: true });
+          set({ initializationStatus: 'success' });
           return;
         }
 
-        set({ loading: true, error: null });
+        set({ initializationStatus: 'loading', loading: true, error: null, errorDetails: null });
         try {
           const accounts = await ledgerAccountService.getAll();
-          set({ accounts, loading: false, initialized: true });
+          set({ accounts, loading: false, initializationStatus: 'success' });
         } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to fetch ledger accounts';
           set({
-            error: error instanceof Error ? error.message : 'Failed to fetch ledger accounts',
+            error: message,
+            errorDetails: message,
             loading: false,
-            initialized: true,
+            initializationStatus: 'error',
           });
         }
       },

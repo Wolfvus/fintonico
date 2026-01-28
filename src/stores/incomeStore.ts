@@ -18,11 +18,15 @@ export interface NewIncome {
   date?: string;
 }
 
+type InitializationStatus = 'idle' | 'loading' | 'success' | 'error';
+
 interface IncomeState {
   incomes: Income[];
   loading: boolean;
   error: string | null;
-  initialized: boolean;
+  initializationStatus: InitializationStatus;
+  errorDetails: string | null;
+  isReady: () => boolean;
   fetchAll: () => Promise<void>;
   addIncome: (income: NewIncome) => Promise<Income>;
   updateIncome: (id: string, updates: Partial<NewIncome>) => Promise<Income>;
@@ -38,23 +42,28 @@ export const useIncomeStore = create<IncomeState>()(
       incomes: [],
       loading: false,
       error: null,
-      initialized: false,
+      initializationStatus: 'idle' as InitializationStatus,
+      errorDetails: null,
+
+      isReady: () => get().initializationStatus === 'success',
 
       fetchAll: async () => {
         if (DEV_MODE) {
-          set({ initialized: true });
+          set({ initializationStatus: 'success' });
           return;
         }
 
-        set({ loading: true, error: null });
+        set({ initializationStatus: 'loading', loading: true, error: null, errorDetails: null });
         try {
           const incomes = await incomeService.getAll();
-          set({ incomes, loading: false, initialized: true });
+          set({ incomes, loading: false, initializationStatus: 'success' });
         } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to fetch income';
           set({
-            error: error instanceof Error ? error.message : 'Failed to fetch income',
+            error: message,
+            errorDetails: message,
             loading: false,
-            initialized: true,
+            initializationStatus: 'error',
           });
         }
       },

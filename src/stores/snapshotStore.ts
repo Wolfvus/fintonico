@@ -31,11 +31,15 @@ export interface NetWorthSnapshot {
   createdAt: string; // ISO timestamp when snapshot was created
 }
 
+type InitializationStatus = 'idle' | 'loading' | 'success' | 'error';
+
 interface SnapshotState {
   snapshots: NetWorthSnapshot[];
   loading: boolean;
   error: string | null;
-  initialized: boolean;
+  initializationStatus: InitializationStatus;
+  errorDetails: string | null;
+  isReady: () => boolean;
   fetchAll: () => Promise<void>;
   getSnapshot: (monthEnd: string) => NetWorthSnapshot | undefined;
   getHistory: (startMonth?: string, endMonth?: string) => NetWorthSnapshot[];
@@ -69,23 +73,28 @@ export const useSnapshotStore = create<SnapshotState>()(
       snapshots: [],
       loading: false,
       error: null,
-      initialized: false,
+      initializationStatus: 'idle' as InitializationStatus,
+      errorDetails: null,
+
+      isReady: () => get().initializationStatus === 'success',
 
       fetchAll: async () => {
         if (DEV_MODE) {
-          set({ initialized: true });
+          set({ initializationStatus: 'success' });
           return;
         }
 
-        set({ loading: true, error: null });
+        set({ initializationStatus: 'loading', loading: true, error: null, errorDetails: null });
         try {
           const snapshots = await snapshotService.getAll();
-          set({ snapshots, loading: false, initialized: true });
+          set({ snapshots, loading: false, initializationStatus: 'success' });
         } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to fetch snapshots';
           set({
-            error: error instanceof Error ? error.message : 'Failed to fetch snapshots',
+            error: message,
+            errorDetails: message,
             loading: false,
-            initialized: true,
+            initializationStatus: 'error',
           });
         }
       },
