@@ -19,7 +19,7 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { formatAmount, baseCurrency, convertAmount } = useCurrencyStore(
     useShallow((state) => ({ formatAmount: state.formatAmount, baseCurrency: state.baseCurrency, convertAmount: state.convertAmount }))
   );

@@ -795,7 +795,7 @@ const TableHeaderWithFilter: React.FC<TableHeaderWithFilterProps> = ({
 
 // Main Component
 export const IncomePage: React.FC = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { incomes, addIncome, deleteIncome } = useIncomeStore(
     useShallow((state) => ({ incomes: state.incomes, addIncome: state.addIncome, deleteIncome: state.deleteIncome }))
   );

@@ -544,7 +544,7 @@ const AccountsTableHeader: React.FC<AccountsTableHeaderProps> = ({
 
 // Main Component
 export const ChartOfAccountsPage: React.FC = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { accounts, addAccount, deleteAccount, updateAccount, toggleActive } = useLedgerAccountStore();
 
   // Import modal state

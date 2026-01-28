@@ -960,7 +960,7 @@ const RecurringTableHeader: React.FC<RecurringTableHeaderProps> = ({
 
 // Main Component
 export const ExpensePage: React.FC = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { expenses, addExpense, deleteExpense, error: storeError, clearError } = useExpenseStore(
     useShallow((state) => ({ expenses: state.expenses, addExpense: state.addExpense, deleteExpense: state.deleteExpense, error: state.error, clearError: state.clearError }))
   );
