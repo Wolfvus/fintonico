@@ -122,6 +122,12 @@ export const useSnapshotStore = create<SnapshotState>()(
         const monthEndString = monthEnd || getMonthEndString();
         const monthEndDate = getMonthEndDate(monthEndString);
 
+        // Guard: Verify accounts are available
+        const accounts = useAccountStore.getState().accounts;
+        if (!accounts || accounts.length === 0) {
+          throw new Error('Cannot create snapshot: no accounts available');
+        }
+
         // Get net worth data at month end
         const netWorthData = getNetWorthAt(monthEndDate);
 
@@ -135,9 +141,6 @@ export const useSnapshotStore = create<SnapshotState>()(
           expense: 0,
           equity: 0 // Equity is typically calculated as assets - liabilities
         };
-
-        // Capture per-account balances
-        const accounts = useAccountStore.getState().accounts;
         const { convertAmount, baseCurrency } = useCurrencyStore.getState();
 
         const accountSnapshots: AccountSnapshot[] = accounts
@@ -206,6 +209,19 @@ export const useSnapshotStore = create<SnapshotState>()(
       },
 
       ensureCurrentMonthSnapshot: async () => {
+        // Guard: Check accounts store is ready
+        const accountStore = useAccountStore.getState();
+        if (!accountStore.isReady()) {
+          console.warn('Skipping snapshot — accounts not ready');
+          return undefined as unknown as NetWorthSnapshot;
+        }
+
+        // Guard: No accounts exist yet
+        if (accountStore.accounts.length === 0) {
+          console.warn('Skipping snapshot — no accounts exist');
+          return undefined as unknown as NetWorthSnapshot;
+        }
+
         const currentMonthEnd = getMonthEndString();
         const existing = get().getSnapshot(currentMonthEnd);
 
