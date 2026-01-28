@@ -1939,16 +1939,16 @@ interface NetWorthSnapshot {
 | Add "Retry" button to error banner | ✅ |
 | Implement `retryFailedStores()` method | ✅ |
 
-### Step 5: Date Override Store
+### Step 5: Date Override Store ✅
 
 **Goal:** Create time travel infrastructure for admin testing.
 
 | Task | Status |
 | --- | --- |
-| Create `dateOverrideStore.ts` with override state | ⬜ |
-| Add `setOverride()`, `resetToToday()` actions | ⬜ |
-| Add `adjustDays()`, `adjustMonths()` helpers | ⬜ |
-| Only functional when `isDevMode === true` | ⬜ |
+| Create `dateOverrideStore.ts` with override state | ✅ |
+| Add `setOverride()`, `resetToToday()` actions | ✅ |
+| Add `adjustDays()`, `adjustMonths()` helpers | ✅ |
+| Only functional when `isDevMode === true` | ✅ |
 
 ### Step 6: Date Utilities
 
