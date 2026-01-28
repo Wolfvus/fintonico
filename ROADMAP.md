@@ -1894,13 +1894,13 @@ interface NetWorthSnapshot {
 
 | Task | Status |
 | --- | --- |
-| Replace `initialized: boolean` with `initializationStatus` in accountStore | ⬜ |
-| Replace `initialized: boolean` with `initializationStatus` in expenseStore | ⬜ |
-| Replace `initialized: boolean` with `initializationStatus` in incomeStore | ⬜ |
-| Replace `initialized: boolean` with `initializationStatus` in ledgerAccountStore | ⬜ |
-| Replace `initialized: boolean` with `initializationStatus` in snapshotStore | ⬜ |
-| Add `errorDetails: string \| null` to each store | ⬜ |
-| Add `isReady()` helper to each store | ⬜ |
+| Replace `initialized: boolean` with `initializationStatus` in accountStore | ✅ |
+| Replace `initialized: boolean` with `initializationStatus` in expenseStore | ✅ |
+| Replace `initialized: boolean` with `initializationStatus` in incomeStore | ✅ |
+| Replace `initialized: boolean` with `initializationStatus` in ledgerAccountStore | ✅ |
+| Replace `initialized: boolean` with `initializationStatus` in snapshotStore | ✅ |
+| Add `errorDetails: string \| null` to each store | ✅ |
+| Add `isReady()` helper to each store | ✅ |
 
 **Initialization Status:** `'idle' | 'loading' | 'success' | 'error'`
 
@@ -1910,9 +1910,9 @@ interface NetWorthSnapshot {
 
 | Task | Status |
 | --- | --- |
-| Add guards to `getBalancesAt()` — return zero Money if accounts not ready | ⬜ |
-| Add guards to `getNetWorthAt()` — use safe defaults from getBalancesAt | ⬜ |
-| Add null checks before Money operations | ⬜ |
+| Add guards to `getBalancesAt()` — return zero Money if accounts not ready | ✅ |
+| Add guards to `getNetWorthAt()` — use safe defaults from getBalancesAt | ✅ |
+| Add null checks before Money operations | ✅ |
 
 ### Step 3: Snapshot Creation Guards ✅
 
@@ -1920,10 +1920,10 @@ interface NetWorthSnapshot {
 
 | Task | Status |
 | --- | --- |
-| Add `accountStore.isReady()` check to `ensureCurrentMonthSnapshot()` | ⬜ |
-| Add empty accounts check to `ensureCurrentMonthSnapshot()` | ⬜ |
-| Add guard to `createSnapshot()` — throw if no accounts available | ⬜ |
-| Log warnings when operations are skipped | ⬜ |
+| Add `accountStore.isReady()` check to `ensureCurrentMonthSnapshot()` | ✅ |
+| Add empty accounts check to `ensureCurrentMonthSnapshot()` | ✅ |
+| Add guard to `createSnapshot()` — throw if no accounts available | ✅ |
+| Log warnings when operations are skipped | ✅ |
 
 ### Step 4: App Loading Orchestration ✅
 
@@ -1931,15 +1931,15 @@ interface NetWorthSnapshot {
 
 | Task | Status |
 | --- | --- |
-| Replace `Promise.allSettled` with sequential loading in App.tsx | ⬜ |
-| Add `getFailedStores()` helper to check initialization status | ⬜ |
-| Only fetch snapshots after accounts are ready | ⬜ |
-| Add `dataLoadError` state for user-visible errors | ⬜ |
-| Update error banner to show specific failed stores | ⬜ |
-| Add "Retry" button to error banner | ⬜ |
-| Implement `retryFailedStores()` method | ⬜ |
+| Replace `Promise.allSettled` with sequential loading in App.tsx | ✅ |
+| Add `getFailedStores()` helper to check initialization status | ✅ |
+| Only fetch snapshots after accounts are ready | ✅ |
+| Add `dataLoadError` state for user-visible errors | ✅ |
+| Update error banner to show specific failed stores | ✅ |
+| Add "Retry" button to error banner | ✅ |
+| Implement `retryFailedStores()` method | ✅ |
 
-### Step 5: Date Override Store ✅
+### Step 5: Date Override Store
 
 **Goal:** Create time travel infrastructure for admin testing.
 
@@ -1950,7 +1950,7 @@ interface NetWorthSnapshot {
 | Add `adjustDays()`, `adjustMonths()` helpers | ⬜ |
 | Only functional when `isDevMode === true` | ⬜ |
 
-### Step 6: Date Utilities ✅
+### Step 6: Date Utilities
 
 **Goal:** Centralize date access with override support.
 
@@ -1965,7 +1965,7 @@ interface NetWorthSnapshot {
 | Replace `new Date()` in snapshotStore.ts (2 locations) | ⬜ |
 | Replace `new Date()` in App.tsx (1 location) | ⬜ |
 
-### Step 7: Time Travel UI ✅
+### Step 7: Time Travel UI
 
 **Goal:** Add admin controls for date override.
 
@@ -1980,7 +1980,7 @@ interface NetWorthSnapshot {
 | Add TimeTravelBanner to App.tsx layout | ⬜ |
 | Only visible when `isDevMode === true` | ⬜ |
 
-### Step 8: Testing & Verification ✅
+### Step 8: Testing & Verification
 
 **Goal:** Verify all fixes work correctly.
 
