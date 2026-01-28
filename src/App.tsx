@@ -58,37 +58,84 @@ function App() {
     initializeTheme();
   }, [checkUser, initializeDefaultAccounts, initializeTheme]);
 
+  // Check which stores failed to load
+  const getFailedStores = () => {
+    const stores = [
+      { name: 'expenses', store: useExpenseStore },
+      { name: 'income', store: useIncomeStore },
+      { name: 'accounts', store: useAccountStore },
+      { name: 'ledger', store: useLedgerAccountStore },
+      { name: 'snapshots', store: useSnapshotStore },
+    ];
+    return stores
+      .filter(s => s.store.getState().initializationStatus === 'error')
+      .map(s => s.name);
+  };
+
+  // Retry only the stores that failed
+  const retryFailedStores = async () => {
+    setDataLoadError(null);
+    const stores = [
+      { name: 'expenses', store: useExpenseStore },
+      { name: 'income', store: useIncomeStore },
+      { name: 'accounts', store: useAccountStore },
+      { name: 'ledger', store: useLedgerAccountStore },
+      { name: 'snapshots', store: useSnapshotStore },
+    ];
+
+    const failedStores = stores.filter(
+      s => s.store.getState().initializationStatus === 'error'
+    );
+
+    await Promise.all(failedStores.map(s => s.store.getState().fetchAll()));
+
+    const stillFailed = getFailedStores();
+    if (stillFailed.length > 0) {
+      setDataLoadError(`Failed to load: ${stillFailed.join(', ')}`);
+    } else {
+      // All stores recovered — try snapshot creation
+      if (useAccountStore.getState().isReady()) {
+        useSnapshotStore.getState().ensureCurrentMonthSnapshot().catch((err) => {
+          console.error('Failed to ensure current month snapshot:', err);
+        });
+      }
+    }
+  };
+
   // When user is authenticated, fetch all data from Supabase (runs once)
   useEffect(() => {
     if (user && !dataFetched.current) {
       dataFetched.current = true;
       setDataLoadError(null);
 
-      Promise.allSettled([
-        useExpenseStore.getState().fetchAll(),
-        useIncomeStore.getState().fetchAll(),
-        useAccountStore.getState().fetchAll(),
-        useLedgerAccountStore.getState().fetchAll(),
-        useSnapshotStore.getState().fetchAll(),
-      ]).then((results) => {
-        // Check for failures and report them
-        const failures = results
-          .map((r, i) => r.status === 'rejected' ? ['expenses', 'income', 'accounts', 'ledger', 'snapshots'][i] : null)
-          .filter(Boolean);
+      const loadData = async () => {
+        try {
+          // Load all stores in parallel
+          await Promise.all([
+            useExpenseStore.getState().fetchAll(),
+            useIncomeStore.getState().fetchAll(),
+            useAccountStore.getState().fetchAll(),
+            useLedgerAccountStore.getState().fetchAll(),
+          ]);
 
-        if (failures.length > 0) {
-          console.error('Failed to load data stores:', failures);
-          setDataLoadError(`Failed to load: ${failures.join(', ')}. Try refreshing.`);
+          // Only fetch snapshots after accounts loaded successfully
+          if (useAccountStore.getState().isReady()) {
+            await useSnapshotStore.getState().fetchAll();
+            await useSnapshotStore.getState().ensureCurrentMonthSnapshot();
+          }
+        } catch (err) {
+          console.error('Error during data loading:', err);
         }
 
-        // Only create snapshot if accounts loaded successfully
-        const accountsLoaded = results[2].status === 'fulfilled';
-        if (accountsLoaded) {
-          useSnapshotStore.getState().ensureCurrentMonthSnapshot().catch((err) => {
-            console.error('Failed to ensure current month snapshot:', err);
-          });
+        // Check which stores failed (they track their own status)
+        const failedStores = getFailedStores();
+        if (failedStores.length > 0) {
+          console.error('Failed to load data stores:', failedStores);
+          setDataLoadError(`Failed to load: ${failedStores.join(', ')}`);
         }
-      });
+      };
+
+      loadData();
     }
   }, [user]);
 
@@ -157,9 +204,22 @@ function App() {
 
 
       {dataLoadError && (
-        <div className="fixed top-14 lg:top-12 left-0 lg:left-16 right-0 z-40 bg-red-600 text-white px-4 py-2 text-sm text-center cursor-pointer"
-             onClick={() => setDataLoadError(null)}>
-          {dataLoadError}
+        <div className="fixed top-14 lg:top-12 left-0 lg:left-16 right-0 z-40 bg-red-600 text-white px-4 py-2 text-sm flex items-center justify-between">
+          <span>{dataLoadError}</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={retryFailedStores}
+              className="underline font-semibold hover:no-underline"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => setDataLoadError(null)}
+              className="opacity-70 hover:opacity-100"
+            >
+              Dismiss
+            </button>
+          </div>
         </div>
       )}
 
