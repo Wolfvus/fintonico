@@ -1,10 +1,10 @@
 /**
  * XLSX Import/Export Utilities
  * Handles parsing and generating Excel files for data import/export
- * Uses SheetJS (xlsx) library
+ * Uses a maintained SheetJS npm fork.
  */
 
-import * as XLSX from 'xlsx';
+import * as XLSX from '@e965/xlsx';
 
 // Re-export types from csv.ts for consistency
 export type {
