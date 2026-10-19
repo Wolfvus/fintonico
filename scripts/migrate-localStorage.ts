@@ -5,10 +5,10 @@
  * It handles accounts, transactions, income, and expenses.
  *
  * Usage:
- *   npx ts-node scripts/migrate-localStorage.ts
+ *   pnpm exec tsx scripts/migrate-localStorage.ts
  *
- * Or run via npm script:
- *   npm run migrate
+ * Or run via pnpm script:
+ *   pnpm run migrate
  *
  * Environment Variables:
  *   VITE_API_URL - Backend API URL (default: http://localhost:3000/api)
@@ -547,7 +547,7 @@ async function runMigration(localStorageExportPath: string): Promise<void> {
 // CLI entry point
 const args = process.argv.slice(2);
 if (args.length === 0) {
-  console.log('Usage: npx ts-node scripts/migrate-localStorage.ts <localStorage-export.json>');
+  console.log('Usage: pnpm exec tsx scripts/migrate-localStorage.ts <localStorage-export.json>');
   console.log('\nTo export localStorage from browser:');
   console.log('  1. Open browser DevTools (F12)');
   console.log('  2. Go to Console tab');

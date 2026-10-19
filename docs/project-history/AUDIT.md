@@ -615,22 +615,22 @@ Issues:
 
 | Task | Command/Files | Status |
 | --- | --- | --- |
-| Run npm audit | `npm audit` | ❌ |
-| Check for outdated packages | `npm outdated` | ⚠️ |
-| Review high-severity vulnerabilities | `npm audit --audit-level=high` | ❌ |
-| Check unused dependencies | `npx depcheck` | ⚠️ |
+| Run pnpm audit | `pnpm audit` | ❌ |
+| Check for outdated packages | `pnpm outdated` | ⚠️ |
+| Review high-severity vulnerabilities | `pnpm audit --audit-level=high` | ❌ |
+| Check unused dependencies | `pnpm dlx depcheck` | ⚠️ |
 
 **4.1 Findings:**
 
-❌ **npm audit (5 vulnerabilities):**
+❌ **pnpm audit (5 vulnerabilities):**
 
 | Package | Severity | Vulnerability | Fix Available |
 | --- | --- | --- | --- |
 | xlsx | **HIGH** | Prototype Pollution (GHSA-4r6h-8v6p-xvw6) | ❌ No fix |
 | xlsx | **HIGH** | ReDoS vulnerability | ❌ No fix |
-| vite | Moderate | 3 vulnerabilities | ✅ npm audit fix |
-| body-parser | Moderate | Via express | ✅ npm audit fix |
-| glob, js-yaml | Low | Transitive | ✅ npm audit fix |
+| vite | Moderate | 3 vulnerabilities | ✅ ppnpm audit --fix |
+| body-parser | Moderate | Via express | ✅ ppnpm audit --fix |
+| glob, js-yaml | Low | Transitive | ✅ ppnpm audit --fix |
 
 **Critical: xlsx package has known HIGH vulnerabilities with NO FIX AVAILABLE**
 - Consider alternatives: ExcelJS, Papa Parse (CSV only), or server-side processing
@@ -683,7 +683,7 @@ Note: autoprefixer, postcss, tailwindcss are needed for TailwindCSS build pipeli
 
 | Task | Command | Status |
 | --- | --- | --- |
-| Analyze bundle size | `npm run build && npx vite-bundle-analyzer` | ⚠️ |
+| Analyze bundle size | `pnpm run build && pnpm dlx vite-bundle-analyzer` | ⚠️ |
 | Identify large dependencies | Bundle analysis | ⚠️ |
 | Check for tree-shaking issues | Build output | ✅ |
 
@@ -1442,7 +1442,7 @@ Track audit progress here:
 | 2025-12-17 | Data Integrity | 3.1 Store Consistency | 1 PASS, 3 MEDIUM | Standardize persist configs, add versions |
 | 2025-12-17 | Data Integrity | 3.2 Data Validation | 3 PASS, 1 MEDIUM, 1 HIGH | Add validation to accountStore |
 | 2025-12-17 | Data Integrity | 3.3 Import/Export | 3 PASS, 1 MEDIUM | Test round-trip for edge cases |
-| 2025-12-17 | Dependency | 4.1 Package Security | 2 HIGH (xlsx), 3 Moderate (vite) | Consider xlsx alternatives, run npm audit fix |
+| 2025-12-17 | Dependency | 4.1 Package Security | 2 HIGH (xlsx), 3 Moderate (vite) | Consider xlsx alternatives, run ppnpm audit --fix |
 | 2025-12-17 | Dependency | 4.2 License Compliance | 2 PASS | No GPL contamination |
 | 2025-12-17 | Dependency | 4.3 Bundle Size | 1 PASS, 2 MEDIUM | Lazy-load xlsx, code-split admin |
 | 2025-12-17 | Code Quality | 5.1 Code Organization | 2 PASS, 2 MEDIUM | Split large page components |
@@ -1485,7 +1485,7 @@ Track critical issues requiring immediate attention:
 | DATA-001 | Data Integrity | Store persist configs inconsistent (naming, versions, migrations) | Medium | Open |
 | DATA-002 | Data Integrity | accountStore has NO input validation - accepts any data | **High** | ✅ Fixed |
 | DATA-003 | Data Integrity | validateCurrency() missing BTC, ETH from whitelist | Medium | ✅ Fixed |
-| DEP-003 | Dependency | 3 moderate vulnerabilities in vite (fix available via npm audit fix) | Medium | Open |
+| DEP-003 | Dependency | 3 moderate vulnerabilities in vite (fix available via ppnpm audit --fix) | Medium | Open |
 | DEP-004 | Dependency | 29 outdated packages (react, typescript, eslint, etc.) | Medium | Open |
 | DEP-005 | Dependency | xlsx is ~500KB - should be lazy-loaded for bundle optimization | Medium | Open |
 | CODE-001 | Code Quality | NetWorthPage.tsx is 1,992 lines - needs component extraction | Medium | Open |
@@ -1779,7 +1779,7 @@ app.use(cors({
 
 **Recommended Fix:**
 ```bash
-cd server && npm install helmet
+cd server && pnpm add helmet
 ```
 ```javascript
 import helmet from 'helmet';
@@ -2030,11 +2030,11 @@ const validCurrencies = ['USD', 'MXN', 'EUR'];
 ### Category 4 - Dependency Audit (2025-12-17)
 
 **Commands Run:**
-- `npm audit`
-- `npm outdated`
-- `npx depcheck`
+- `pnpm audit`
+- `pnpm outdated`
+- `pnpm dlx depcheck`
 
-**npm audit Results:**
+**pnpm audit Results:**
 
 ```
 5 vulnerabilities (3 moderate, 2 high)
@@ -2051,7 +2051,7 @@ LOW:
 - glob, js-yaml (transitive)
 
 To address issues that do not require attention:
-  npm audit fix
+  ppnpm audit --fix
 
 Some issues need review and manual intervention.
 ```
@@ -2068,7 +2068,7 @@ Some issues need review and manual intervention.
 2. **Papa Parse** - CSV only, very fast
 3. **Server-side processing** - Move xlsx parsing to backend
 
-**npm outdated Results (29 packages):**
+**pnpm outdated Results (29 packages):**
 
 ```
 Package                            Current   Wanted    Latest
@@ -2088,7 +2088,7 @@ zod                                4.0.17    4.0.17    4.1.0
 ... and 16 more
 ```
 
-**npx depcheck Results:**
+**pnpm dlx depcheck Results:**
 
 ```
 Unused dependencies
@@ -2124,7 +2124,7 @@ Note: depcheck marks TailwindCSS dependencies as "unused" because they're config
 **Recommended Actions:**
 
 1. **Immediate (Security):**
-   - Run `npm audit fix` to resolve vite vulnerabilities
+   - Run `ppnpm audit --fix` to resolve vite vulnerabilities
    - Evaluate xlsx alternatives (ExcelJS most promising)
    - Add file size limits for XLSX imports
 
@@ -2402,7 +2402,7 @@ const NetWorthHistory = React.lazy(() =>
 ### Category 7 - Testing Coverage Audit (2025-12-17)
 
 **Test Framework:** Vitest
-**Test Runner:** `npm test`
+**Test Runner:** `pnpm test`
 **Result:** All 49 tests pass (10 test files)
 
 **Test File Inventory:**

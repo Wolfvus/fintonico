@@ -19,19 +19,19 @@ Personal finance web app for tracking income, expenses, accounts, and net worth 
 ## Local Setup
 
 ```bash
-npm install
-npm run dev:all
+pnpm install --frozen-lockfile
+pnpm run dev:all
 ```
 
 Frontend: `http://localhost:5173`
 
 ## Scripts
 
-- `npm run dev`: frontend
-- `npm run dev:server`: backend
-- `npm run dev:all`: frontend + backend
-- `npm run build`: production build
-- `npm run test`: test suite
+- `pnpm run dev`: frontend
+- `pnpm run dev:server`: backend
+- `pnpm run dev:all`: frontend + backend
+- `pnpm run build`: production build
+- `pnpm run test`: test suite
 
 ## Project Notes
 
@@ -40,3 +40,5 @@ Historical planning and audit notes were moved to [`docs/project-history`](docs/
 ## Status
 
 Active project, originally started as a rapid prototyping build and now being cleaned up for maintainability.
+
+Dependency maintenance uses Node 24 and pnpm 12.9.1. SheetJS CE 0.20.3 is pinned to the [official vendor artifact](https://docs.sheetjs.com/docs/getting-started/installation/nodejs/) because the registry release is outdated.

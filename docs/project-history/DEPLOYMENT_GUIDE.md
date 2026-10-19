@@ -31,9 +31,9 @@ Vercel should auto-detect Vite, but verify:
 | Setting | Value |
 |---------|-------|
 | Framework Preset | Vite |
-| Build Command | `npm run build` |
+| Build Command | `pnpm run build` |
 | Output Directory | `dist` |
-| Install Command | `npm install` |
+| Install Command | `pnpm install --frozen-lockfile` |
 
 ### 1.4 Add Environment Variables
 In the Vercel project settings, add these environment variables:
@@ -135,7 +135,7 @@ Ensure all migrations have been applied:
 
 If not, run from your local machine:
 ```bash
-npx supabase db push --project-ref xvcmnpezakcmwffcnhmw
+pnpm dlx supabase db push --project-ref xvcmnpezakcmwffcnhmw
 ```
 
 ---
@@ -152,7 +152,7 @@ VITE_SUPABASE_ANON_KEY=<your-anon-key>
 
 ### 4.2 Test Locally
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Visit `http://localhost:5173` and try:
